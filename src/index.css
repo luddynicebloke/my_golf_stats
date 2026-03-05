@@ -1,0 +1,200 @@
+@import url("https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&family=Quattrocento:wght@400;700&family=Rubik:ital,wght@0,300..900;1,300..900&family=Sniglet:wght@400;800&display=swap");
+@import "tailwindcss";
+
+:root {
+  --background-rgb: 214, 219, 220;
+  --foreground-rgb: 0, 0, 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-rgb: 0, 0, 0;
+    --foreground-rgb: 255, 255, 255;
+  }
+}
+
+body {
+  background: rgb(var(--background-rgb));
+  color: rgb(var(--foreground-rgb));
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #2563eb; /* Tailwind blue-600 */
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #2563eb;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+@theme {
+  --font-quattro: "Quattrocento", serif;
+  --font-rubik: "Rubik", sans-serif;
+  --font-grotesk: "Host Grotesk", sans-serif;
+  --font-sniglet: "Sniglet", system-ui;
+}
+
+@layer utilities {
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    @apply appearance-none;
+  }
+}
+
+@layer base {
+  :root {
+    --chart-axis: 55 65 81; /* slate-700 */
+    --chart-grid: 226 232 240; /* slate-200 */
+    --chart-bar: 59 130 246; /* blue-500 */
+    --chart-bar-hover: 37 99 235; /* blue-600 */
+    --chart-tooltip-bg: 15 23 42; /* slate-900 */
+    --chart-tooltip-text: 255 255 255;
+  }
+
+  html.dark {
+    --chart-axis: 255 255 255; /* slate-200 */
+    --chart-grid: 71 85 105; /* slate-600 */
+    --chart-bar: 96 165 250; /* blue-400 */
+    --chart-bar-hover: 147 197 253; /* blue-300 */
+    --chart-tooltip-bg: 30 41 59; /* slate-800 */
+    --chart-tooltip-text: 255 255 255;
+  }
+
+  button {
+    @apply flex items-center self-start rounded-lg bg-slate-800 dark:bg-emerald-700 px-2 py-3 text-sm 
+    font-medium text-white transition-colors hover:bg-emerald-900 hover:text-white md:text-base;
+  }
+}
+
+@layer components {
+  .input__label {
+    @apply block text-sm font-medium text-slate-700;
+  }
+  .input__field {
+    @apply mt-1 block w-full dark:bg-gray-900 rounded-lg border border-slate-200 p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-300;
+  }
+  .input__error {
+    @apply text-red-600 text-sm mt-1;
+  }
+  .solid_A {
+    @apply bg-emerald-700 rounded-md p-2 hover:bg-emerald-900;
+  }
+}
+
+/* Loader animation */
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #fff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* POPOVER */
+.popover__trigger {
+  appearance: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  width: auto;
+  outline: none;
+  border-radius: 6px;
+  padding: 0 16px;
+  background-color: hsl(200 98% 39%);
+  color: white;
+  font-size: 14px;
+  line-height: 0;
+  transition: 250ms background-color;
+}
+.popover__trigger:hover {
+  background-color: hsl(201 96% 32%);
+}
+.popover__trigger:focus-visible {
+  outline: 2px solid hsl(200 98% 39%);
+  outline-offset: 2px;
+}
+.popover__trigger:active {
+  background-color: hsl(201 90% 27%);
+}
+.popover__content {
+  z-index: 50;
+  max-width: min(calc(100vw - 16px), 380px);
+  border: 1px solid hsl(240 5% 84%);
+  border-radius: 6px;
+  padding: 12px;
+  background-color: white;
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  transform-origin: var(--kb-popover-content-transform-origin);
+  animation: contentHide 250ms ease-in forwards;
+}
+.popover__content[data-expanded] {
+  animation: contentShow 250ms ease-out;
+}
+.popover__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.popover__close-button {
+  height: 16px;
+  width: 16px;
+  color: hsl(240 5% 34%);
+}
+.popover__title {
+  font-size: 16px;
+  font-weight: 500;
+  color: hsl(240 6% 10%);
+}
+.popover__description {
+  font-size: 14px;
+  color: hsl(240 5% 26%);
+}
+@keyframes contentShow {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes contentHide {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
