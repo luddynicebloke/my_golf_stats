@@ -8,31 +8,85 @@ type View = "courses" | "add_course" | "users" | "other";
 
 const AdminPanel = () => {
   const [view, setView] = createSignal<View>("courses");
+  const navItems: { key: View; label: string; description: string }[] = [
+    {
+      key: "courses",
+      label: "Course List",
+      description: "Manage course records and details",
+    },
+    {
+      key: "users",
+      label: "Users",
+      description: "Review profiles and account roles",
+    },
+    {
+      key: "other",
+      label: "Other",
+      description: " Reserved for future admin actions",
+    },
+  ];
 
   return (
-    <div class='container flex flex-col mx-auto p-4 justify-center items-center gap-6'>
-      <h1 class='text-2xl font-bold mb-4'>Admin Panel</h1>
-      <div class='flex mx-auto justify-center space-x-3'>
-        <A href='/dashboard' class='solid_A mx-auto w-max'>
-          Back to Dashboard
-        </A>
+    <div class='mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
+      <div class='rounded-3xl border border-slate-200 bg-linear-to-r from-cyan-950 via-slate-900 to-emerald-950 px-6 py-8 text-slate-100 shadow-xl'>
+        <p class='font-grotesk text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300'>
+          Golf Stats Admin
+        </p>
+        <div class='mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between'>
+          <div>
+            <h1 class='font-rubik text-3xl font-semibold tracking-tight md:text-4xl'>
+              Admin Panel
+            </h1>
+            <p class='mt-2 max-w-2xl font-grotesk text-sm text-slate-300 md:text-base'>
+              Control courses, users, and platform tools from a single
+              workspace.
+            </p>
+          </div>
+          <A
+            href='/dashboard'
+            class='inline-flex w-max items-center rounded-full border border-white/20 bg-white/10 px-4 py-2 font-grotesk text-sm font-semibold text-white transition hover:bg-white/20'
+          >
+            Back to Dashboard
+          </A>
+        </div>
       </div>
-      <div class='flex mx-auto justify-center space-x-3'>
-        <button onClick={() => setView("courses")} class='p-2'>
-          Course list
-        </button>
 
-        <button onClick={() => setView("users")} class='p-2'>
-          Users
-        </button>
-        <button onClick={() => setView("other")} class='p-2'>
-          Other
-        </button>
+      <div class='mt-6 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm'>
+        <div class='grid gap-2 md:grid-cols-3'>
+          {navItems.map((item) => (
+            <button
+              onClick={() => setView(item.key)}
+              class={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                view() === item.key
+                  ? "border-cyan-300 bg-cyan-50 text-cyan-900 shadow-sm"
+                  : "border-transparent bg-slate-50 text-slate-700 hover:border-slate-200 hover:bg-white"
+              }`}
+            >
+              <p class='font-rubik text-sm font-semibold'>{item.label}</p>
+              <p class='mt-0.5 font-grotesk text-xs opacity-80 ml-5'>
+                {item.description}
+              </p>
+            </button>
+          ))}
+        </div>
       </div>
-      {view() === "courses" && <Courses />}
-      {view() === "add_course" && <div>Add Course</div>}
-      {view() === "users" && <Users />}
-      {view() === "other" && <div>Other</div>}
+
+      <div class='mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
+        <Switch>
+          <Match when={view() === "courses"}>
+            <Courses />
+          </Match>
+          <Match when={view() === "add_course"}>
+            <div class='font-grotesk text-slate-600'>Add Course</div>
+          </Match>
+          <Match when={view() === "users"}>
+            <Users />
+          </Match>
+          <Match when={view() === "other"}>
+            <div class='font-grotesk text-slate-600'>Other</div>
+          </Match>
+        </Switch>
+      </div>
     </div>
   );
 };

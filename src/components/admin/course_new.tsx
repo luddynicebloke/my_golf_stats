@@ -12,29 +12,41 @@ type NewCourseForm = {
   country: string;
 };
 
-const Course_new = () => {
+const CourseNew = () => {
   const navigate = useNavigate();
+  const [submitError, setSubmitError] = createSignal("");
 
   // create the form using modularforms
   const [newCourse, { Form, Field }] = createForm<NewCourseForm>();
 
   const handleSave = async (values: Partial<TCourse>) => {
+    setSubmitError("");
+
     const { data, error } = await supabase
       .from("courses")
       .insert({ name: values.name, city: values.city, country: values.country })
       .select()
       .single();
 
-    console.log(error);
-    console.log(data.id);
+    if (error || !data?.id) {
+      setSubmitError(error?.message || "Unable to create the course.");
+      return;
+    }
 
     navigate(`/course_editor/${data.id}`);
   };
   return (
-    <div class='bg-neutral-700 shadow-xs rounded-xl border flex flex-col  mb-4 p-2'>
-      <div class=' p-2 '>
+    <div class='mb-4 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6'>
+      <div class='mb-3 min-h-6'>
+        {submitError() ? (
+          <p class='rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700'>
+            {submitError()}
+          </p>
+        ) : null}
+      </div>
+      <div class='[&_label]:text-slate-700 dark:[&_label]:text-slate-700 [&_input]:bg-white [&_input]:text-slate-800 [&_input]:placeholder:text-slate-400 dark:[&_input]:bg-white dark:[&_input]:text-slate-800 dark:[&_input]:placeholder:text-slate-400'>
         <Form onSubmit={(values) => handleSave(values)}>
-          <div class='flex gap-2 items-center'>
+          <div class='grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end'>
             <Field name='name' validate={required("Enter a name")}>
               {(field, props) => (
                 <TextInput
@@ -45,6 +57,7 @@ const Course_new = () => {
                   label='Name'
                   required
                   placeholder='Course name'
+                  class='min-h-30'
                 />
               )}
             </Field>
@@ -58,6 +71,7 @@ const Course_new = () => {
                   label='City'
                   required
                   placeholder='City name'
+                  class='min-h-[7.5rem]'
                 />
               )}
             </Field>
@@ -71,11 +85,15 @@ const Course_new = () => {
                   label='Country'
                   required
                   placeholder='Country'
+                  class='min-h-[7.5rem]'
                 />
               )}
             </Field>
 
-            <button class='mt-8 p-2 mb-2' type='submit'>
+            <button
+              class='inline-flex self-auto rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 lg:mb-1'
+              type='submit'
+            >
               Create
             </button>
           </div>
@@ -85,4 +103,4 @@ const Course_new = () => {
   );
 };
 
-export default Course_new;
+export default CourseNew;

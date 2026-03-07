@@ -1,0 +1,350 @@
+# AI Project Context
+
+## Project Overview
+This is a web application built with:
+
+- SolidJS
+- TypeScript
+- Vite
+- Tailwind CSS
+- @solidjs/router
+- @modular-forms/solid
+- @mbarzda/solid-i18next
+- Supabase
+
+The goal is to keep the codebase simple, modular, typed, and maintainable.
+
+---
+
+## Core Rules
+When making changes in this project, always follow these rules:
+
+1. Use TypeScript strictly.
+2. Prefer small, composable components and utilities.
+3. Keep logic out of JSX where practical.
+4. Do not introduce unnecessary abstraction.
+5. Do not duplicate business logic.
+6. Preserve existing coding style unless there is a clear reason to improve it.
+7. Prefer readable code over clever code.
+8. Do not add new dependencies unless explicitly requested.
+9. Keep files focused on one responsibility.
+10. When editing existing files, preserve current naming conventions unless asked to refactor.
+
+---
+
+## Framework Conventions
+
+### SolidJS
+- Use SolidJS idioms, not React patterns.
+- Prefer `createSignal`, `createMemo`, `createEffect`, `createResource` only where appropriate.
+- Avoid unnecessary effects.
+- Derive values with `createMemo` instead of storing duplicated state.
+- Prefer direct, explicit props typing.
+- Use `Component` type only when it improves clarity; otherwise use typed function components.
+- Avoid overusing context unless state truly needs to be shared broadly.
+- Keep reactive flows simple and predictable.
+
+### Components
+- Prefer one component per file.
+- Keep presentational components separate from data-loading or service logic.
+- Extract repeated UI patterns into reusable components.
+- Do not create giant components.
+- Prefer explicit prop names.
+- Keep components easy to scan.
+
+### Routing
+- Use `@solidjs/router`.
+- Keep route definitions organized and predictable.
+- Route components should primarily orchestrate page behavior, not contain large amounts of low-level UI logic.
+- Put reusable page sections into components.
+- Use route params and search params carefully, with type-safe parsing when needed.
+- Do not hardcode navigation paths repeatedly; centralize route constants if the project already does so.
+
+---
+
+## Tailwind CSS Conventions
+- Use Tailwind utility classes for styling.
+- Do not use inline styles unless absolutely necessary.
+- Prefer reusable utility patterns over repeated long class strings.
+- Keep class lists readable and grouped logically:
+  - layout
+  - spacing
+  - sizing
+  - typography
+  - color/state
+- Reuse existing design tokens, spacing, and color patterns already present in the codebase.
+- Do not introduce arbitrary values unless needed.
+- Prefer responsive utilities where appropriate.
+- Preserve visual consistency with existing components.
+
+### Tailwind Class Ordering
+When practical, keep Tailwind classes grouped in a consistent order:
+1. layout / display
+2. position
+3. size
+4. spacing
+5. borders / radius
+6. background
+7. typography
+8. effects / transitions
+9. states / responsive modifiers
+
+---
+
+## TypeScript Conventions
+- Always prefer explicit, safe typing.
+- Avoid `any`.
+- Use `unknown` instead of `any` when needed.
+- Prefer narrow types and well-named interfaces/types.
+- Export shared types from appropriate domain files when reused.
+- Keep types close to the domain they belong to.
+- Use discriminated unions where they improve clarity.
+- Validate external data boundaries.
+- Do not silence type errors with casts unless there is a strong reason.
+
+---
+
+## Forms Conventions
+This project uses `@modular-forms/solid`.
+
+### Rules for Forms
+- Use Modular Forms for form state and validation.
+- Keep form models strongly typed.
+- Prefer schema-based or clearly centralized validation where already used in the project.
+- Show validation messages consistently.
+- Keep field components reusable when patterns repeat.
+- Handle loading, success, and error states clearly.
+- Do not mix multiple form management patterns in the same project.
+- Avoid deeply nesting form logic inside page components.
+
+### Form Structure
+When creating a form:
+- Define a clear typed form model.
+- Keep validation rules near the form or in a dedicated validation file.
+- Use reusable field wrappers/components if the project already has them.
+- Surface server errors in a user-friendly way.
+- Support translated labels, placeholders, and validation messages.
+
+### Form UX
+- Disable submit while submitting when appropriate.
+- Preserve accessibility:
+  - labels
+  - `aria-*` attributes
+  - error associations
+- Keep error messaging concise and consistent.
+
+---
+
+## Internationalization Conventions
+This project uses `@mbarzda/solid-i18next`.
+
+### Rules for i18n
+- All user-facing strings must be translated.
+- Do not hardcode visible UI text.
+- Use existing translation namespaces if present.
+- Keep translation keys consistent and descriptive.
+- Prefer stable keys over sentence-like keys where the project already follows that style.
+- Do not build translated strings by concatenating fragments when avoidable.
+- Use interpolation for dynamic values.
+- Keep pluralization and variable insertion compatible with i18next conventions.
+
+### Translation Key Style
+Prefer structured keys such as:
+- `common.save`
+- `common.cancel`
+- `auth.login.title`
+- `auth.login.submit`
+- `profile.form.firstName`
+- `errors.network`
+
+### i18n Usage
+- Translate:
+  - labels
+  - buttons
+  - headings
+  - helper text
+  - error text
+  - empty states
+  - notifications
+- If introducing new keys, place them in the most appropriate namespace.
+- Keep translation additions minimal and well organized.
+
+---
+
+## Supabase Conventions
+Supabase is used for backend services such as:
+- authentication
+- database reads/writes
+- storage
+- possibly edge functions
+
+### Rules for Supabase
+- Keep Supabase access centralized in service or data-access layers.
+- Do not scatter raw queries across many UI components.
+- Prefer wrapper functions for repeated queries or mutations.
+- Handle errors explicitly.
+- Type database results whenever possible.
+- Respect row-level security assumptions.
+- Never expose secrets in client code.
+- Use the existing client setup rather than creating duplicate clients.
+
+### Data Access
+- UI components should not contain large raw Supabase query blocks unless already established in the codebase.
+- Prefer patterns such as:
+  - `services/`
+  - `lib/`
+  - `data/`
+  - `repositories/`
+depending on the current structure.
+- Keep database interactions easy to test and reuse.
+
+### Auth
+- Follow the project’s existing auth flow.
+- Keep session/user state handling consistent with existing patterns.
+- Do not invent parallel auth helpers if one already exists.
+- Guard authenticated routes/pages consistently.
+
+---
+
+## File and Folder Organization
+Follow the current project structure first. If creating new files, prefer patterns like:
+
+- `src/components/` for reusable UI
+- `src/pages/` or `src/routes/` for route-level components
+- `src/hooks/` or `src/utils/` for helpers
+- `src/supabase/` for API / Supabase interaction
+- `src/i18n/` for translations and config
+- `src/forms/` or feature-local form files for form models/validation
+
+Do not reorganize the whole project unless explicitly asked.
+
+---
+
+## Preferred Coding Style
+- Use descriptive names.
+- Keep functions short.
+- Prefer early returns.
+- Reduce nesting where possible.
+- Extract complex conditions into named helpers.
+- Keep event handlers small.
+- Avoid magic strings repeated across files.
+- Reuse constants where helpful.
+- Add comments only for non-obvious reasoning.
+
+---
+
+## Error Handling
+- Handle async failures explicitly.
+- Do not swallow errors silently.
+- Show user-friendly messages in the UI.
+- Log useful debugging information only where appropriate.
+- Keep error handling consistent with existing app patterns.
+
+---
+
+## Accessibility
+- Use semantic HTML.
+- Ensure buttons, links, inputs, and forms are accessible.
+- Associate labels correctly.
+- Preserve keyboard usability.
+- Use translated accessible text where relevant.
+- Do not rely only on color to convey meaning.
+
+---
+
+## Performance
+- Avoid premature optimization.
+- Avoid unnecessary reactive dependencies.
+- Avoid unnecessary rerenders or recalculations.
+- Lazy-load route-level code where appropriate if the project already supports it.
+- Keep bundle impact small.
+
+---
+
+## When Creating New Features
+When asked to build a feature:
+
+1. Inspect existing patterns first.
+2. Reuse existing components, helpers, services, and translation namespaces.
+3. Match current styling and architecture.
+4. Keep business logic separate from presentational UI.
+5. Add or update translations for all new user-facing text.
+6. Ensure forms are typed and validated.
+7. Keep Supabase access centralized and typed.
+8. Prefer minimal, focused edits over broad unrelated refactors.
+
+---
+
+## When Editing Existing Code
+When modifying code:
+
+1. Read surrounding files first.
+2. Preserve architecture unless asked to improve it.
+3. Avoid unrelated changes.
+4. Do not rename files, exports, or types without good reason.
+5. Maintain compatibility with current routes, forms, translations, and data flows.
+
+---
+
+## Output Expectations for AI
+When generating code for this project:
+
+- Return production-quality code.
+- Keep code concise but clear.
+- Prefer complete working code over pseudo-code.
+- Do not invent libraries or APIs.
+- Do not use React patterns that are wrong for SolidJS.
+- Do not hardcode untranslated strings.
+- Do not use `any`.
+- Do not bypass validation or typing.
+- Do not place large Supabase query logic directly inside UI components unless already consistent with the project.
+- Explain important architectural decisions briefly when they are not obvious.
+
+---
+
+## Preferred Patterns
+
+### Example: Translations
+- Good: use translation keys in components
+- Bad: hardcoded button labels or messages
+
+### Example: Forms
+- Good: typed form values, reusable fields, translated errors
+- Bad: ad hoc uncontrolled inputs mixed with inconsistent validation
+
+### Example: Supabase
+- Good: service/helper layer that returns typed results
+- Bad: repeating raw queries in multiple components
+
+### Example: Components
+- Good: small focused components
+- Bad: one very large page component containing fetch, form, modal, and table logic together
+
+---
+
+## AI Checklist Before Finalizing Changes
+Before suggesting or applying changes, check:
+
+- Are all visible strings translated?
+- Are types safe and explicit?
+- Does this follow SolidJS rather than React habits?
+- Does this match the current folder and naming conventions?
+- Is form handling done with Modular Forms?
+- Is routing consistent with `@solidjs/router`?
+- Is Supabase logic placed in the right layer?
+- Are changes scoped only to the requested task?
+- Is styling consistent with Tailwind and the existing UI?
+- Is the code maintainable and easy to read?
+
+---
+
+## Stack Reminder
+Assume the following unless the existing code clearly shows otherwise:
+
+- SolidJS for UI
+- TypeScript everywhere
+- Tailwind for styling
+- `@solidjs/router` for routing
+- `@modular-forms/solid` for forms
+- `@mbarzda/solid-i18next` for i18n
+- Supabase for backend/data/auth

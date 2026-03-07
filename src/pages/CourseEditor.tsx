@@ -44,33 +44,59 @@ const CourseEditor = () => {
   };
 
   return (
-    <>
-      <div class='container mx-auto flex flex-col space-y-10 p-5'>
-        <A class='solid_A mx-auto w-max' href={`/admin`}>
-          Back to Admin Panel
-        </A>
-        <Show when={courseData()} fallback={<LoadingCss />}>
-          <div class='flex justify-center space-x-16'>
-            <div class=''>
-              <Course_details course={courseData()!.course} />
-            </div>
-            <div class=''>
-              <TeeManager
-                tees={courseData()!.tees}
-                onDeleteTee={handleDeleteTee}
-              />
-            </div>
+    <div class='mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
+      <div class='rounded-3xl border border-slate-200 bg-linear-to-r from-cyan-950 via-slate-900 to-emerald-950 px-6 py-8 text-slate-100 shadow-xl'>
+        <p class='font-grotesk text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300'>
+          Golf Stats Admin
+        </p>
+        <div class='mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between'>
+          <div>
+            <h1 class='font-rubik text-3xl font-semibold tracking-tight md:text-4xl'>
+              Course Editor
+            </h1>
+            <p class='mt-2 max-w-2xl font-grotesk text-sm text-slate-300 md:text-base'>
+              Update course details, configure tee settings, and manage hole
+              yardages.
+            </p>
           </div>
-          <div class=''>
-            <Scorecard
-              tees={courseData()?.tees ?? []}
-              holes={courseData()?.holes ?? []}
-              holeTees={courseData()?.holeTees ?? []}
-            />
-          </div>
-        </Show>
+          <A
+            href='/admin'
+            class='inline-flex w-max items-center rounded-full border border-white/20 bg-white/10 px-4 py-2 font-grotesk text-sm font-semibold text-white transition hover:bg-white/20'
+          >
+            Back to Admin Panel
+          </A>
+        </div>
       </div>
-    </>
+
+      <Show
+        when={courseData()}
+        fallback={
+          <div class='mt-6 flex justify-center rounded-2xl border border-slate-200 bg-white p-8 shadow-sm'>
+            <LoadingCss />
+          </div>
+        }
+      >
+        <div class='mt-6 grid gap-6 lg:grid-cols-12'>
+          <div class='rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6 lg:col-span-5'>
+            <Course_details course={courseData()!.course} />
+          </div>
+          <div class='rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6 lg:col-span-7'>
+            <TeeManager tees={courseData()!.tees} onDeleteTee={handleDeleteTee} />
+          </div>
+        </div>
+
+        <div class='mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6'>
+          <h2 class='mb-4 font-rubik text-lg font-semibold text-slate-800'>
+            Hole Scorecard
+          </h2>
+          <Scorecard
+            tees={courseData()?.tees ?? []}
+            holes={courseData()?.holes ?? []}
+            holeTees={courseData()?.holeTees ?? []}
+          />
+        </div>
+      </Show>
+    </div>
   );
 };
 

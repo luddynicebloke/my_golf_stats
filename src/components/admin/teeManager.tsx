@@ -41,140 +41,141 @@ const TeeManager = (props: TeeManagerProps) => {
       <ConfirmationModal
         open={modalOpen()}
         title='Delete Tee'
-        message='This action cannot be undone. Are you sure? If it is the 
-        only tee at the course the course will also be deleted.'
+        message='This action cannot be undone. Are you sure? If it is the only tee at the course the course will also be deleted.'
         cancelText='No'
         onClose={(confirmed) => {
           if (confirmed && selectedTeeId()) {
             props.onDeleteTee(selectedTeeId()!);
-            setModalOpen(false);
-          } else {
-            setModalOpen(false);
           }
+          setModalOpen(false);
         }}
       />
+
       <Show when={props.tees}>
         <section>
-          <table class='w-full text-sm text-left rtl:text-right text-neutral-00'>
-            <thead class='bg-neutral-900 border-b text-neutral-400'>
-              <tr>
-                <th scope='col' class='px-3 py-3 font-bold'>
-                  ID
-                </th>
-                <th scope='col' class='px-6 py-3 font-bold'>
-                  Colour
-                </th>
-                <th scope='col' class='px-6 py-3 font-bold'>
-                  Metres
-                </th>
-                <th scope='col' class='px-6 py-3 font-bold'>
-                  Rating
-                </th>
-                <th scope='col' class='px-6 py-3 font-bold'>
-                  Slope
-                </th>
-                <th scope='col' class='px-6 py-3 font-bold'></th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+          <div class='mb-3'>
+            <h3 class='font-rubik text-lg font-semibold text-slate-800'>
+              Tee Settings
+            </h3>
+            <p class='font-grotesk text-sm text-slate-500'>
+              Edit tee color, yardage, rating, and slope values.
+            </p>
+          </div>
 
-          <table>
-            <tbody>
-              <For each={props.tees}>
-                {(tee) => {
-                  // ✅ local signals per field
-                  const [color, setColor] = createSignal(tee.color);
-                  const [totalYardage, setTotalYardage] = createSignal(
-                    tee.total_yardage,
-                  );
+          <div class='overflow-x-auto rounded-xl border border-slate-200'>
+            <table class='w-full min-w-[740px] text-left text-sm text-slate-700'>
+              <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
+                <tr>
+                  <th scope='col' class='px-3 py-3 font-bold'>
+                    ID
+                  </th>
+                  <th scope='col' class='px-4 py-3 font-bold'>
+                    Colour
+                  </th>
+                  <th scope='col' class='px-4 py-3 font-bold'>
+                    Metres
+                  </th>
+                  <th scope='col' class='px-4 py-3 font-bold'>
+                    Rating
+                  </th>
+                  <th scope='col' class='px-4 py-3 font-bold'>
+                    Slope
+                  </th>
+                  <th scope='col' class='px-4 py-3 text-right font-bold'>
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <For each={props.tees}>
+                  {(tee) => {
+                    const [color, setColor] = createSignal(tee.color);
+                    const [totalYardage, setTotalYardage] = createSignal(
+                      tee.total_yardage,
+                    );
 
-                  // ✅ blur instance for color
-                  const colorBlur = useBlurSave(
-                    color,
-                    async (value) => await updateTee(tee.id, { color: value }),
-                  );
+                    const colorBlur = useBlurSave(
+                      color,
+                      async (value) => await updateTee(tee.id, { color: value }),
+                    );
 
-                  // ✅ blur instance for total_yardage
-                  const yardageBlur = useBlurSave(
-                    totalYardage,
-                    async (value) =>
-                      await updateTee(tee.id, { total_yardage: value }),
-                  );
+                    const yardageBlur = useBlurSave(
+                      totalYardage,
+                      async (value) =>
+                        await updateTee(tee.id, { total_yardage: value }),
+                    );
 
-                  return (
-                    <tr class='odd:bg-neutral-700 even:bg-neutral-900 border-b'>
-                      <td class='px-3 py-2'>{tee.id}</td>
-
-                      {/* COLOR INPUT */}
-                      <td class='px-3 py-2'>
-                        <input
-                          class={`border rounded-md p-1 w-32 transition-colors duration-300
-                ${colorBlur.stateClasses()}
-                ${colorBlur.loading() ? "opacity-70" : ""}`}
-                          value={color()}
-                          onInput={(e) => setColor(e.currentTarget.value)}
-                          onFocus={colorBlur.handleFocus}
-                          onBlur={colorBlur.handleBlur}
-                          disabled={colorBlur.loading()}
-                        />
-                      </td>
-
-                      {/* TOTAL YARDAGE INPUT */}
-                      <td class='px-3 py-2'>
-                        <input
-                          class={`border rounded-md p-1 w-32 appearance-none transition-colors duration-300
-                ${yardageBlur.stateClasses()}
-                ${yardageBlur.loading() ? "opacity-70" : ""}`}
-                          type='number'
-                          value={totalYardage()}
-                          onInput={(e) =>
-                            setTotalYardage(+e.currentTarget.value)
-                          }
-                          onFocus={yardageBlur.handleFocus}
-                          onBlur={yardageBlur.handleBlur}
-                          disabled={yardageBlur.loading()}
-                        />
-                      </td>
-                      {/* RATING INPUT */}
-                      <td class='px-3 py-2'>
-                        <input
-                          class={`border rounded-md p-1 w-32 appearance-none transition-colors duration-300
-                ${yardageBlur.stateClasses()}
-                ${yardageBlur.loading() ? "opacity-70" : ""}`}
-                          type='number'
-                          value={tee.course_rating ?? ""}
-                          onBlur={(e) =>
-                            updateTee(tee.id, {
-                              course_rating: +e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      {/* SLOPE INPUT */}
-                      <td class='px-3 py-2'>
-                        <input
-                          class={`border rounded-md p-1 w-32 appearance-none transition-colors duration-300
-                ${yardageBlur.stateClasses()}
-                ${yardageBlur.loading() ? "opacity-70" : ""}`}
-                          type='number'
-                          value={tee.slope_rating ?? ""}
-                          onBlur={(e) =>
-                            updateTee(tee.id, { slope_rating: +e.target.value })
-                          }
-                        />
-                      </td>
-                      <td class='px-6 py-4' onClick={() => openModal(tee.id)}>
-                        <span class='cursor-pointer'>🗑</span>
-                      </td>
-                    </tr>
-                  );
-                }}
-              </For>
-            </tbody>
-          </table>
-
-          {/* <button onClick={addTee}>+ Add Tee</button> */}
+                    return (
+                      <tr class='border-b border-slate-200 odd:bg-white even:bg-slate-50'>
+                        <td class='px-3 py-2'>{tee.id}</td>
+                        <td class='px-4 py-2'>
+                          <input
+                            class={`w-28 rounded-md border border-slate-300 p-1 transition-colors duration-300 ${colorBlur.stateClasses()} ${
+                              colorBlur.loading() ? "opacity-70" : ""
+                            }`}
+                            value={color()}
+                            onInput={(e) => setColor(e.currentTarget.value)}
+                            onFocus={colorBlur.handleFocus}
+                            onBlur={colorBlur.handleBlur}
+                            disabled={colorBlur.loading()}
+                          />
+                        </td>
+                        <td class='px-4 py-2'>
+                          <input
+                            class={`w-24 appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
+                              yardageBlur.loading() ? "opacity-70" : ""
+                            }`}
+                            type='number'
+                            value={totalYardage()}
+                            onInput={(e) => setTotalYardage(+e.currentTarget.value)}
+                            onFocus={yardageBlur.handleFocus}
+                            onBlur={yardageBlur.handleBlur}
+                            disabled={yardageBlur.loading()}
+                          />
+                        </td>
+                        <td class='px-4 py-2'>
+                          <input
+                            class={`w-24 appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
+                              yardageBlur.loading() ? "opacity-70" : ""
+                            }`}
+                            type='number'
+                            value={tee.course_rating ?? ""}
+                            onBlur={(e) =>
+                              updateTee(tee.id, {
+                                course_rating: +e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td class='px-4 py-2'>
+                          <input
+                            class={`w-24 appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
+                              yardageBlur.loading() ? "opacity-70" : ""
+                            }`}
+                            type='number'
+                            value={tee.slope_rating ?? ""}
+                            onBlur={(e) =>
+                              updateTee(tee.id, {
+                                slope_rating: +e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td class='px-4 py-2 text-right'>
+                          <button
+                            class='inline-flex self-auto rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100'
+                            onClick={() => openModal(tee.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  }}
+                </For>
+              </tbody>
+            </table>
+          </div>
         </section>
       </Show>
     </>

@@ -88,8 +88,11 @@ const Courses = () => {
 
   return (
     <>
-      <Course_new /> Number of registered courses :{" "}
-      {courses()?.courses?.length ?? "Loading..."}
+      <Course_new />{" "}
+      <span class=' text-gray-800'>
+        Number of registered courses :{" "}
+        {courses()?.courses?.length ?? "Loading..."}
+      </span>
       <div class='relative overflow-x-auto bg-neutral-700 shadow-xs rounded-xl border w-full'>
         <input
           type='text'

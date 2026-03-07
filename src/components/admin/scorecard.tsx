@@ -97,21 +97,21 @@ const Scorecard = (props: {
   return (
     <>
       {props.holes.length === 0 ? (
-        <div class='text-center'>No course details found</div>
+        <div class='text-center text-slate-600'>No course details found</div>
       ) : (
-        <div class='flex  justify-center'>
-          <table class='border-separate border-spacing-2 border border-gray-400  '>
-            <thead class='bg-neutral-900 border-b text-neutral-400'>
+        <div class='overflow-x-auto rounded-xl border border-slate-200'>
+          <table class='w-full min-w-[760px] border-separate border-spacing-0 text-slate-700'>
+            <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
               <tr>
-                <th scope='col' class='w-24 px-6 py-3 font-bold items-center'>
+                <th scope='col' class='w-20 px-3 py-3 text-center font-bold'>
                   Hole
                 </th>
-                <th scope='col' class='w-24 px-6 py-3 font-bold'>
+                <th scope='col' class='w-20 px-3 py-3 text-center font-bold'>
                   Par
                 </th>
                 <For each={props.tees}>
                   {(t) => (
-                    <th scope='col' class='w-24 px-6 py-3 font-bold'>
+                    <th scope='col' class='w-24 px-3 py-3 text-center font-bold'>
                       {t.color}
                     </th>
                   )}
@@ -130,10 +130,10 @@ const Scorecard = (props: {
                   });
 
                   return (
-                    <tr class='text-center'>
-                      <td>{row.holeNumber}</td>
+                    <tr class='border-b border-slate-200 text-center odd:bg-white even:bg-slate-50'>
+                      <td class='px-3 py-2 font-medium'>{row.holeNumber}</td>
 
-                      <td>
+                      <td class='px-3 py-2'>
                         <input
                           type='number'
                           min={3}
@@ -143,7 +143,7 @@ const Scorecard = (props: {
                           onFocus={parBlur.handleFocus}
                           onBlur={parBlur.handleBlur}
                           disabled={parBlur.loading()}
-                          class={`px-2 py-1 border rounded-md transition-colors duration-300
+                          class={`w-16 rounded-md border border-slate-300 px-2 py-1 text-center transition-colors duration-300
                 ${parBlur.stateClasses()}
                 ${parBlur.loading() ? "opacity-70" : ""}`}
                         />
@@ -163,7 +163,7 @@ const Scorecard = (props: {
                           );
 
                           return (
-                            <td>
+                            <td class='px-3 py-2'>
                               <input
                                 type='number'
                                 value={yardage()}
@@ -173,7 +173,7 @@ const Scorecard = (props: {
                                 onFocus={yardageBlur.handleFocus}
                                 onBlur={yardageBlur.handleBlur}
                                 disabled={yardageBlur.loading()}
-                                class={`border rounded-md p-1 w-24 transition-colors duration-300
+                                class={`w-20 rounded-md border border-slate-300 p-1 text-center transition-colors duration-300
                       ${yardageBlur.stateClasses()}
                       ${yardageBlur.loading() ? "opacity-70" : ""}`}
                               />

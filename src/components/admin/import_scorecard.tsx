@@ -1,6 +1,6 @@
 import { createResource, createSignal, For, Show } from "solid-js";
 import { supabase } from "../../supabase/client";
-import { A, useNavigate, useParams } from "@solidjs/router";
+import { A, useParams } from "@solidjs/router";
 import { TTee } from "../../lib/definitions";
 
 type NewTee = {
@@ -17,7 +17,6 @@ const Import_scorecard = () => {
   const [errorMessage, setErrorMessage] = createSignal("");
 
   let addTeeColourInputRef: HTMLInputElement | undefined;
-  const navigate = useNavigate();
 
   // show hide form to add tee
   const [addTee, setAddTee] = createSignal(false);
@@ -32,7 +31,7 @@ const Import_scorecard = () => {
   });
 
   // fetch the current tees, use mutate later to update the data locally
-  const [tees, { mutate, refetch }] = createResource(
+  const [tees, { mutate }] = createResource(
     params.id,
     async (id_t) => {
       const { data, error } = await supabase
@@ -109,102 +108,167 @@ const Import_scorecard = () => {
   };
 
   return (
-    <div class='container mx-auto width-1/2 flex flex-col gap-5 justify-center items-center'>
-      <A class='solid_A' href={`/course_editor/${params.id}`}>
-        Return to course details
-      </A>
-      <h1 class='text-3xl'>Current tees</h1>
-      <Show when={tees()} fallback={<div>Loading</div>}>
-        <div class='grid grid-flow-col gap-4'>
-          <For each={tees()}>
-            {(tee) => <span class='text-2xl'>{tee.color}</span>}
-          </For>
-        </div>
-      </Show>
-      <section>
-        <p>
-          IMPORTANT - if the tee color(s) (description) that will be imported
-          doesn't exist in the above list above then it must be created first.
+    <div class='mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8'>
+      <div class='rounded-3xl border border-slate-200 bg-linear-to-r from-cyan-950 via-slate-900 to-emerald-950 px-6 py-8 text-slate-100 shadow-xl'>
+        <p class='font-grotesk text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300'>
+          Golf Stats Admin
         </p>
-        <div class='flex my-5 gap-5'>
-          <p>Do you want to add a new tee? </p>
-          <button onclick={() => setAddTee(!addTee())} class='px-2 py-1'>
-            {!addTee() ? "Yes" : "No"}
-          </button>
-          {!addTee() ? (
-            ""
-          ) : (
-            <>
-              <form onSubmit={submit} class='flex flex-col'>
-                <label>Tee color</label>
+        <div class='mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between'>
+          <div>
+            <h1 class='font-rubik text-3xl font-semibold tracking-tight md:text-4xl'>
+              Import Scorecard
+            </h1>
+            <p class='mt-2 max-w-2xl font-grotesk text-sm text-slate-300 md:text-base'>
+              Upload a CSV scorecard and map yardages to existing tee colors.
+            </p>
+          </div>
+          <A
+            href={`/course_editor/${params.id}`}
+            class='inline-flex w-max items-center rounded-full border border-white/20 bg-white/10 px-4 py-2 font-grotesk text-sm font-semibold text-white transition hover:bg-white/20'
+          >
+            Return to Course Editor
+          </A>
+        </div>
+      </div>
+
+      <div class='mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6'>
+        <h2 class='font-rubik text-xl font-semibold'>Current Tees</h2>
+        <Show
+          when={tees()}
+          fallback={<p class='mt-3 font-grotesk text-slate-500'>Loading...</p>}
+        >
+          <div class='mt-4 flex flex-wrap gap-2'>
+            <For each={tees()}>
+              {(tee) => (
+                <span class='rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-grotesk text-sm font-semibold text-slate-700'>
+                  {tee.color}
+                </span>
+              )}
+            </For>
+          </div>
+        </Show>
+
+        <div class='mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4'>
+          <p class='font-grotesk text-sm text-amber-900'>
+            Important: every tee color in the CSV must already exist in the
+            list above. Add missing tees before importing.
+          </p>
+        </div>
+
+        <div class='mt-5'>
+          <div class='flex flex-wrap items-center gap-3'>
+            <p class='font-grotesk text-sm text-slate-700'>
+              Add a new tee before import?
+            </p>
+            <button
+              onClick={() => setAddTee(!addTee())}
+              class='inline-flex self-auto rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+            >
+              {!addTee() ? "Yes, add tee" : "Hide form"}
+            </button>
+          </div>
+
+          <Show when={addTee()}>
+            <form
+              onSubmit={submit}
+              class='mt-4 grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2'
+            >
+              <label class='block'>
+                <span class='mb-1 block font-grotesk text-sm font-medium text-slate-600'>
+                  Tee color
+                </span>
                 <input
                   ref={(el) => (addTeeColourInputRef = el)}
                   required
-                  placeholder={"Required"}
+                  placeholder='Required'
                   value={form().color}
                   onInput={handleChange("color")}
-                  class='border rounded-md p-2 mb-4'
+                  class='w-full rounded-md border border-slate-300 bg-white p-2'
                   type='text'
                 />
-                <label>Course rating</label>
+              </label>
+              <label class='block'>
+                <span class='mb-1 block font-grotesk text-sm font-medium text-slate-600'>
+                  Course rating
+                </span>
                 <input
-                  placeholder={"Optional"}
+                  placeholder='Optional'
                   value={form().course_rating!}
                   onInput={handleChange("course_rating")}
-                  class='border rounded-md p-2 mb-4'
+                  class='w-full rounded-md border border-slate-300 bg-white p-2'
                   type='number'
                 />
-                <label>Slope rating</label>
+              </label>
+              <label class='block'>
+                <span class='mb-1 block font-grotesk text-sm font-medium text-slate-600'>
+                  Slope rating
+                </span>
                 <input
-                  placeholder={"Optional"}
+                  placeholder='Optional'
                   value={form().slope_rating!}
                   onInput={handleChange("slope_rating")}
-                  class='border rounded-md p-2 mb-4'
+                  class='w-full rounded-md border border-slate-300 bg-white p-2'
                   type='number'
                 />
-                <label>Total yardage</label>
+              </label>
+              <label class='block'>
+                <span class='mb-1 block font-grotesk text-sm font-medium text-slate-600'>
+                  Total yardage
+                </span>
                 <input
-                  placeholder={"Optional"}
+                  placeholder='Optional'
                   value={form().total_yardage!}
                   onInput={handleChange("total_yardage")}
-                  class='border rounded-md p-2 mb-6'
+                  class='w-full rounded-md border border-slate-300 bg-white p-2'
                   type='number'
                 />
-                <button type='submit' class='px-2 py-1'>
-                  Add
+              </label>
+              <div class='sm:col-span-2'>
+                <button
+                  type='submit'
+                  class='inline-flex self-auto rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100'
+                >
+                  Add Tee
                 </button>
-              </form>
-            </>
-          )}
+              </div>
+            </form>
+          </Show>
         </div>
-      </section>
-      <p>
-        The format below must be adhered to for the scorecard import to work.
-        The first line contains the header. Start with hole_number, par and then
-        the tee colours. No spaces, even at the end of the line and use commas.
-        "hole_number" and "par" must be spelt exactly like this. NB there is no
-        comma at the end of a line
-      </p>
-      <p>
-        hole_number,par,white,yellow,blue
-        <br />
-        1,4,400,365,320
-        <br />
-        2,5,520,495,462
-        <br />
-        3,3,180,165,136
-      </p>
-      <input
-        onclick={() => setShowError(false)}
-        class='text-md text-stone-500 mt-5
-                file:mr-5 file:py-1 file:px-3 file:font-medium file:text-xl file:bg-emerald-800
-                file:text-white file:rounded-md hover:file:cursor-pointer hover:file:bg-blue-50
-                hover:file:text-blue-700'
-        type='file'
-        accept='.csv'
-        onChange={handleFile}
-      />
-      {showError() ? errorMessage() : ""}
+
+        <div class='mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4'>
+          <h3 class='font-rubik text-base font-semibold text-slate-800'>
+            CSV Format Rules
+          </h3>
+          <p class='mt-2 font-grotesk text-sm text-slate-600'>
+            First row is the header: start with <code>hole_number,par</code>,
+            then tee colors. Use commas only, no trailing spaces, and no trailing
+            comma.
+          </p>
+          <pre class='mt-3 overflow-x-auto rounded-md border border-slate-200 bg-white p-3 font-mono text-xs text-slate-700'>
+hole_number,par,white,yellow,blue
+1,4,400,365,320
+2,5,520,495,462
+3,3,180,165,136
+          </pre>
+        </div>
+
+        <div class='mt-6'>
+          <input
+            onClick={() => setShowError(false)}
+            class='block w-full max-w-md rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-600
+              file:mr-4 file:rounded-md file:border-0 file:bg-cyan-700 file:px-4 file:py-2 file:font-semibold file:text-white
+              hover:file:cursor-pointer hover:file:bg-cyan-800'
+            type='file'
+            accept='.csv'
+            onChange={handleFile}
+          />
+          <Show when={showError()}>
+            <p class='mt-3 rounded-md border border-rose-200 bg-rose-50 p-2 font-grotesk text-sm text-rose-700'>
+              {errorMessage()}
+            </p>
+          </Show>
+        </div>
+      </div>
     </div>
   );
 };
