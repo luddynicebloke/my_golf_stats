@@ -33,7 +33,7 @@ const CourseNew = () => {
       return;
     }
 
-    navigate(`/course_editor/${data.id}`);
+    navigate(`/admin/course_editor/${data.id}`);
   };
   return (
     <div class='mb-4 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6'>

@@ -2,10 +2,10 @@ import { TCourse } from "../../lib/definitions";
 
 const Course = (props: { course: TCourse }) => {
   return (
-    <tr class='odd:bg-neutral-700 even:bg-neutral-900 border-b '>
+    <tr class='border-b border-slate-200 odd:bg-white even:bg-slate-50'>
       <th
         scope='row'
-        class='px-6 py-4 font-medium text-heading whitespace-nowrap'
+        class='whitespace-nowrap px-6 py-4 font-medium text-slate-700'
       >
         {props.course.id}
       </th>
@@ -17,8 +17,8 @@ const Course = (props: { course: TCourse }) => {
       <td class='px-6 py-4'>{props.course.country}</td>
       <td class='px-6 py-4'>
         <a
-          href={`/course_editor/${props.course.id}`}
-          class='font-medium text-fg-brand hover:underline'
+          href={`/admin/course_editor/${props.course.id}`}
+          class='font-medium text-cyan-700 hover:text-cyan-800 hover:underline'
         >
           Edit
         </a>

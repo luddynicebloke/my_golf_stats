@@ -31,18 +31,15 @@ const Import_scorecard = () => {
   });
 
   // fetch the current tees, use mutate later to update the data locally
-  const [tees, { mutate }] = createResource(
-    params.id,
-    async (id_t) => {
-      const { data, error } = await supabase
-        .from("tees")
-        .select("*")
-        .eq("course_id", id_t);
+  const [tees, { mutate }] = createResource(params.id, async (id_t) => {
+    const { data, error } = await supabase
+      .from("tees")
+      .select("*")
+      .eq("course_id", id_t);
 
-      if (error) throw error;
-      return data;
-    },
-  );
+    if (error) throw error;
+    return data;
+  });
 
   const handleChange = (key: keyof TTee) => (e: Event) => {
     if (key === "color") {
@@ -123,7 +120,7 @@ const Import_scorecard = () => {
             </p>
           </div>
           <A
-            href={`/course_editor/${params.id}`}
+            href={`/admin/course_editor/${params.id}`}
             class='inline-flex w-max items-center rounded-full border border-white/20 bg-white/10 px-4 py-2 font-grotesk text-sm font-semibold text-white transition hover:bg-white/20'
           >
             Return to Course Editor
@@ -150,8 +147,8 @@ const Import_scorecard = () => {
 
         <div class='mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4'>
           <p class='font-grotesk text-sm text-amber-900'>
-            Important: every tee color in the CSV must already exist in the
-            list above. Add missing tees before importing.
+            Important: every tee color in the CSV must already exist in the list
+            above. Add missing tees before importing.
           </p>
         </div>
 
@@ -241,14 +238,15 @@ const Import_scorecard = () => {
           </h3>
           <p class='mt-2 font-grotesk text-sm text-slate-600'>
             First row is the header: start with <code>hole_number,par</code>,
-            then tee colors. Use commas only, no trailing spaces, and no trailing
-            comma.
+            then tee colors. Use commas only, no trailing spaces, and no
+            trailing comma.
           </p>
           <pre class='mt-3 overflow-x-auto rounded-md border border-slate-200 bg-white p-3 font-mono text-xs text-slate-700'>
-hole_number,par,white,yellow,blue
+            {`hole_number,par,white,yellow,blue
 1,4,400,365,320
 2,5,520,495,462
 3,3,180,165,136
+.....`}
           </pre>
         </div>
 

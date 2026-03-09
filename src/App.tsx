@@ -26,6 +26,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ScorecardEntry = lazy(
   () => import("./components/scoreEntry/ScorecardEntry"),
 );
+const User = lazy(() => import("./components/admin/user"));
 
 const App: Component = () => {
   return (
@@ -94,7 +95,7 @@ const App: Component = () => {
           )}
         />
         <Route
-          path='/course_editor/:id'
+          path='/admin/course_editor/:id'
           component={(props) => (
             <RoleProtectedRoute requiredRole='admin'>
               {(CourseEditor as any)({ id: props.params.id })}
@@ -102,10 +103,18 @@ const App: Component = () => {
           )}
         />
         <Route
-          path='/import_scorecard/:id'
+          path='/admin/import_scorecard/:id'
           component={(props) => (
             <RoleProtectedRoute requiredRole='admin'>
               {(Import_scorecard as any)({ id: props.params.id })}
+            </RoleProtectedRoute>
+          )}
+        />
+        <Route
+          path='/admin/user/:id'
+          component={(props) => (
+            <RoleProtectedRoute requiredRole='admin'>
+              {(User as any)({ user: {} })}
             </RoleProtectedRoute>
           )}
         />

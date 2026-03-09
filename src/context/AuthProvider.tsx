@@ -8,7 +8,6 @@ import {
   createContext,
   useContext,
   onMount,
-  createEffect,
 } from "solid-js";
 
 type UserProfile = {
@@ -25,12 +24,22 @@ type UserMetadata = {
   avatar_url?: string;
 };
 
+type ProfileData = {
+  user_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  category: string | null;
+  preferred_distance_unit: string | null;
+};
+
 type Role = "admin" | "user" | "Pro";
 
 type AuthContextType = {
   user: () => User | null; // supabase user object
   session: () => Session | null; // supabase session object
   metaData: () => UserMetadata | null;
+  profile: () => ProfileData | null;
+  refreshProfile: () => Promise<void>;
   role: () => Role | null;
   loading: () => boolean; // true while initial session is loading or signing in/out
   initialized: () => boolean; // true when first session check finished
@@ -45,6 +54,7 @@ export const AuthProvider: ParentComponent = (props) => {
   const [user, setUser] = createSignal<User | null>(null);
   const [metaData, setMetaData] = createSignal<UserMetadata | null>(null);
   const [session, setSession] = createSignal<Session | null>(null);
+  const [profile, setProfile] = createSignal<ProfileData | null>(null);
   const [role, setRole] = createSignal<Role | null>(null);
   const [loading, setLoading] = createSignal<boolean>(true);
   const [initialized, setInitialized] = createSignal<boolean>(false);
@@ -60,6 +70,27 @@ export const AuthProvider: ParentComponent = (props) => {
     else setRole(null);
   };
 
+  const refreshProfile = async () => {
+    const currentUser = user();
+    if (!currentUser) {
+      setProfile(null);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select("user_name, email, avatar_url, category, preferred_distance_unit")
+      .eq("id", currentUser.id)
+      .single();
+
+    if (error) {
+      setProfile(null);
+      return;
+    }
+
+    setProfile(data as ProfileData);
+  };
+
   onMount(async () => {
     // get current session
     const {
@@ -68,7 +99,12 @@ export const AuthProvider: ParentComponent = (props) => {
     setSession(session ?? null);
     setUser(session?.user ?? null);
     setMetaData(session?.user?.user_metadata as UserMetadata | null);
-    if (session?.user) await fetchUserRole(session.user.id);
+    if (session?.user) {
+      await fetchUserRole(session.user.id);
+      await refreshProfile();
+    } else {
+      setProfile(null);
+    }
     setLoading(false);
     setInitialized(true);
 
@@ -77,8 +113,13 @@ export const AuthProvider: ParentComponent = (props) => {
       async (_event, newSession) => {
         setSession(newSession ?? null);
         setUser(newSession?.user ?? null);
-        if (newSession?.user) await fetchUserRole(newSession.user.id);
-        else setRole(null);
+        if (newSession?.user) {
+          await fetchUserRole(newSession.user.id);
+          await refreshProfile();
+        } else {
+          setRole(null);
+          setProfile(null);
+        }
       },
     );
 
@@ -102,6 +143,8 @@ export const AuthProvider: ParentComponent = (props) => {
         user,
         metaData,
         session,
+        profile,
+        refreshProfile,
         role,
         loading,
         initialized,

@@ -1,12 +1,11 @@
 import { onMount } from "solid-js";
 
-import { Chart, BarElement, Title, Tooltip, Legend, Colors } from "chart.js";
+import { Chart, Title, Tooltip, Legend, Colors } from "chart.js";
 import { Bar } from "solid-chartjs";
 import { SGColors } from "../lib/graphColors";
 
 import { TStrokesGained } from "../lib/definitions";
-import { BsAspectRatio } from "solid-icons/bs";
-import { style } from "solid-js/web";
+
 type SGChartProps = {
   currentSG: TStrokesGained[];
 };
@@ -25,16 +24,16 @@ export default function DashboardChart(props: SGChartProps) {
     labels: ["Driving", "Approach", "Chipping", "Putting", "Tee-to-green"],
     datasets: [
       {
-        legend: { text: "Strokes Gained", display: true },
         minBarLength: 7,
         data: [0.3, -0.9, 0.5, 0.0, -0.6],
         backgroundColor: SGColors,
       },
     ],
   };
+
   const chartOptions = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     barPercentage: 0.8,
     scales: {
       x: {
@@ -58,22 +57,6 @@ export default function DashboardChart(props: SGChartProps) {
         display: false,
         text: "Strokes Gained Overview",
       },
-      customCanvasBackgroundColor: {
-        color: "lightGreen",
-      },
-      annotation: {
-        annotations: [
-          {
-            id: "a-line-1",
-            type: "line",
-            mode: "horizontal",
-            scaleID: "y",
-            value: "0",
-            borderColor: "red",
-            borderWidth: 2,
-          },
-        ],
-      },
       tooltip: {
         backgroundColor: () => rgb("--chart-tooltip-bg"),
         titleColor: () => rgb("--chart-tooltip-text"),
@@ -85,16 +68,16 @@ export default function DashboardChart(props: SGChartProps) {
   };
 
   return (
-    <div class='w-full md:col-span-4'>
-      <h2 class='mb-4 text-xl md-text-2xl'>Current Strokes Gained </h2>
-      <div class='rounded-xl bg-gray-50 dark:bg-gray-800/75 p-4'>
-        <div class=''>
-          <Bar
-            data={chartData}
-            options={chartOptions}
-            fallback={<div>No data available</div>}
-          />
-        </div>
+    <div class='w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
+      <h2 class='mb-4 font-rubik text-lg font-semibold text-slate-800 sm:text-xl'>
+        Current Strokes Gained
+      </h2>
+      <div class='h-[260px] sm:h-[320px]'>
+        <Bar
+          data={chartData}
+          options={chartOptions}
+          fallback={<div class='text-slate-600'>No data available</div>}
+        />
       </div>
     </div>
   );

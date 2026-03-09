@@ -51,7 +51,7 @@ const Course_details = (props: { course: TCourse | undefined }) => {
 
         <A
           class='mt-5 inline-flex w-full items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100'
-          href={`/import_scorecard/${props.course?.id}`}
+          href={`/admin/import_scorecard/${props.course?.id}`}
         >
           Import Scorecard
         </A>

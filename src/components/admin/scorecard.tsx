@@ -100,7 +100,7 @@ const Scorecard = (props: {
         <div class='text-center text-slate-600'>No course details found</div>
       ) : (
         <div class='overflow-x-auto rounded-xl border border-slate-200'>
-          <table class='w-full min-w-[760px] border-separate border-spacing-0 text-slate-700'>
+          <table class='w-full min-w-190 border-separate border-spacing-0 text-slate-700'>
             <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
               <tr>
                 <th scope='col' class='w-20 px-3 py-3 text-center font-bold'>
@@ -111,7 +111,10 @@ const Scorecard = (props: {
                 </th>
                 <For each={props.tees}>
                   {(t) => (
-                    <th scope='col' class='w-24 px-3 py-3 text-center font-bold'>
+                    <th
+                      scope='col'
+                      class='w-24 px-3 py-3 text-center font-bold'
+                    >
                       {t.color}
                     </th>
                   )}

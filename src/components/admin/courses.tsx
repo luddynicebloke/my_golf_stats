@@ -4,7 +4,7 @@ import { TCourse } from "../../lib/definitions";
 import { supabase } from "../../supabase/client";
 
 import Course from "./course";
-import Course_new from "./course_new";
+import CourseNew from "./course_new";
 import LoadingCss from "../LoadingCss";
 
 // type for sorting
@@ -88,21 +88,21 @@ const Courses = () => {
 
   return (
     <>
-      <Course_new />{" "}
-      <span class=' text-gray-800'>
+      <CourseNew />
+      <span class='text-slate-700'>
         Number of registered courses :{" "}
         {courses()?.courses?.length ?? "Loading..."}
       </span>
-      <div class='relative overflow-x-auto bg-neutral-700 shadow-xs rounded-xl border w-full'>
+      <div class='relative mt-3 overflow-x-auto rounded-xl border border-slate-200'>
         <input
           type='text'
           placeholder='Search courses...'
-          class='w-full p-2 border rounded'
+          class='w-full rounded-t-xl border-b border-slate-200 bg-white p-2 text-slate-800 placeholder:text-slate-400'
           onInput={(e) => handleSearch(e.currentTarget.value)}
         />
         <Show when={courses()?.courses} fallback={<LoadingCss />}>
-          <table class='w-full text-sm text-left rtl:text-right text-neutral-00'>
-            <thead class='bg-neutral-900 border-b text-neutral-400'>
+          <table class='w-full min-w-[760px] text-left text-sm text-slate-700'>
+            <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
               <tr>
                 <th scope='col' class='px-6 py-3 font-bold'>
                   ID
@@ -151,7 +151,7 @@ const Courses = () => {
       {/* Pagination */}
       <div class='flex justify-between gap-2 items-center mt-4'>
         <button
-          class='px-3 py-1 bg-gray-500 rounded disabled:opacity-50'
+          class='self-auto rounded-md border border-slate-300 bg-white px-3 py-1 text-slate-700 hover:bg-slate-50 disabled:opacity-50'
           disabled={currentPage() === 1}
           onClick={() => setCurrentPage((p) => p - 1)}
         >
@@ -163,7 +163,7 @@ const Courses = () => {
         </span>
 
         <button
-          class='px-3 py-1 bg-gray-500 rounded disabled:opacity-50'
+          class='self-auto rounded-md border border-slate-300 bg-white px-3 py-1 text-slate-700 hover:bg-slate-50 disabled:opacity-50'
           disabled={currentPage() === totalPages()}
           onClick={() => setCurrentPage((p) => p + 1)}
         >

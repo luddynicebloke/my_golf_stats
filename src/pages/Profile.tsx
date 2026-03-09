@@ -1,201 +1,396 @@
-import { createEffect, createResource, createSignal, on, Show } from "solid-js";
+import { Show, createEffect, createSignal } from "solid-js";
 import { supabase } from "../supabase/client";
-
-import LogoSG from "../assets/logo.png";
-import { useTransContext } from "@mbarzda/solid-i18next";
-import TextInput from "../components/forms/TextInput";
-import MessageModal from "../components/MessageModal";
-
-import { PlayerCategories, User, CategoryOptions } from "../lib/definitions";
-
-export type TProfile = {
-  email: string;
-  category: PlayerCategories;
-};
-
-import {
-  createForm,
-  getValue,
-  setValue,
-  required,
-  reset,
-  setValues,
-} from "@modular-forms/solid";
-import { A, useNavigate } from "@solidjs/router";
-
 import { useAuth } from "../context/AuthProvider";
-import Select from "../components/forms/Select";
-import { use } from "i18next";
 
-export default function Profile() {
-  const [modelOpen, setModalOpen] = createSignal(false);
-  const [modelMessage, setModalMessage] = createSignal("");
-  const [profile, { Form, Field }] = createForm<User>();
-  const [t] = useTransContext();
-  const { user } = useAuth();
+const categoryOptions = [
+  "Pro M",
+  "Am M",
+  "Senior M",
+  "Pro F",
+  "Am F",
+  "Senior F",
+];
 
-  const [currentUser] = createResource(user, async (user) => {
-    if (!user) return null;
+const distanceOptions = ["yards", "meters"];
+
+type SaveState = {
+  type: "success" | "error";
+  message: string;
+} | null;
+
+const Profile = () => {
+  const { user, refreshProfile } = useAuth();
+
+  const [loading, setLoading] = createSignal(true);
+
+  const [avatar, setAvatar] = createSignal("");
+  const [username, setUsername] = createSignal("");
+  const [category, setCategory] = createSignal("Am M");
+  const [distance, setDistance] = createSignal("yards");
+  const [email, setEmail] = createSignal("");
+  const [password, setPassword] = createSignal("");
+  const [confirmPassword, setConfirmPassword] = createSignal("");
+
+  const [profileState, setProfileState] = createSignal<SaveState>(null);
+  const [emailState, setEmailState] = createSignal<SaveState>(null);
+  const [passwordState, setPasswordState] = createSignal<SaveState>(null);
+
+  createEffect(async () => {
+    const currentUser = user();
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setEmail(currentUser.email ?? "");
+
     const { data, error } = await supabase
       .from("user_profiles")
-      .select("*")
-      .eq("id", user.id)
+      .select("user_name, avatar_url, category, preferred_distance_unit")
+      .eq("id", currentUser.id)
       .single();
 
     if (error) {
-      console.error("Error fetching user data:", error);
-      setModalOpen(true);
-      return null;
+      setProfileState({
+        type: "error",
+        message: `Failed to load profile: ${error.message}`,
+      });
+    } else if (data) {
+      setUsername(data.user_name ?? "");
+      setAvatar(data.avatar_url ?? "");
+      setCategory(data.category ?? "Am M");
+      setDistance(data.preferred_distance_unit ?? "yards");
     }
 
-    return data;
+    setLoading(false);
   });
 
-  createEffect(
-    on(currentUser, (data) => {
-      if (!data) return;
+  const saveProfile = async () => {
+    const currentUser = user();
+    if (!currentUser) return;
 
-      setValues(profile, {
-        email: data.email ?? "",
-        category: data.category ?? "",
-        avatar_url: data.avatar_url ?? "",
-        distance: data.preferred_distance_unit ?? "",
+    setProfileState(null);
+    if (!username().trim()) {
+      setProfileState({
+        type: "error",
+        message: "Username is required.",
       });
-    }),
-  );
+      return;
+    }
 
-  const handleFormSubmit = async (values: Partial<User>) => {
-    setModalOpen(true);
-    setModalMessage("Profile updated successfully!");
     const { error } = await supabase
       .from("user_profiles")
       .update({
-        category: values.category,
-        avatar_url: values.avatar_url,
-        preferred_distance_unit: values.distance,
+        user_name: username().trim(),
+        avatar_url: avatar().trim() || null,
+        category: category(),
+        preferred_distance_unit: distance(),
       })
-      .eq("id", user()?.id)
-      .select()
-      .single();
+      .eq("id", currentUser.id);
 
     if (error) {
-      console.error("Error updating profile:", error);
-      setModalMessage("Failed to update profile. Please try again.");
-      setModalOpen(true);
-    } else {
-      setModalMessage("Profile updated successfully!");
-      setModalOpen(true);
-      reset(profile, {
-        initialValues: {
-          email: values.email ?? "",
-          category: values.category ?? "",
-          avatar_url: values.avatar_url ?? "",
-          distance: values.distance ?? "",
-        },
+      setProfileState({
+        type: "error",
+        message: `Profile not saved: ${error.message}`,
       });
+      return;
     }
+
+    setProfileState({
+      type: "success",
+      message: "Profile saved to database.",
+    });
+    await refreshProfile();
+  };
+
+  const saveEmail = async () => {
+    const currentUser = user();
+    if (!currentUser) return;
+
+    setEmailState(null);
+
+    const nextEmail = email().trim();
+    if (!nextEmail) {
+      setEmailState({ type: "error", message: "Email is required." });
+      return;
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+      email: nextEmail,
+    });
+
+    if (error) {
+      setEmailState({ type: "error", message: error.message });
+      return;
+    }
+
+    const { error: profileError } = await supabase
+      .from("user_profiles")
+      .update({ email: nextEmail })
+      .eq("id", currentUser.id);
+
+    if (profileError) {
+      setEmailState({
+        type: "error",
+        message: `Auth email updated, but profile row failed: ${profileError.message}`,
+      });
+      return;
+    }
+
+    const emailChangeSent = Boolean(data.user?.email_change_sent_at);
+    setEmailState({
+      type: "success",
+      message: emailChangeSent
+        ? "Email update submitted. Check your inbox to confirm the new address."
+        : "Email saved successfully.",
+    });
+    await refreshProfile();
+  };
+
+  const savePassword = async () => {
+    setPasswordState(null);
+
+    if (!password()) {
+      setPasswordState({ type: "error", message: "Password is required." });
+      return;
+    }
+    if (password().length < 6) {
+      setPasswordState({
+        type: "error",
+        message: "Password must be at least 6 characters.",
+      });
+      return;
+    }
+    if (password() !== confirmPassword()) {
+      setPasswordState({ type: "error", message: "Passwords do not match." });
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      password: password(),
+    });
+
+    if (error) {
+      setPasswordState({ type: "error", message: error.message });
+      return;
+    }
+
+    setPassword("");
+    setConfirmPassword("");
+    setPasswordState({
+      type: "success",
+      message: "Password updated successfully.",
+    });
   };
 
   return (
-    <>
-      <MessageModal
-        open={modelOpen()}
-        title='Profile Updated'
-        message={modelMessage()}
-        onClose={() => setModalOpen(false)}
-      />
-
-      <div class='flex mx-auto min-h-full flex-col  px-6 py-12 lg:px-8'>
-        <div class='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
-          <Show when={currentUser()} fallback={<div>Loading...</div>}>
-            <Form
-              onSubmit={(values) => handleFormSubmit(values)}
-              class='space-y-4 sm:space-y-6'
-            >
-              <Field name='email' validate={[required("Email is required")]}>
-                {(field, props) => (
-                  <TextInput
-                    {...props}
-                    type='email'
-                    name={field.name}
-                    value={field.value}
-                    error={field.error}
-                    disabled
-                    label='Email'
-                    class='block w-full rounded-md px-3 py-1.5 text-base text-white  
-                 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6'
-                  />
-                )}
-              </Field>
-
-              <Field
-                name='avatar_url'
-                validate={[required("Avatar is required")]}
-              >
-                {(field, props) => (
-                  <TextInput
-                    {...props}
-                    type='text'
-                    name={field.name}
-                    value={field.value}
-                    error={field.error}
-                    label='Avatar URL'
-                    class='block w-full rounded-md px-3 py-1.5 text-base text-white  
-                 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6'
-                  />
-                )}
-              </Field>
-
-              <Field
-                name='category'
-                validate={[required("Category is required")]}
-              >
-                {(field, props) => (
-                  <Select
-                    {...props}
-                    options={CategoryOptions}
-                    name={field.name}
-                    value={field.value}
-                    error={field.error}
-                    required
-                    label='Category'
-                    class='block w-full rounded-md px-3 py-1.5 text-base text-white  
-                 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6'
-                  />
-                )}
-              </Field>
-              <Field
-                name='distance'
-                validate={[required("Category is required")]}
-              >
-                {(field, props) => (
-                  <Select
-                    {...props}
-                    options={[
-                      { label: "Metres", value: "Metres" },
-                      { label: "Yards", value: "Yards" },
-                    ]}
-                    name={field.name}
-                    value={field.value}
-                    error={field.error}
-                    label='Distance'
-                    class='block w-full rounded-md px-3 py-1.5 text-base text-white  
-                 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6'
-                  />
-                )}
-              </Field>
-              <div class='px-2'>
-                <button
-                  class='w-full m-auto justify-center items-center  '
-                  type='submit'
-                >
-                  Update Profile
-                </button>
-              </div>
-            </Form>
-          </Show>
-        </div>
+    <div class='mx-auto w-full max-w-4xl space-y-6'>
+      <div class='rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
+        <h1 class='font-rubik text-3xl font-semibold tracking-tight text-slate-800'>
+          Profile Settings
+        </h1>
+        <p class='mt-2 font-grotesk text-sm text-slate-500'>
+          Manage your account details and save changes to your profile.
+        </p>
       </div>
-    </>
+
+      <Show when={!loading()} fallback={<div>Loading profile...</div>}>
+        <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
+          <h2 class='font-rubik text-xl font-semibold text-slate-800'>
+            Public Profile
+          </h2>
+          <p class='mt-1 font-grotesk text-sm text-slate-500'>
+            Update avatar, category, and preferred distance unit.
+          </p>
+
+          <div class='mt-4 space-y-4'>
+            <label class='block'>
+              <span class='mb-1 block text-sm font-medium text-slate-700'>
+                Username
+              </span>
+              <input
+                type='text'
+                value={username()}
+                onInput={(e) => setUsername(e.currentTarget.value)}
+                class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
+                placeholder='Your username'
+                required
+              />
+            </label>
+
+            <label class='block'>
+              <span class='mb-1 block text-sm font-medium text-slate-700'>
+                Avatar URL
+              </span>
+              <input
+                type='url'
+                value={avatar()}
+                onInput={(e) => setAvatar(e.currentTarget.value)}
+                class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
+                placeholder='https://...'
+              />
+            </label>
+
+            <div class='grid gap-4 sm:grid-cols-2'>
+              <label class='block'>
+                <span class='mb-1 block text-sm font-medium text-slate-700'>
+                  Category
+                </span>
+                <select
+                  value={category()}
+                  onChange={(e) => setCategory(e.currentTarget.value)}
+                  class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800'
+                >
+                  {categoryOptions.map((option) => (
+                    <option value={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label class='block'>
+                <span class='mb-1 block text-sm font-medium text-slate-700'>
+                  Distance Unit
+                </span>
+                <select
+                  value={distance()}
+                  onChange={(e) => setDistance(e.currentTarget.value)}
+                  class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800'
+                >
+                  {distanceOptions.map((option) => (
+                    <option value={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <Show when={profileState()}>
+              {(state) => (
+                <p
+                  class={`rounded-md px-3 py-2 text-sm ${
+                    state().type === "success"
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border border-rose-200 bg-rose-50 text-rose-700"
+                  }`}
+                >
+                  {state().message}
+                </p>
+              )}
+            </Show>
+
+            <button
+              type='button'
+              onClick={saveProfile}
+              class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+            >
+              Save Profile
+            </button>
+          </div>
+        </div>
+
+        <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
+          <h2 class='font-rubik text-xl font-semibold text-slate-800'>Email</h2>
+          <p class='mt-1 font-grotesk text-sm text-slate-500'>
+            Save email changes separately.
+          </p>
+          <div class='mt-4 space-y-4'>
+            <label class='block'>
+              <span class='mb-1 block text-sm font-medium text-slate-700'>
+                Email
+              </span>
+              <input
+                type='email'
+                value={email()}
+                onInput={(e) => setEmail(e.currentTarget.value)}
+                class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
+                placeholder='you@example.com'
+              />
+            </label>
+
+            <Show when={emailState()}>
+              {(state) => (
+                <p
+                  class={`rounded-md px-3 py-2 text-sm ${
+                    state().type === "success"
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border border-rose-200 bg-rose-50 text-rose-700"
+                  }`}
+                >
+                  {state().message}
+                </p>
+              )}
+            </Show>
+
+            <button
+              type='button'
+              onClick={saveEmail}
+              class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+            >
+              Save Email
+            </button>
+          </div>
+        </div>
+
+        <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
+          <h2 class='font-rubik text-xl font-semibold text-slate-800'>
+            Password
+          </h2>
+          <p class='mt-1 font-grotesk text-sm text-slate-500'>
+            Save password changes separately.
+          </p>
+          <div class='mt-4 space-y-4'>
+            <label class='block'>
+              <span class='mb-1 block text-sm font-medium text-slate-700'>
+                New password
+              </span>
+              <input
+                type='password'
+                value={password()}
+                onInput={(e) => setPassword(e.currentTarget.value)}
+                class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
+                placeholder='New password'
+              />
+            </label>
+
+            <label class='block'>
+              <span class='mb-1 block text-sm font-medium text-slate-700'>
+                Confirm new password
+              </span>
+              <input
+                type='password'
+                value={confirmPassword()}
+                onInput={(e) => setConfirmPassword(e.currentTarget.value)}
+                class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
+                placeholder='Repeat new password'
+              />
+            </label>
+
+            <Show when={passwordState()}>
+              {(state) => (
+                <p
+                  class={`rounded-md px-3 py-2 text-sm ${
+                    state().type === "success"
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border border-rose-200 bg-rose-50 text-rose-700"
+                  }`}
+                >
+                  {state().message}
+                </p>
+              )}
+            </Show>
+
+            <button
+              type='button'
+              onClick={savePassword}
+              class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+            >
+              Save Password
+            </button>
+          </div>
+        </div>
+      </Show>
+    </div>
   );
-}
+};
+
+export default Profile;

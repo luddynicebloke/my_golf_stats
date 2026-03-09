@@ -63,25 +63,25 @@ const TeeManager = (props: TeeManagerProps) => {
           </div>
 
           <div class='overflow-x-auto rounded-xl border border-slate-200'>
-            <table class='w-full min-w-[740px] text-left text-sm text-slate-700'>
+            <table class='w-full table-fixed text-left text-sm text-slate-700'>
               <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
                 <tr>
-                  <th scope='col' class='px-3 py-3 font-bold'>
+                  <th scope='col' class='w-28 px-2 py-3 font-bold'>
                     ID
                   </th>
-                  <th scope='col' class='px-4 py-3 font-bold'>
+                  <th scope='col' class='px-2 py-3 font-bold'>
                     Colour
                   </th>
-                  <th scope='col' class='px-4 py-3 font-bold'>
+                  <th scope='col' class='px-2 py-3 font-bold'>
                     Metres
                   </th>
-                  <th scope='col' class='px-4 py-3 font-bold'>
+                  <th scope='col' class='px-2 py-3 font-bold'>
                     Rating
                   </th>
-                  <th scope='col' class='px-4 py-3 font-bold'>
+                  <th scope='col' class='px-2 py-3 font-bold'>
                     Slope
                   </th>
-                  <th scope='col' class='px-4 py-3 text-right font-bold'>
+                  <th scope='col' class='w-24 px-2 py-3 text-right font-bold'>
                     Action
                   </th>
                 </tr>
@@ -96,7 +96,8 @@ const TeeManager = (props: TeeManagerProps) => {
 
                     const colorBlur = useBlurSave(
                       color,
-                      async (value) => await updateTee(tee.id, { color: value }),
+                      async (value) =>
+                        await updateTee(tee.id, { color: value }),
                     );
 
                     const yardageBlur = useBlurSave(
@@ -107,10 +108,12 @@ const TeeManager = (props: TeeManagerProps) => {
 
                     return (
                       <tr class='border-b border-slate-200 odd:bg-white even:bg-slate-50'>
-                        <td class='px-3 py-2'>{tee.id}</td>
-                        <td class='px-4 py-2'>
+                        <td class='max-w-28 truncate px-2 py-2 font-mono text-xs'>
+                          <span title={tee.id}>{tee.id}</span>
+                        </td>
+                        <td class='px-2 py-2'>
                           <input
-                            class={`w-28 rounded-md border border-slate-300 p-1 transition-colors duration-300 ${colorBlur.stateClasses()} ${
+                            class={`w-full rounded-md border border-slate-300 p-1 transition-colors duration-300 ${colorBlur.stateClasses()} ${
                               colorBlur.loading() ? "opacity-70" : ""
                             }`}
                             value={color()}
@@ -120,22 +123,24 @@ const TeeManager = (props: TeeManagerProps) => {
                             disabled={colorBlur.loading()}
                           />
                         </td>
-                        <td class='px-4 py-2'>
+                        <td class='px-2 py-2'>
                           <input
-                            class={`w-24 appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
+                            class={`w-full appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
                               yardageBlur.loading() ? "opacity-70" : ""
                             }`}
                             type='number'
                             value={totalYardage()}
-                            onInput={(e) => setTotalYardage(+e.currentTarget.value)}
+                            onInput={(e) =>
+                              setTotalYardage(+e.currentTarget.value)
+                            }
                             onFocus={yardageBlur.handleFocus}
                             onBlur={yardageBlur.handleBlur}
                             disabled={yardageBlur.loading()}
                           />
                         </td>
-                        <td class='px-4 py-2'>
+                        <td class='px-2 py-2'>
                           <input
-                            class={`w-24 appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
+                            class={`w-full appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
                               yardageBlur.loading() ? "opacity-70" : ""
                             }`}
                             type='number'
@@ -147,9 +152,9 @@ const TeeManager = (props: TeeManagerProps) => {
                             }
                           />
                         </td>
-                        <td class='px-4 py-2'>
+                        <td class='px-2 py-2'>
                           <input
-                            class={`w-24 appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
+                            class={`w-full appearance-none rounded-md border border-slate-300 p-1 transition-colors duration-300 ${yardageBlur.stateClasses()} ${
                               yardageBlur.loading() ? "opacity-70" : ""
                             }`}
                             type='number'
@@ -161,9 +166,9 @@ const TeeManager = (props: TeeManagerProps) => {
                             }
                           />
                         </td>
-                        <td class='px-4 py-2 text-right'>
+                        <td class='px-2 py-2 text-right'>
                           <button
-                            class='inline-flex self-auto rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100'
+                            class='inline-flex self-auto rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-xs font-semibold whitespace-nowrap text-rose-700 hover:bg-rose-100'
                             onClick={() => openModal(tee.id)}
                           >
                             Delete

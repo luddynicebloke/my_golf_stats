@@ -7,10 +7,11 @@ type UserType = {
   id: string;
   created_at: string;
   email: string;
-  avatar: string;
+  avatar_url: string;
   category: string;
   role: string;
   preferred_distance_unit: string;
+  user_name: string;
 };
 
 const fetchCourses = async () => {
@@ -24,14 +25,36 @@ const fetchCourses = async () => {
 };
 
 const Users = () => {
-  const [users] = createResource(fetchCourses);
+  const [users, { mutate }] = createResource(fetchCourses);
+
+  const handleUserUpdated = (
+    id: string,
+    updates: Partial<Omit<UserType, "id" | "created_at">>,
+  ) => {
+    mutate((prev) => {
+      if (!prev?.users) return prev;
+      return {
+        users: prev.users.map((u) =>
+          u.id === id
+            ? {
+                ...u,
+                ...updates,
+              }
+            : u,
+        ),
+      };
+    });
+  };
+
   return (
     <>
-      <div>List of users</div>
+      <div class='mb-2 font-rubik text-lg font-semibold text-slate-800'>
+        List of users ({users()?.users?.length})
+      </div>
       <Show when={users()} fallback={<div>Loading...</div>}>
-        <div class='relative overflow-x-auto bg-neutral-700 shadow-xs rounded-xl border'>
-          <table class='w-full text-sm text-left rtl:text-right text-neutral-00'>
-            <thead class='bg-neutral-900 border-b text-neutral-400'>
+        <div class='relative overflow-x-auto rounded-xl border border-slate-200'>
+          <table class='w-full min-w-245 text-left text-sm text-slate-700'>
+            <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
               <tr>
                 <th scope='col' class='px-6 py-3 font-bold'>
                   Email
@@ -51,6 +74,9 @@ const Users = () => {
                 <th scope='col' class='px-6 py-3 font-bold'>
                   Avatar
                 </th>
+                <th scope='col' class='px-6 py-3 font-bold'>
+                  User name
+                </th>
 
                 <th scope='col' class='px-6 py-3 font-bold'>
                   Action
@@ -58,7 +84,9 @@ const Users = () => {
               </tr>
             </thead>
             <tbody>
-              <For each={users()?.users}>{(user) => <User user={user} />}</For>
+              <For each={users()?.users}>
+                {(user) => <User user={user} onUpdated={handleUserUpdated} />}
+              </For>
             </tbody>
           </table>
         </div>

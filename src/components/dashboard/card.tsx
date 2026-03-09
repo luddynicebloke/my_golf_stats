@@ -19,12 +19,14 @@ interface CardProps {
 export default function Card(props: CardProps) {
   const Icon = iconMap[props.type];
   return (
-    <div class='rounded-xl bg-gray-50 dark:bg-gray-900/75 p-2 shadow-sm'>
-      <div class='flex p-4'>
-        {Icon ? <Icon class='h-5 w-5 text-gray-700' /> : null}
-        <h3 class='ml-2 text-sm font-medium'>{props.title}</h3>
+    <div class='rounded-2xl border border-slate-200 bg-white p-3 text-slate-800 shadow-sm'>
+      <div class='flex items-center gap-2 p-2 sm:p-3'>
+        {Icon ? <Icon class='h-5 w-5 text-cyan-700' /> : null}
+        <h3 class='font-grotesk text-sm font-medium text-slate-600'>
+          {props.title}
+        </h3>
       </div>
-      <p class='truncate rounded-xl bg-white dark:bg-slate-900 px-4 py-8 text-center text-2xl'>
+      <p class='truncate rounded-xl bg-slate-50 px-3 py-6 text-center font-rubik text-2xl font-semibold sm:py-8'>
         {props.value}
       </p>
     </div>
