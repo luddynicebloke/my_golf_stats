@@ -5,7 +5,7 @@ import { ImStatsBars2 } from "solid-icons/im";
 import { CgProfile } from "solid-icons/cg";
 import { VsSignOut } from "solid-icons/vs";
 import { Component, For } from "solid-js";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 
 import { useAuth } from "../../context/AuthProvider";
 
@@ -31,6 +31,13 @@ export const links: NavLinkItem[] = [
 
 export default function NavLinks() {
   const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut: JSX.EventHandlerUnion<HTMLAnchorElement, MouseEvent> = async (e) => {
+    e.preventDefault();
+    await signOut();
+    navigate("/signin", { replace: true });
+  };
 
   return (
     <div class='flex flex-row gap-2 overflow-x-auto pb-1 md:flex-col md:overflow-visible'>
@@ -47,7 +54,7 @@ export default function NavLinks() {
               class={`inline-flex h-11 min-w-max items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition md:w-full ${baseClass}`}
               activeClass='!border-cyan-300 !bg-cyan-50 !text-cyan-800'
               end
-              onClick={link.name === "Sign Out" ? signOut : undefined}
+              onClick={link.name === "Sign Out" ? handleSignOut : undefined}
             >
               <LinkIcon class='h-5 w-5' />
               <span class='font-grotesk whitespace-nowrap'>{link.name}</span>

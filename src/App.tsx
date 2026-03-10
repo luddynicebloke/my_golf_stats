@@ -20,9 +20,8 @@ const Import_scorecard = lazy(
   () => import("./components/admin/import_scorecard"),
 );
 const Profile = lazy(() => import("./pages/Profile"));
-const ChangePassword = lazy(() => import("./pages/ChangePassword"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const RestPassword = lazy(() => import("./pages/ResetPassword"));
 const ScorecardEntry = lazy(
   () => import("./components/scoreEntry/ScorecardEntry"),
 );
@@ -35,12 +34,18 @@ const App: Component = () => {
         <Route path='/' component={Welcome} />
         <Route path='/signin' component={SignIn} />
         <Route path='/register' component={Register} />
-        <Route path='/reset-password' component={ResetPassword} />
-        <Route path='/change-password' component={ChangePassword} />
         <Route path='*404' component={NotFound} />
         <Route path='test' component={testpage} />
+        <Route path='reset-password' component={RestPassword} />
 
-        <Route path='/dashboard' component={DashLayout}>
+        <Route
+          path='/dashboard'
+          component={(props) => (
+            <ProtectedRoute>
+              <DashLayout>{props.children}</DashLayout>
+            </ProtectedRoute>
+          )}
+        >
           <Route
             path='/'
             component={() => (

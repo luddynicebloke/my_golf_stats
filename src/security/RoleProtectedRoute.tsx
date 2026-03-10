@@ -15,6 +15,11 @@ export const RoleProtectedRoute: Component<Props> = (props) => {
   const { user, initialized, loading, role } = useAuth();
   const navigate = useNavigate();
   const redirectTo = props.redirectTo ?? "/";
+  const isAllowed = () =>
+    initialized() &&
+    !loading() &&
+    Boolean(user()) &&
+    role() === props.requiredRole;
 
   createEffect(() => {
     // wait until the provider has carried out the initial session check
@@ -31,7 +36,7 @@ export const RoleProtectedRoute: Component<Props> = (props) => {
   });
 
   return (
-    <Show when={initialized()} fallback={""}>
+    <Show when={isAllowed()} fallback={""}>
       {props.children}
     </Show>
   );

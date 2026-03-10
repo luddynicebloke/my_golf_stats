@@ -113,6 +113,7 @@ export const AuthProvider: ParentComponent = (props) => {
       async (_event, newSession) => {
         setSession(newSession ?? null);
         setUser(newSession?.user ?? null);
+        setMetaData(newSession?.user?.user_metadata as UserMetadata | null);
         if (newSession?.user) {
           await fetchUserRole(newSession.user.id);
           await refreshProfile();
@@ -134,7 +135,13 @@ export const AuthProvider: ParentComponent = (props) => {
   }
 
   async function signOut() {
-    const { error } = await supabase.auth.signOut();
+    // Clear local auth state immediately to avoid stale UI if remote revoke fails.
+    setSession(null);
+    setUser(null);
+    setMetaData(null);
+    setRole(null);
+    setProfile(null);
+    await supabase.auth.signOut({ scope: "local" });
   }
 
   return (

@@ -1,6 +1,7 @@
-import { Show, createEffect, createSignal } from "solid-js";
+import { Show, createEffect, createSignal, onCleanup } from "solid-js";
 import { supabase } from "../supabase/client";
 import { useAuth } from "../context/AuthProvider";
+import ChangeEmailModal from "../components/profile/ChangeEmailModal";
 
 const categoryOptions = [
   "Pro M",
@@ -20,6 +21,7 @@ type SaveState = {
 
 const Profile = () => {
   const { user, refreshProfile } = useAuth();
+  let hasLoadedProfileOnce = false;
 
   const [loading, setLoading] = createSignal(true);
 
@@ -28,42 +30,74 @@ const Profile = () => {
   const [category, setCategory] = createSignal("Am M");
   const [distance, setDistance] = createSignal("yards");
   const [email, setEmail] = createSignal("");
-  const [password, setPassword] = createSignal("");
-  const [confirmPassword, setConfirmPassword] = createSignal("");
+  const [emailDraft, setEmailDraft] = createSignal("");
+  const [emailModalOpen, setEmailModalOpen] = createSignal(false);
+  const [emailSaving, setEmailSaving] = createSignal(false);
+  const [passwordResetSending, setPasswordResetSending] = createSignal(false);
 
   const [profileState, setProfileState] = createSignal<SaveState>(null);
   const [emailState, setEmailState] = createSignal<SaveState>(null);
   const [passwordState, setPasswordState] = createSignal<SaveState>(null);
 
-  createEffect(async () => {
+  createEffect(() => {
     const currentUser = user();
-    if (!currentUser) {
-      setLoading(false);
-      return;
-    }
+    let cancelled = false;
 
-    setLoading(true);
-    setEmail(currentUser.email ?? "");
+    const loadProfile = async () => {
+      if (!currentUser) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("user_name, avatar_url, category, preferred_distance_unit")
-      .eq("id", currentUser.id)
-      .single();
+      if (!cancelled) {
+        setEmail(currentUser.email ?? "");
+        setEmailDraft(currentUser.email ?? "");
+      }
 
-    if (error) {
-      setProfileState({
-        type: "error",
-        message: `Failed to load profile: ${error.message}`,
-      });
-    } else if (data) {
-      setUsername(data.user_name ?? "");
-      setAvatar(data.avatar_url ?? "");
-      setCategory(data.category ?? "Am M");
-      setDistance(data.preferred_distance_unit ?? "yards");
-    }
+      if (!cancelled && !hasLoadedProfileOnce) {
+        setLoading(true);
+      }
 
-    setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .select("user_name, avatar_url, category, preferred_distance_unit")
+          .eq("id", currentUser.id)
+          .single();
+
+        if (cancelled) return;
+
+        if (error) {
+          setProfileState({
+            type: "error",
+            message: `Failed to load profile: ${error.message}`,
+          });
+          return;
+        }
+
+        setUsername(data.user_name ?? "");
+        setAvatar(data.avatar_url ?? "");
+        setCategory(data.category ?? "Am M");
+        setDistance(data.preferred_distance_unit ?? "yards");
+      } catch (error) {
+        if (!cancelled) {
+          setProfileState({
+            type: "error",
+            message: "Failed to load profile. Please refresh and try again.",
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          hasLoadedProfileOnce = true;
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadProfile();
+    onCleanup(() => {
+      cancelled = true;
+    });
   });
 
   const saveProfile = async () => {
@@ -110,17 +144,19 @@ const Profile = () => {
 
     setEmailState(null);
 
-    const nextEmail = email().trim();
+    const nextEmail = emailDraft().trim();
     if (!nextEmail) {
       setEmailState({ type: "error", message: "Email is required." });
       return;
     }
 
+    setEmailSaving(true);
     const { data, error } = await supabase.auth.updateUser({
       email: nextEmail,
     });
 
     if (error) {
+      setEmailSaving(false);
       setEmailState({ type: "error", message: error.message });
       return;
     }
@@ -131,6 +167,7 @@ const Profile = () => {
       .eq("id", currentUser.id);
 
     if (profileError) {
+      setEmailSaving(false);
       setEmailState({
         type: "error",
         message: `Auth email updated, but profile row failed: ${profileError.message}`,
@@ -146,41 +183,39 @@ const Profile = () => {
         : "Email saved successfully.",
     });
     await refreshProfile();
+    setEmail(nextEmail);
+    setEmailDraft(nextEmail);
+    setEmailSaving(false);
+    setEmailModalOpen(false);
   };
 
-  const savePassword = async () => {
+  const sendPasswordResetLink = async () => {
+    if (passwordResetSending()) return;
     setPasswordState(null);
 
-    if (!password()) {
-      setPasswordState({ type: "error", message: "Password is required." });
-      return;
-    }
-    if (password().length < 6) {
+    const targetEmail = email().trim() || user()?.email?.trim() || "";
+    if (!targetEmail) {
       setPasswordState({
         type: "error",
-        message: "Password must be at least 6 characters.",
+        message: "No email found for this account.",
       });
       return;
     }
-    if (password() !== confirmPassword()) {
-      setPasswordState({ type: "error", message: "Passwords do not match." });
-      return;
-    }
 
-    const { error } = await supabase.auth.updateUser({
-      password: password(),
+    setPasswordResetSending(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
     });
+    setPasswordResetSending(false);
 
     if (error) {
       setPasswordState({ type: "error", message: error.message });
       return;
     }
 
-    setPassword("");
-    setConfirmPassword("");
     setPasswordState({
       type: "success",
-      message: "Password updated successfully.",
+      message: `Reset link sent to ${targetEmail}. Check your inbox.`,
     });
   };
 
@@ -291,21 +326,12 @@ const Profile = () => {
         <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>Email</h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Save email changes separately.
+            Change your account email in a separate modal.
           </p>
           <div class='mt-4 space-y-4'>
-            <label class='block'>
-              <span class='mb-1 block text-sm font-medium text-slate-700'>
-                Email
-              </span>
-              <input
-                type='email'
-                value={email()}
-                onInput={(e) => setEmail(e.currentTarget.value)}
-                class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-                placeholder='you@example.com'
-              />
-            </label>
+            <p class='rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700'>
+              Current email: {email() || "Not set"}
+            </p>
 
             <Show when={emailState()}>
               {(state) => (
@@ -323,10 +349,14 @@ const Profile = () => {
 
             <button
               type='button'
-              onClick={saveEmail}
+              onClick={() => {
+                setEmailDraft(email());
+                setEmailState(null);
+                setEmailModalOpen(true);
+              }}
               class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
             >
-              Save Email
+              Change Email
             </button>
           </div>
         </div>
@@ -336,35 +366,9 @@ const Profile = () => {
             Password
           </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Save password changes separately.
+            A reset link will be sent to your account email address.
           </p>
           <div class='mt-4 space-y-4'>
-            <label class='block'>
-              <span class='mb-1 block text-sm font-medium text-slate-700'>
-                New password
-              </span>
-              <input
-                type='password'
-                value={password()}
-                onInput={(e) => setPassword(e.currentTarget.value)}
-                class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-                placeholder='New password'
-              />
-            </label>
-
-            <label class='block'>
-              <span class='mb-1 block text-sm font-medium text-slate-700'>
-                Confirm new password
-              </span>
-              <input
-                type='password'
-                value={confirmPassword()}
-                onInput={(e) => setConfirmPassword(e.currentTarget.value)}
-                class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-                placeholder='Repeat new password'
-              />
-            </label>
-
             <Show when={passwordState()}>
               {(state) => (
                 <p
@@ -381,14 +385,24 @@ const Profile = () => {
 
             <button
               type='button'
-              onClick={savePassword}
+              onClick={sendPasswordResetLink}
+              disabled={passwordResetSending()}
               class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
             >
-              Save Password
+              {passwordResetSending() ? "Sending..." : "Reset Password"}
             </button>
           </div>
         </div>
       </Show>
+
+      <ChangeEmailModal
+        open={emailModalOpen}
+        emailDraft={emailDraft()}
+        saving={emailSaving()}
+        onEmailInput={setEmailDraft}
+        onCancel={() => setEmailModalOpen(false)}
+        onSave={saveEmail}
+      />
     </div>
   );
 };
