@@ -1,6 +1,28 @@
 import { onMount } from "solid-js";
 
-import { Chart, Title, Tooltip, Legend, Colors } from "chart.js";
+import {
+  Chart,
+  Title,
+  Tooltip,
+  Legend,
+  Colors,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+} from "chart.js";
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Title,
+  Tooltip,
+  Legend,
+);
+
 import { Bar } from "solid-chartjs";
 import { SGColors } from "../lib/graphColors";
 

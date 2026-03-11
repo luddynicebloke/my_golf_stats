@@ -4,7 +4,7 @@ import { FaSolidGolfBallTee } from "solid-icons/fa";
 import { ImStatsBars2 } from "solid-icons/im";
 import { CgProfile } from "solid-icons/cg";
 import { VsSignOut } from "solid-icons/vs";
-import { Component, For } from "solid-js";
+import { Component, For, JSX } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 
 import { useAuth } from "../../context/AuthProvider";
@@ -33,7 +33,10 @@ export default function NavLinks() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
-  const handleSignOut: JSX.EventHandlerUnion<HTMLAnchorElement, MouseEvent> = async (e) => {
+  const handleSignOut: JSX.EventHandlerUnion<
+    HTMLAnchorElement,
+    MouseEvent
+  > = async (e) => {
     e.preventDefault();
     await signOut();
     navigate("/signin", { replace: true });

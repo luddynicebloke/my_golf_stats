@@ -12,7 +12,7 @@ export default function Dashboard() {
   return (
     <div class='w-full'>
       <div class='mb-6 flex flex-wrap items-center justify-between gap-3'>
-        <h1 class='font-rubik text-2xl font-semibold tracking-tight md:text-3xl'>
+        <h1 class='font-rubik text-2xl text-gray-600 font-semibold tracking-tight md:text-3xl'>
           Dashboard
         </h1>
         {role() === "admin" && (

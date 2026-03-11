@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+﻿import { For } from "solid-js";
 
 type ScorecardHole = {
   hole_round_id: number;
@@ -17,55 +17,69 @@ export default function FrontNineTable(props: {
 
   return (
     <div class='max-w-full'>
-      <table class=' border-gray-300  text-center'>
+      <table class='text-center text-slate-700 dark:text-slate-600'>
         <tbody>
-          {/* Hole Numbers */}
           <tr>
-            <td class='p-0 font-bold '>Hole</td>
-            <For each={props.holes}>
-              {(h) => <td class='font-semibold'>{h.hole_number}</td>}
-            </For>
-            <td class='font-bold '>OUT</td>
-          </tr>
-
-          {/* Yardage */}
-          <tr>
-            <td class=' font-bold '>Yds</td>
-            <For each={props.holes}>
-              {(h) => <td class=' p-1'>{h.yardage}</td>}
-            </For>
-            <td class=' font-semibold'>{total("yardage")}</td>
-          </tr>
-
-          {/* Par */}
-          <tr>
-            <td class='font-bold '>Par</td>
-            <For each={props.holes}>{(h) => <td class=' '>{h.par}</td>}</For>
-            <td class='font-semibold'>{total("par")}</td>
-          </tr>
-
-          {/* Score */}
-          <tr>
-            <td class='  font-bold b'>Score</td>
+            <td class='p-0 font-bold text-slate-800 dark:text-slate-600'>
+              Hole
+            </td>
             <For each={props.holes}>
               {(h) => (
-                <td class=' '>
-                  <input
-                    type='number'
-                    min='0'
-                    value={h.strokes?.toString()}
-                    class='w-5 text-center  rounded'
-                    onInput={(e) =>
-                      props.onChange?.(
-                        h.hole_round_id,
-                        Number(e.currentTarget.value),
-                      )
-                    }
-                  />
+                <td class='font-semibold text-slate-800 dark:text-slate-600'>
+                  {h.hole_number}
                 </td>
               )}
             </For>
-            <td class='p-0 font-semibold'>{total("strokes")}</td>
+            <td class='font-bold text-slate-800 dark:text-slate-600'>OUT</td>
+          </tr>
+
+          <tr>
+            <td class='font-bold text-slate-700 dark:text-slate-600'>Yds</td>
+            <For each={props.holes}>
+              {(h) => <td class='p-1'>{h.yardage}</td>}
+            </For>
+            <td class='font-semibold text-slate-800 dark:text-slate-600'>
+              {total("yardage")}
+            </td>
+          </tr>
+
+          <tr>
+            <td class='font-bold text-slate-700 dark:text-slate-600'>Par</td>
+            <For each={props.holes}>{(h) => <td>{h.par}</td>}</For>
+            <td class='font-semibold text-slate-800 dark:text-slate-600'>
+              {total("par")}
+            </td>
+          </tr>
+
+          <tr>
+            <td class=' font-bold text-slate-700 dark:text-slate-600'>Score</td>
+            <For each={props.holes}>
+              {(h) => (
+                <td>
+                  {props.onChange ? (
+                    <input
+                      type='number'
+                      min='0'
+                      value={h.strokes?.toString()}
+                      class='w-8 rounded border border-slate-700 bg-slate-800 text-center text-white dark:border-slate-700 dark:bg-slate-900 dark:text-white'
+                      onInput={(e) =>
+                        props.onChange?.(
+                          h.hole_round_id,
+                          Number(e.currentTarget.value),
+                        )
+                      }
+                    />
+                  ) : (
+                    <span class='inline-block min-w-6 px-1 py-0.5 text-center bg-gray-700 rounded-sm text-white '>
+                      {h.strokes ?? 0}
+                    </span>
+                  )}
+                </td>
+              )}
+            </For>
+            <td class='bg-slate-500 rounded-sm p-0 font-semibold text-white'>
+              {total("strokes")}
+            </td>
           </tr>
         </tbody>
       </table>

@@ -1,6 +1,7 @@
 # AI Project Context
 
 ## Project Overview
+
 This is a web application built with:
 
 - SolidJS
@@ -17,6 +18,7 @@ The goal is to keep the codebase simple, modular, typed, and maintainable.
 ---
 
 ## Core Rules
+
 When making changes in this project, always follow these rules:
 
 1. Use TypeScript strictly.
@@ -35,6 +37,7 @@ When making changes in this project, always follow these rules:
 ## Framework Conventions
 
 ### SolidJS
+
 - Use SolidJS idioms, not React patterns.
 - Prefer `createSignal`, `createMemo`, `createEffect`, `createResource` only where appropriate.
 - Avoid unnecessary effects.
@@ -45,6 +48,7 @@ When making changes in this project, always follow these rules:
 - Keep reactive flows simple and predictable.
 
 ### Components
+
 - Prefer one component per file.
 - Keep presentational components separate from data-loading or service logic.
 - Extract repeated UI patterns into reusable components.
@@ -53,6 +57,7 @@ When making changes in this project, always follow these rules:
 - Keep components easy to scan.
 
 ### Routing
+
 - Use `@solidjs/router`.
 - Keep route definitions organized and predictable.
 - Route components should primarily orchestrate page behavior, not contain large amounts of low-level UI logic.
@@ -63,6 +68,7 @@ When making changes in this project, always follow these rules:
 ---
 
 ## Tailwind CSS Conventions
+
 - Use Tailwind utility classes for styling.
 - Do not use inline styles unless absolutely necessary.
 - Prefer reusable utility patterns over repeated long class strings.
@@ -78,7 +84,9 @@ When making changes in this project, always follow these rules:
 - Preserve visual consistency with existing components.
 
 ### Tailwind Class Ordering
+
 When practical, keep Tailwind classes grouped in a consistent order:
+
 1. layout / display
 2. position
 3. size
@@ -92,6 +100,7 @@ When practical, keep Tailwind classes grouped in a consistent order:
 ---
 
 ## TypeScript Conventions
+
 - Always prefer explicit, safe typing.
 - Avoid `any`.
 - Use `unknown` instead of `any` when needed.
@@ -105,9 +114,11 @@ When practical, keep Tailwind classes grouped in a consistent order:
 ---
 
 ## Forms Conventions
+
 This project uses `@modular-forms/solid`.
 
 ### Rules for Forms
+
 - Use Modular Forms for form state and validation.
 - Keep form models strongly typed.
 - Prefer schema-based or clearly centralized validation where already used in the project.
@@ -118,7 +129,9 @@ This project uses `@modular-forms/solid`.
 - Avoid deeply nesting form logic inside page components.
 
 ### Form Structure
+
 When creating a form:
+
 - Define a clear typed form model.
 - Keep validation rules near the form or in a dedicated validation file.
 - Use reusable field wrappers/components if the project already has them.
@@ -126,6 +139,7 @@ When creating a form:
 - Support translated labels, placeholders, and validation messages.
 
 ### Form UX
+
 - Disable submit while submitting when appropriate.
 - Preserve accessibility:
   - labels
@@ -136,9 +150,11 @@ When creating a form:
 ---
 
 ## Internationalization Conventions
+
 This project uses `@mbarzda/solid-i18next`.
 
 ### Rules for i18n
+
 - All user-facing strings must be translated.
 - Do not hardcode visible UI text.
 - Use existing translation namespaces if present.
@@ -149,7 +165,9 @@ This project uses `@mbarzda/solid-i18next`.
 - Keep pluralization and variable insertion compatible with i18next conventions.
 
 ### Translation Key Style
+
 Prefer structured keys such as:
+
 - `common.save`
 - `common.cancel`
 - `auth.login.title`
@@ -158,6 +176,7 @@ Prefer structured keys such as:
 - `errors.network`
 
 ### i18n Usage
+
 - Translate:
   - labels
   - buttons
@@ -172,13 +191,93 @@ Prefer structured keys such as:
 ---
 
 ## Supabase Conventions
+
 Supabase is used for backend services such as:
+
 - authentication
 - database reads/writes
 - storage
 - possibly edge functions
 
+## Database schema
+
+### Tables
+
+TABLE courses
+id
+created_at
+name
+city
+country
+
+Table hole_round
+id
+round_i,
+hole_id
+strokes
+completed
+
+TABLE hole_tee
+id
+hole_id
+tee_id
+yardage
+
+TABLE holes
+id
+course_id
+hole_number
+par smallint
+
+Table rounds
+id
+created_at
+user_id
+course_id
+tee_id
+round_date
+is_finalised
+
+TABLE sg_expectation
+id bigint
+lie_type
+min_distance
+max_distance
+expected_strokes
+
+TABLE shotslies
+id
+created_at t
+hole_round_id
+shot_number
+distance_to_pin
+lie_type
+start_loaction
+end_location
+sg_value
+penalty_strokes
+holed_out
+
+TABLE tees
+id
+course_id
+color text
+course_rating
+slope_rating
+total_yardage
+
+TABLE user_profiles
+id
+email
+created_at
+avatar_url
+category
+preferred_distance_unit
+role text
+user_name
+
 ### Rules for Supabase
+
 - Keep Supabase access centralized in service or data-access layers.
 - Do not scatter raw queries across many UI components.
 - Prefer wrapper functions for repeated queries or mutations.
@@ -189,16 +288,18 @@ Supabase is used for backend services such as:
 - Use the existing client setup rather than creating duplicate clients.
 
 ### Data Access
+
 - UI components should not contain large raw Supabase query blocks unless already established in the codebase.
 - Prefer patterns such as:
   - `services/`
   - `lib/`
   - `data/`
   - `repositories/`
-depending on the current structure.
+    depending on the current structure.
 - Keep database interactions easy to test and reuse.
 
 ### Auth
+
 - Follow the project’s existing auth flow.
 - Keep session/user state handling consistent with existing patterns.
 - Do not invent parallel auth helpers if one already exists.
@@ -207,6 +308,7 @@ depending on the current structure.
 ---
 
 ## File and Folder Organization
+
 Follow the current project structure first. If creating new files, prefer patterns like:
 
 - `src/components/` for reusable UI
@@ -221,6 +323,7 @@ Do not reorganize the whole project unless explicitly asked.
 ---
 
 ## Preferred Coding Style
+
 - Use descriptive names.
 - Keep functions short.
 - Prefer early returns.
@@ -234,6 +337,7 @@ Do not reorganize the whole project unless explicitly asked.
 ---
 
 ## Error Handling
+
 - Handle async failures explicitly.
 - Do not swallow errors silently.
 - Show user-friendly messages in the UI.
@@ -243,6 +347,7 @@ Do not reorganize the whole project unless explicitly asked.
 ---
 
 ## Accessibility
+
 - Use semantic HTML.
 - Ensure buttons, links, inputs, and forms are accessible.
 - Associate labels correctly.
@@ -253,6 +358,7 @@ Do not reorganize the whole project unless explicitly asked.
 ---
 
 ## Performance
+
 - Avoid premature optimization.
 - Avoid unnecessary reactive dependencies.
 - Avoid unnecessary rerenders or recalculations.
@@ -262,6 +368,7 @@ Do not reorganize the whole project unless explicitly asked.
 ---
 
 ## When Creating New Features
+
 When asked to build a feature:
 
 1. Inspect existing patterns first.
@@ -276,6 +383,7 @@ When asked to build a feature:
 ---
 
 ## When Editing Existing Code
+
 When modifying code:
 
 1. Read surrounding files first.
@@ -287,6 +395,7 @@ When modifying code:
 ---
 
 ## Output Expectations for AI
+
 When generating code for this project:
 
 - Return production-quality code.
@@ -305,24 +414,29 @@ When generating code for this project:
 ## Preferred Patterns
 
 ### Example: Translations
+
 - Good: use translation keys in components
 - Bad: hardcoded button labels or messages
 
 ### Example: Forms
+
 - Good: typed form values, reusable fields, translated errors
 - Bad: ad hoc uncontrolled inputs mixed with inconsistent validation
 
 ### Example: Supabase
+
 - Good: service/helper layer that returns typed results
 - Bad: repeating raw queries in multiple components
 
 ### Example: Components
+
 - Good: small focused components
 - Bad: one very large page component containing fetch, form, modal, and table logic together
 
 ---
 
 ## AI Checklist Before Finalizing Changes
+
 Before suggesting or applying changes, check:
 
 - Are all visible strings translated?
@@ -339,6 +453,7 @@ Before suggesting or applying changes, check:
 ---
 
 ## Stack Reminder
+
 Assume the following unless the existing code clearly shows otherwise:
 
 - SolidJS for UI
