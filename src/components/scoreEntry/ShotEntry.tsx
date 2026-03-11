@@ -30,6 +30,7 @@ export default function ShotEntry(props: ShotEntryProps) {
   const [holedOut, setHoledOut] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
+  const minimumDistance = () => 1;
 
   createEffect(() => {
     setDistanceToPin(props.startDistance);
@@ -102,10 +103,14 @@ export default function ShotEntry(props: ShotEntryProps) {
           Distance to pin
           <input
             type='number'
-            min='0'
+            min='1'
             class='w-full rounded border px-2 py-1'
             value={distanceToPin()}
-            onInput={(e) => setDistanceToPin(Number(e.currentTarget.value))}
+            onInput={(e) =>
+              setDistanceToPin(
+                Math.max(minimumDistance(), Number(e.currentTarget.value)),
+              )
+            }
             disabled={holedOut()}
           />
         </label>

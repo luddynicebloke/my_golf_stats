@@ -26,11 +26,14 @@ type SliderProps = {
 
 const Slider = (props: SliderProps) => {
   const id = () => props.id ?? "slider";
+  const min = () => props.min ?? 1;
+  const max = () => props.max ?? 600;
+  const clamp = (value: number) => Math.min(max(), Math.max(min(), value));
 
   const handleInput: JSX.EventHandlerUnion<HTMLInputElement, InputEvent> = (
     e,
   ) => {
-    props.onChange(Number(e.currentTarget.value));
+    props.onChange(clamp(Number(e.currentTarget.value)));
   };
 
   return (
@@ -43,8 +46,8 @@ const Slider = (props: SliderProps) => {
           <input
             type='number'
             maxLength={3}
-            min={props.min ?? 0.5}
-            max={props.max ?? 600}
+            min={min()}
+            max={max()}
             step={props.step ?? 1}
             value={props.value}
             onInput={handleInput}
@@ -56,8 +59,8 @@ const Slider = (props: SliderProps) => {
           type='range'
           value={props.value}
           step={props.step ?? 1}
-          min={props.min ?? 0.5}
-          max={props.max ?? 600}
+          min={min()}
+          max={max()}
           onInput={handleInput}
           class='w-full h-2 bg-gray-400 rounded-lg appearance-none cursor-pointer'
         />
