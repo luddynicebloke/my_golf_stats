@@ -1,8 +1,17 @@
-import { createEffect, createSignal, Show } from "solid-js";
+﻿import { createEffect, createSignal, For, Show } from "solid-js";
 import { supabase } from "../../supabase/client";
 import Slider from "./Slider";
 
 type LieType = "TEE" | "FAIRWAY" | "ROUGH" | "BUNKER" | "GREEN" | "RECOVERY";
+
+const lieOptions: Array<{ value: LieType; label: string }> = [
+  { value: "TEE", label: "Tee" },
+  { value: "FAIRWAY", label: "Fairway" },
+  { value: "ROUGH", label: "Rough" },
+  { value: "BUNKER", label: "Bunker" },
+  { value: "GREEN", label: "Green" },
+  { value: "RECOVERY", label: "Recovery" },
+];
 
 type ShotEntryProps = {
   holeRoundId: number;
@@ -88,7 +97,7 @@ export default function ShotEntry(props: ShotEntryProps) {
         onChange={(value) => setDistanceToPin(Number(value))}
       />
 
-      <div class='grid grid-cols-2 gap-2 p-1'>
+      <div class='space-y-3 p-1'>
         <label class='text-sm'>
           Distance to pin
           <input
@@ -101,21 +110,28 @@ export default function ShotEntry(props: ShotEntryProps) {
           />
         </label>
 
-        <label class='text-sm'>
-          Lie
-          <select
-            class='w-full rounded border px-2 py-1'
-            value={lieType()}
-            onChange={(e) => setLieType(e.currentTarget.value as LieType)}
-          >
-            <option value='TEE'>Tee</option>
-            <option value='FAIRWAY'>Fairway</option>
-            <option value='ROUGH'>Rough</option>
-            <option value='BUNKER'>Bunker</option>
-            <option value='GREEN'>Green</option>
-            <option value='RECOVERY'>Recovery</option>
-          </select>
-        </label>
+        <div class='mt-3 grid grid-cols-3 gap-2'>
+          <For each={lieOptions}>
+            {(option) => (
+              <button
+                type='button'
+                class={`rounded border px-2 py-3 text-sm font-medium transition ${
+                  lieType() === option.value
+                    ? "border-cyan-600 bg-cyan-100 text-cyan-900"
+                    : "border-slate-300 bg-white text-slate-700"
+                }`}
+                onClick={() => {
+                  setLieType(option.value);
+                  if (option.value === "GREEN") {
+                    setDistanceToPin(15);
+                  }
+                }}
+              >
+                {option.label}
+              </button>
+            )}
+          </For>
+        </div>
       </div>
 
       <div class='flex items-center gap-3'>

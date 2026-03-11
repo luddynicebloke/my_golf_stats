@@ -94,7 +94,7 @@ export default function DashboardChart(props: SGChartProps) {
       <h2 class='mb-4 font-rubik text-lg font-semibold text-slate-800 sm:text-xl'>
         Current Strokes Gained
       </h2>
-      <div class='h-[260px] sm:h-[320px]'>
+      <div class='h-65 sm:h-80'>
         <Bar
           data={chartData}
           options={chartOptions}

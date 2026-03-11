@@ -117,7 +117,7 @@ export default function ScorecardEntry(props: { id: string }) {
       }),
     );
 
-    rows.sort((a, b) => a.hole_number - b.hole_number);
+    rows.sort((a: any, b: any) => a.hole_number - b.hole_number);
     setScorecard(rows);
     setLoading(false);
   };
@@ -225,44 +225,44 @@ export default function ScorecardEntry(props: { id: string }) {
           <h1 class='font-rubik text-2xl font-semibold text-slate-800'>
             Score Entry
           </h1>
-          <div class='flex items-center gap-2'>
-            <p class='font-grotesk text-sm text-slate-500'>
-              {courseTee().name
-                ? `${courseTee().name} - ${courseTee().colour}`
-                : "Loading round..."}
-            </p>
-            <A
-              href='/dashboard'
-              class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
-            >
-              Back to Dashboard
-            </A>
-          </div>
+          <A
+            href='/dashboard'
+            class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+          >
+            Back to Dashboard
+          </A>
         </div>
 
-        <div class='mt-4 flex items-center gap-2'>
-          <button
-            type='button'
-            class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
-              activeNine() === "front"
-                ? "border-cyan-300 bg-cyan-50 text-cyan-800"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-            }`}
-            onClick={() => setActiveNine("front")}
-          >
-            Front 9
-          </button>
-          <button
-            type='button'
-            class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
-              activeNine() === "back"
-                ? "border-cyan-300 bg-cyan-50 text-cyan-800"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-            }`}
-            onClick={() => setActiveNine("back")}
-          >
-            Back 9
-          </button>
+        <div class='mt-4 flex flex-wrap items-center justify-between gap-2'>
+          <p class='font-grotesk text-sm text-slate-500'>
+            {courseTee().name
+              ? `${courseTee().name} - ${courseTee().colour}`
+              : "Loading round..."}
+          </p>
+          <div class='flex items-center gap-2'>
+            <button
+              type='button'
+              class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
+                activeNine() === "front"
+                  ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+              }`}
+              onClick={() => setActiveNine("front")}
+            >
+              Front 9
+            </button>
+            <button
+              type='button'
+              class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
+                activeNine() === "back"
+                  ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+              }`}
+              onClick={() => setActiveNine("back")}
+            >
+              Back 9
+            </button>
+          </div>
         </div>
 
         <Show
