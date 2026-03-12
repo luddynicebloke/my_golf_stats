@@ -50,10 +50,10 @@ export default function ScorecardEntry(props: { id: string }) {
 
   const [shotContextLoading, setShotContextLoading] = createSignal(false);
   const [nextShotNumber, setNextShotNumber] = createSignal(1);
-  const [startDistance, setStartDistance] = createSignal(0);
+  const [startDistance, setStartDistance] = createSignal(1);
   const [startLie, setStartLie] = createSignal<LieType>("TEE");
 
-  // display the course and the tee
+  // display the course and the tee. This is from an SQL query
   const loadCourseDetails = async () => {
     const { data, error } = await supabase.rpc("get_course_and_tee", {
       p_round_id: roundId,
@@ -67,13 +67,25 @@ export default function ScorecardEntry(props: { id: string }) {
     });
   };
 
+  // Fetch the registered course details. This is from an SQL query
   const loadScorecard = async () => {
     setLoading(true);
     setLoadError(null);
 
-    const { data, error } = await supabase.rpc("get_scorecard", {
-      p_round_id: roundId,
-    });
+    /* query "get_round_details" joins the tables hole_round with rounds, holes and hole_tee returning
+     hole_round_id
+     hole number
+     par
+     yardage
+     strokes
+     completed
+     */
+    const { data: ScorecardData, error } = await supabase.rpc(
+      "get_round_details",
+      {
+        p_round_id: roundId,
+      },
+    );
 
     if (error) {
       setLoadError(error.message);
@@ -81,39 +93,14 @@ export default function ScorecardEntry(props: { id: string }) {
       return;
     }
 
-    const { data: holeRoundProgress, error: progressError } = await supabase
-      .from("hole_round")
-      .select("id, strokes, completed")
-      .eq("round_id", roundId);
-
-    if (progressError) {
-      setLoadError(progressError.message);
-      setLoading(false);
-      return;
-    }
-
-    const progressByHoleRoundId = new Map(
-      (holeRoundProgress ?? []).map((row: any) => [
-        Number(row.id),
-        {
-          strokes: row.strokes == null ? 0 : Number(row.strokes),
-          completed: Boolean(row.completed),
-        },
-      ]),
-    );
-
-    const rows = (data ?? []).map(
+    const rows = (ScorecardData ?? []).map(
       (r: any): ScorecardHole => ({
         hole_round_id: Number(r.hole_round_id),
         hole_number: Number(r.hole_number),
         par: Number(r.par),
         yardage: Number(r.yardage),
-        strokes:
-          progressByHoleRoundId.get(Number(r.hole_round_id))?.strokes ??
-          (r.strokes == null ? 0 : Number(r.strokes)),
-        completed:
-          progressByHoleRoundId.get(Number(r.hole_round_id))?.completed ??
-          Boolean(r.completed),
+        strokes: r.strokes == null ? 0 : Number(r.strokes),
+        completed: Boolean(r.completed),
       }),
     );
 
@@ -129,7 +116,9 @@ export default function ScorecardEntry(props: { id: string }) {
 
     const { data, error } = await supabase
       .from("shotslies")
-      .select("shot_number, distance_to_pin, lie_type, holed_out")
+      .select(
+        "shot_number, distance_to_pin, lie_type, holed_out, penalty_strokes",
+      )
       .eq("hole_round_id", hole.hole_round_id)
       .order("shot_number", { ascending: false })
       .limit(1);
@@ -142,7 +131,7 @@ export default function ScorecardEntry(props: { id: string }) {
     const last = data?.[0];
     if (!last) {
       setNextShotNumber(1);
-      setStartDistance(hole.yardage || 0);
+      setStartDistance(hole.yardage || 1);
       setStartLie(hole.par === 3 ? "FAIRWAY" : "TEE");
       setShotContextLoading(false);
       return;
@@ -150,14 +139,14 @@ export default function ScorecardEntry(props: { id: string }) {
 
     if (last.holed_out) {
       setNextShotNumber(Number(last.shot_number) + 1);
-      setStartDistance(0);
+      setStartDistance(1);
       setStartLie("GREEN");
       setShotContextLoading(false);
       return;
     }
 
     setNextShotNumber(Number(last.shot_number) + 1);
-    setStartDistance(Number(last.distance_to_pin) || 0);
+    setStartDistance(Number(last.distance_to_pin) || 1);
     setStartLie(normalizeLie(last.lie_type));
     setShotContextLoading(false);
   };
@@ -211,10 +200,6 @@ export default function ScorecardEntry(props: { id: string }) {
   });
 
   const handleShotSaved = async () => {
-    await loadScorecard();
-  };
-
-  const handleHoledOut = async () => {
     await loadScorecard();
   };
 

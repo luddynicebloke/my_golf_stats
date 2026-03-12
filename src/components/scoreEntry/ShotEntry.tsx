@@ -48,7 +48,7 @@ export default function ShotEntry(props: ShotEntryProps) {
       const payload = {
         hole_round_id: props.holeRoundId,
         shot_number: props.nextShotNumber,
-        distance_to_pin: holedOut() ? 0 : Number(distanceToPin()),
+        distance_to_pin: Number(distanceToPin()),
         lie_type: lieType(),
         holed_out: holedOut(),
         sg_value: null,
