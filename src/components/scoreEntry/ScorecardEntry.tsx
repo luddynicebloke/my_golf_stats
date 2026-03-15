@@ -1,10 +1,17 @@
-﻿import { createMemo, createSignal, For, onMount, Show } from "solid-js";
-import { A, Params } from "@solidjs/router";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onMount,
+  Show,
+} from "solid-js";
+import { A } from "@solidjs/router";
 
 import { supabase } from "../../supabase/client";
 import BackNineTable from "./BackNineTable";
 import FrontNineTable from "./FrontNineTable";
-import ShotEntry from "./ShotEntry";
+import Slider from "./Slider";
 
 type ScorecardHole = {
   round_hole_id: number;
@@ -19,6 +26,8 @@ type RoundHeader = {
   courseName: string;
   teeColor: string;
 };
+
+type BallLie = "Tee" | "Fairway" | "Rough" | "Bunker" | "Green" | "Recovery";
 
 type RoundRow = {
   id: number;
@@ -42,8 +51,22 @@ const emptyHeader: RoundHeader = {
   teeColor: "",
 };
 
+const ballLies: BallLie[] = [
+  "Tee",
+  "Fairway",
+  "Rough",
+  "Bunker",
+  "Green",
+  "Recovery",
+];
+
+const activeButtonClass =
+  "border-cyan-300 bg-cyan-50 text-cyan-800";
+const inactiveButtonClass =
+  "border-slate-300 bg-white text-slate-700 hover:bg-slate-100";
+
 /*
-T is a generic type, meaning “whatever object shape you expect”
+T is a generic type, meaning "whatever object shape you expect"
 if value is an array, it returns the first item
 if the array is empty, it returns null
 if value is already a single object, it returns that object
@@ -55,15 +78,55 @@ const getSingleRelation = <T,>(value: T | T[] | null | undefined): T | null => {
 };
 
 export default function ScorecardEntry(props: { id: string }) {
-  const params = props as Params;
-  const roundId = Number(params.id);
+  const roundId = Number(props.id);
 
   const [activeNine, setActiveNine] = createSignal<"front" | "back">("front");
   const [selectedHoleNumber, setSelectedHoleNumber] = createSignal(1);
   const [scorecard, setScorecard] = createSignal<ScorecardHole[]>([]);
   const [roundHeader, setRoundHeader] = createSignal<RoundHeader>(emptyHeader);
+  const [ballLie, setBallLie] = createSignal<BallLie>("Tee");
+  const [sliderValue, setSliderValue] = createSignal(1);
+  const [penaltyEnabled, setPenaltyEnabled] = createSignal(false);
+  const [penaltyShots, setPenaltyShots] = createSignal<number | null>(null);
+  const [holedOut, setHoledOut] = createSignal(false);
   const [loading, setLoading] = createSignal(true);
   const [loadError, setLoadError] = createSignal<string | null>(null);
+
+  const resetShotInputs = (yardage: number) => {
+    setBallLie("Tee");
+    setSliderValue(yardage);
+    setPenaltyEnabled(false);
+    setPenaltyShots(null);
+    setHoledOut(false);
+  };
+
+  const setActiveHole = (holeNumber: number) => {
+    setSelectedHoleNumber(holeNumber);
+  };
+
+  const setNine = (nine: "front" | "back") => {
+    setActiveNine(nine);
+
+    const firstVisibleHole =
+      nine === "front" ? frontNine()[0] : backNine()[0];
+    if (firstVisibleHole) {
+      setActiveHole(firstVisibleHole.hole_number);
+    }
+  };
+
+  const togglePenalty = () => {
+    const nextEnabled = !penaltyEnabled();
+    setPenaltyEnabled(nextEnabled);
+
+    if (!nextEnabled) {
+      setPenaltyShots(null);
+      return;
+    }
+
+    if (penaltyShots() == null) {
+      setPenaltyShots(1);
+    }
+  };
 
   const loadScorecard = async () => {
     if (Number.isNaN(roundId)) {
@@ -96,7 +159,6 @@ export default function ScorecardEntry(props: { id: string }) {
     });
 
     const teeId = Number(round.tee_id);
-    // get the info for the scorecard
     const { data: holeRows, error: holeRowsError } = await supabase
       .from("round_holes")
       .select("id, hole_id, score, completed, holes(hole_number, par)")
@@ -171,6 +233,33 @@ export default function ScorecardEntry(props: { id: string }) {
       scorecard().find((hole) => hole.hole_number === selectedHoleNumber()) ??
       scorecard()[0],
   );
+  const isGreenLie = createMemo(() => ballLie() === "Green");
+  const sliderLabel = createMemo(() =>
+    isGreenLie() ? "Distance to hole" : "Distance to pin",
+  );
+  const sliderMax = createMemo(() =>
+    isGreenLie() ? 100 : Math.max(selectedHole()?.yardage ?? 1, 600),
+  );
+  const sliderStep = createMemo(() => Math.max(1, Math.round(sliderMax() / 6)));
+  const sliderMarks = createMemo(() =>
+    Array.from({ length: 7 }, (_, index) => sliderStep() * index),
+  );
+
+  createEffect(() => {
+    const hole = selectedHole();
+    if (!hole) return;
+
+    resetShotInputs(hole.yardage);
+  });
+
+  createEffect(() => {
+    if (isGreenLie()) {
+      setSliderValue(15);
+      return;
+    }
+
+    setSliderValue((currentValue) => Math.min(currentValue, sliderMax()));
+  });
 
   return (
     <div class='mx-auto w-full max-w-5xl space-y-4'>
@@ -213,14 +302,10 @@ export default function ScorecardEntry(props: { id: string }) {
                 type='button'
                 class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
                   activeNine() === "front"
-                    ? "border-cyan-300 bg-cyan-50 text-cyan-800"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                    ? activeButtonClass
+                    : inactiveButtonClass
                 }`}
-                onClick={() => {
-                  setActiveNine("front");
-                  if (frontNine()[0])
-                    setSelectedHoleNumber(frontNine()[0].hole_number);
-                }}
+                onClick={() => setNine("front")}
               >
                 Front 9
               </button>
@@ -228,14 +313,10 @@ export default function ScorecardEntry(props: { id: string }) {
                 type='button'
                 class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
                   activeNine() === "back"
-                    ? "border-cyan-300 bg-cyan-50 text-cyan-800"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                    ? activeButtonClass
+                    : inactiveButtonClass
                 }`}
-                onClick={() => {
-                  setActiveNine("back");
-                  if (backNine()[0])
-                    setSelectedHoleNumber(backNine()[0].hole_number);
-                }}
+                onClick={() => setNine("back")}
               >
                 Back 9
               </button>
@@ -256,10 +337,10 @@ export default function ScorecardEntry(props: { id: string }) {
                     type='button'
                     class={`rounded-md border px-2 py-2 text-left text-xs font-semibold ${
                       selectedHoleNumber() === hole.hole_number
-                        ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                        ? activeButtonClass
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
-                    onClick={() => setSelectedHoleNumber(hole.hole_number)}
+                    onClick={() => setActiveHole(hole.hole_number)}
                   >
                     H{hole.hole_number}
                   </button>
@@ -274,7 +355,7 @@ export default function ScorecardEntry(props: { id: string }) {
         {(hole) => (
           <div class='rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
             <div class='mb-4 flex flex-wrap items-center justify-between gap-3'>
-              <div>
+              <div class='flex w-full items-center justify-between gap-3'>
                 <h2 class='font-rubik text-lg font-semibold text-slate-800'>
                   Hole {hole().hole_number}
                 </h2>
@@ -284,11 +365,99 @@ export default function ScorecardEntry(props: { id: string }) {
               </div>
             </div>
 
-            <ShotEntry
-              holeNumber={hole().hole_number}
-              par={hole().par}
-              yardage={hole().yardage}
-            />
+            <div class='rounded-xl border border-slate-200 bg-slate-50 p-4'>
+              <Slider
+                id={`hole-${hole().hole_number}-distance`}
+                label={sliderLabel()}
+                value={sliderValue()}
+                onChange={setSliderValue}
+                max={sliderMax()}
+                r1={sliderMarks()[0]}
+                r2={sliderMarks()[1]}
+                r3={sliderMarks()[2]}
+                r4={sliderMarks()[3]}
+                r5={sliderMarks()[4]}
+                r6={sliderMarks()[5]}
+                r7={sliderMarks()[6]}
+              />
+
+              <div class='mt-2'>
+                <p class='mb-3 text-sm font-medium text-slate-700'>Ball lie</p>
+                <div class='grid grid-cols-6 gap-2'>
+                  <For each={ballLies}>
+                    {(lie) => (
+                      <button
+                        type='button'
+                        class={`justify-center rounded-md border px-2 py-3 text-center text-xs font-semibold transition-colors sm:text-sm ${
+                          ballLie() === lie
+                            ? activeButtonClass
+                            : inactiveButtonClass
+                        }`}
+                        onClick={() => setBallLie(lie)}
+                      >
+                        {lie}
+                      </button>
+                    )}
+                  </For>
+                </div>
+
+                <div class='mt-4 flex items-end gap-3'>
+                  <button
+                    type='button'
+                    class={`rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
+                      penaltyEnabled()
+                        ? activeButtonClass
+                        : inactiveButtonClass
+                    }`}
+                    onClick={togglePenalty}
+                  >
+                    Penalty
+                  </button>
+
+                  <Show when={penaltyEnabled()}>
+                    <div class='w-24'>
+                      <input
+                        id='penalty-shots'
+                        type='number'
+                        min='1'
+                        step='1'
+                        value={penaltyShots() ?? ""}
+                        onInput={(event) => {
+                          const value = event.currentTarget.value;
+                          setPenaltyShots(value === "" ? null : Number(value));
+                        }}
+                        class='block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-100'
+                      />
+                    </div>
+                  </Show>
+
+                  <label
+                    for='holed-out'
+                    class='ml-auto flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700'
+                  >
+                    <input
+                      id='holed-out'
+                      type='checkbox'
+                      checked={holedOut()}
+                      onChange={(event) =>
+                        setHoledOut(event.currentTarget.checked)
+                      }
+                      class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
+                    />
+                    Holed out
+                  </label>
+                </div>
+
+                <div class='mt-4'>
+                  <button
+                    type='button'
+                    class='rounded-md border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800 transition-colors hover:bg-cyan-100'
+                  >
+                    Next shot
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </Show>
