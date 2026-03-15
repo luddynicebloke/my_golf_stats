@@ -1,6 +1,6 @@
-# AI Project Context
+# Project Instructions
 
-## Project Overview
+## Overview
 
 This is a web application built with:
 
@@ -8,14 +8,12 @@ This is a web application built with:
 - TypeScript
 - Vite
 - Tailwind CSS
-- @solidjs/router
-- @modular-forms/solid
-- @mbarzda/solid-i18next
+- `@solidjs/router`
+- `@modular-forms/solid`
+- `@mbarzda/solid-i18next`
 - Supabase
 
-The goal is to keep the codebase simple, modular, typed, and maintainable.
-
----
+The codebase should stay simple, modular, typed, and maintainable.
 
 ## Core Rules
 
@@ -32,18 +30,16 @@ When making changes in this project, always follow these rules:
 9. Keep files focused on one responsibility.
 10. When editing existing files, preserve current naming conventions unless asked to refactor.
 
----
-
 ## Framework Conventions
 
 ### SolidJS
 
 - Use SolidJS idioms, not React patterns.
-- Prefer `createSignal`, `createMemo`, `createEffect`, `createResource` only where appropriate.
+- Prefer `createSignal`, `createMemo`, `createEffect`, and `createResource` only where appropriate.
 - Avoid unnecessary effects.
 - Derive values with `createMemo` instead of storing duplicated state.
 - Prefer direct, explicit props typing.
-- Use `Component` type only when it improves clarity; otherwise use typed function components.
+- Use the `Component` type only when it improves clarity; otherwise use typed function components.
 - Avoid overusing context unless state truly needs to be shared broadly.
 - Keep reactive flows simple and predictable.
 
@@ -65,19 +61,12 @@ When making changes in this project, always follow these rules:
 - Use route params and search params carefully, with type-safe parsing when needed.
 - Do not hardcode navigation paths repeatedly; centralize route constants if the project already does so.
 
----
-
 ## Tailwind CSS Conventions
 
 - Use Tailwind utility classes for styling.
 - Do not use inline styles unless absolutely necessary.
 - Prefer reusable utility patterns over repeated long class strings.
-- Keep class lists readable and grouped logically:
-  - layout
-  - spacing
-  - sizing
-  - typography
-  - color/state
+- Keep class lists readable and grouped logically.
 - Reuse existing design tokens, spacing, and color patterns already present in the codebase.
 - Do not introduce arbitrary values unless needed.
 - Prefer responsive utilities where appropriate.
@@ -85,7 +74,7 @@ When making changes in this project, always follow these rules:
 
 ### Tailwind Class Ordering
 
-When practical, keep Tailwind classes grouped in a consistent order:
+When practical, keep Tailwind classes grouped in this order:
 
 1. layout / display
 2. position
@@ -97,21 +86,17 @@ When practical, keep Tailwind classes grouped in a consistent order:
 8. effects / transitions
 9. states / responsive modifiers
 
----
-
 ## TypeScript Conventions
 
 - Always prefer explicit, safe typing.
 - Avoid `any`.
 - Use `unknown` instead of `any` when needed.
-- Prefer narrow types and well-named interfaces/types.
+- Prefer narrow types and well-named interfaces or types.
 - Export shared types from appropriate domain files when reused.
 - Keep types close to the domain they belong to.
 - Use discriminated unions where they improve clarity.
 - Validate external data boundaries.
 - Do not silence type errors with casts unless there is a strong reason.
-
----
 
 ## Forms Conventions
 
@@ -134,20 +119,15 @@ When creating a form:
 
 - Define a clear typed form model.
 - Keep validation rules near the form or in a dedicated validation file.
-- Use reusable field wrappers/components if the project already has them.
+- Use reusable field wrappers or components if the project already has them.
 - Surface server errors in a user-friendly way.
 - Support translated labels, placeholders, and validation messages.
 
 ### Form UX
 
 - Disable submit while submitting when appropriate.
-- Preserve accessibility:
-  - labels
-  - `aria-*` attributes
-  - error associations
+- Preserve accessibility, including labels, `aria-*` attributes, and error associations.
 - Keep error messaging concise and consistent.
-
----
 
 ## Internationalization Conventions
 
@@ -177,106 +157,97 @@ Prefer structured keys such as:
 
 ### i18n Usage
 
-- Translate:
-  - labels
-  - buttons
-  - headings
-  - helper text
-  - error text
-  - empty states
-  - notifications
+- Translate labels, buttons, headings, helper text, error text, empty states, and notifications.
 - If introducing new keys, place them in the most appropriate namespace.
 - Keep translation additions minimal and well organized.
-
----
 
 ## Supabase Conventions
 
 Supabase is used for backend services such as:
 
 - authentication
-- database reads/writes
+- database reads and writes
 - storage
 - possibly edge functions
 
-## Database schema
+### Database Schema
 
-### Tables
+#### Tables
 
-TABLE courses
-id
-created_at
-name
-city
-country
+`courses`
+- `id`
+- `created_at`
+- `name`
+- `city`
+- `country`
 
-Table round_holes
-id
-round_id,
-hole_id
-score
-completed
+`round_holes`
+- `id`
+- `round_id`
+- `hole_id`
+- `score`
+- `completed`
 
-TABLE hole_tee
-id
-hole_id
-tee_id
-yardage
+`hole_tee`
+- `id`
+- `hole_id`
+- `tee_id`
+- `yardage`
 
-TABLE holes
-id
-course_id
-hole_number
-par smallint
+`holes`
+- `id`
+- `course_id`
+- `hole_number`
+- `par` (`smallint`)
 
-Table rounds
-id
-created_at
-user_id
-course_id
-tee_id
-round_date
-is_finalised
+`rounds`
+- `id`
+- `created_at`
+- `user_id`
+- `course_id`
+- `tee_id`
+- `round_date`
+- `is_finalised`
 
-TABLE sg_expectation
-id bigint
-lie_type
-min_distance
-max_distance
-expected_strokes
+`sg_expectation`
+- `id` (`bigint`)
+- `lie_type`
+- `min_distance`
+- `max_distance`
+- `expected_strokes`
 
-TABLE shots
-id
-created_at
-round_hole_id
-shot_number
-distance_to_pin
-lie_type
-start_loaction
-end_location
-penalty_strokes
-holed_out
-club
-notes
-sg_value
+`shots`
+- `id`
+- `created_at`
+- `round_hole_id`
+- `shot_number`
+- `distance_to_pin`
+- `lie_type`
+- `start_loaction`
+- `end_location`
+- `penalty_strokes`
+- `holed_out`
+- `club`
+- `notes`
+- `sg_value`
 
-TABLE tees
-id
-course_id
-color text
-course_rating
-slope_rating
-total_yardage
+`tees`
+- `id`
+- `course_id`
+- `color` (`text`)
+- `course_rating`
+- `slope_rating`
+- `total_yardage`
 
-TABLE user_profiles
-id
-email
-created_at
-avatar_url
-category
-preferred_distance_unit
-role text
-user_name
+`user_profiles`
+- `id`
+- `email`
+- `created_at`
+- `avatar_url`
+- `category`
+- `preferred_distance_unit`
+- `role` (`text`)
+- `user_name`
 
 ### Rules for Supabase
 
@@ -292,22 +263,15 @@ user_name
 ### Data Access
 
 - UI components should not contain large raw Supabase query blocks unless already established in the codebase.
-- Prefer patterns such as:
-  - `services/`
-  - `lib/`
-  - `data/`
-  - `repositories/`
-    depending on the current structure.
+- Prefer patterns such as `services/`, `lib/`, `data/`, or `repositories/`, depending on the current structure.
 - Keep database interactions easy to test and reuse.
 
 ### Auth
 
-- Follow the project’s existing auth flow.
-- Keep session/user state handling consistent with existing patterns.
+- Follow the existing auth flow.
+- Keep session and user state handling consistent with existing patterns.
 - Do not invent parallel auth helpers if one already exists.
-- Guard authenticated routes/pages consistently.
-
----
+- Guard authenticated routes and pages consistently.
 
 ## File and Folder Organization
 
@@ -316,13 +280,11 @@ Follow the current project structure first. If creating new files, prefer patter
 - `src/components/` for reusable UI
 - `src/pages/` or `src/routes/` for route-level components
 - `src/hooks/` or `src/utils/` for helpers
-- `src/supabase/` for API / Supabase interaction
+- `src/supabase/` for API and Supabase interaction
 - `src/i18n/` for translations and config
-- `src/forms/` or feature-local form files for form models/validation
+- `src/forms/` or feature-local form files for form models and validation
 
 Do not reorganize the whole project unless explicitly asked.
-
----
 
 ## Preferred Coding Style
 
@@ -336,8 +298,6 @@ Do not reorganize the whole project unless explicitly asked.
 - Reuse constants where helpful.
 - Add comments only for non-obvious reasoning.
 
----
-
 ## Error Handling
 
 - Handle async failures explicitly.
@@ -345,8 +305,6 @@ Do not reorganize the whole project unless explicitly asked.
 - Show user-friendly messages in the UI.
 - Log useful debugging information only where appropriate.
 - Keep error handling consistent with existing app patterns.
-
----
 
 ## Accessibility
 
@@ -357,8 +315,6 @@ Do not reorganize the whole project unless explicitly asked.
 - Use translated accessible text where relevant.
 - Do not rely only on color to convey meaning.
 
----
-
 ## Performance
 
 - Avoid premature optimization.
@@ -366,8 +322,6 @@ Do not reorganize the whole project unless explicitly asked.
 - Avoid unnecessary rerenders or recalculations.
 - Lazy-load route-level code where appropriate if the project already supports it.
 - Keep bundle impact small.
-
----
 
 ## When Creating New Features
 
@@ -382,8 +336,6 @@ When asked to build a feature:
 7. Keep Supabase access centralized and typed.
 8. Prefer minimal, focused edits over broad unrelated refactors.
 
----
-
 ## When Editing Existing Code
 
 When modifying code:
@@ -394,9 +346,7 @@ When modifying code:
 4. Do not rename files, exports, or types without good reason.
 5. Maintain compatibility with current routes, forms, translations, and data flows.
 
----
-
-## Output Expectations for AI
+## Output Expectations
 
 When generating code for this project:
 
@@ -411,33 +361,29 @@ When generating code for this project:
 - Do not place large Supabase query logic directly inside UI components unless already consistent with the project.
 - Explain important architectural decisions briefly when they are not obvious.
 
----
-
 ## Preferred Patterns
 
-### Example: Translations
+### Translations
 
-- Good: use translation keys in components
-- Bad: hardcoded button labels or messages
+- Good: use translation keys in components.
+- Bad: hardcoded button labels or messages.
 
-### Example: Forms
+### Forms
 
-- Good: typed form values, reusable fields, translated errors
-- Bad: ad hoc uncontrolled inputs mixed with inconsistent validation
+- Good: typed form values, reusable fields, translated errors.
+- Bad: ad hoc uncontrolled inputs mixed with inconsistent validation.
 
-### Example: Supabase
+### Supabase
 
-- Good: service/helper layer that returns typed results
-- Bad: repeating raw queries in multiple components
+- Good: a service or helper layer that returns typed results.
+- Bad: repeating raw queries in multiple components.
 
-### Example: Components
+### Components
 
-- Good: small focused components
-- Bad: one very large page component containing fetch, form, modal, and table logic together
+- Good: small focused components.
+- Bad: one very large page component containing fetch, form, modal, and table logic together.
 
----
-
-## AI Checklist Before Finalizing Changes
+## Checklist Before Finalizing Changes
 
 Before suggesting or applying changes, check:
 
@@ -452,8 +398,6 @@ Before suggesting or applying changes, check:
 - Is styling consistent with Tailwind and the existing UI?
 - Is the code maintainable and easy to read?
 
----
-
 ## Stack Reminder
 
 Assume the following unless the existing code clearly shows otherwise:
@@ -464,4 +408,4 @@ Assume the following unless the existing code clearly shows otherwise:
 - `@solidjs/router` for routing
 - `@modular-forms/solid` for forms
 - `@mbarzda/solid-i18next` for i18n
-- Supabase for backend/data/auth
+- Supabase for backend, data, and auth

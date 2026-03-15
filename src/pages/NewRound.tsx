@@ -60,10 +60,11 @@ export default function NewRound() {
   const auth = useAuth();
   const navigate = useNavigate();
   const [courses] = createResource(fetchCourses);
-  const [unfinishedRounds, { refetch: refetchUnfinishedRounds }] = createResource(
-    () => auth.user()?.id,
-    async (userId) => (userId ? fetchUnfinishedRounds(userId) : []),
-  );
+  const [unfinishedRounds, { refetch: refetchUnfinishedRounds }] =
+    createResource(
+      () => auth.user()?.id,
+      async (userId) => (userId ? fetchUnfinishedRounds(userId) : []),
+    );
   const [roundDate, setRoundDate] = createSignal("");
   const [search, setSearch] = createSignal("");
   const [page, setPage] = createSignal(1);
@@ -199,12 +200,12 @@ export default function NewRound() {
     const holeRoundRows = holes.map((hole) => ({
       round_id: round.id,
       hole_id: hole.id,
-      strokes: 0,
+      score: 0,
       completed: false,
     }));
 
     const { error: roundHolesError } = await supabase
-      .from("hole_round")
+      .from("round_holes")
       .insert(holeRoundRows);
 
     if (roundHolesError) {
@@ -219,7 +220,8 @@ export default function NewRound() {
   };
 
   const getCourseName = (round: any) => {
-    if (Array.isArray(round.courses)) return round.courses[0]?.name ?? "Unknown course";
+    if (Array.isArray(round.courses))
+      return round.courses[0]?.name ?? "Unknown course";
     return round.courses?.name ?? "Unknown course";
   };
 
@@ -233,13 +235,17 @@ export default function NewRound() {
     setDeletingRoundId(roundId);
 
     const { error: deleteHoleRoundError } = await supabase
-      .from("hole_round")
+      .from("round_holes")
       .delete()
       .eq("round_id", roundId);
 
+    console.log(roundId);
+
     if (deleteHoleRoundError) {
       setDeletingRoundId("");
-      setStartError(`Failed to delete round holes: ${deleteHoleRoundError.message}`);
+      setStartError(
+        `Failed to delete round holes: ${deleteHoleRoundError.message}`,
+      );
       return;
     }
 
@@ -293,7 +299,9 @@ export default function NewRound() {
                     disabled={deletingRoundId() === String(round.id)}
                     onClick={() => handleDeleteRound(String(round.id))}
                   >
-                    {deletingRoundId() === String(round.id) ? "Deleting..." : "Delete"}
+                    {deletingRoundId() === String(round.id)
+                      ? "Deleting..."
+                      : "Delete"}
                   </button>
                 </div>
               </div>

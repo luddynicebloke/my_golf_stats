@@ -1,84 +1,69 @@
-﻿import { For } from "solid-js";
+import { For, Show } from "solid-js";
 
-type ScorecardHole = {
-  hole_round_id: number;
-  hole_number: number;
-  par: number;
-  yardage: number;
-  strokes: number | null;
+import type { ScorecardTableHole } from "./FrontNineTable";
+
+type BackNineTableProps = {
+  holes: ScorecardTableHole[];
 };
 
-export default function BackNineTable(props: {
-  holes: ScorecardHole[];
-  onChange?: (hole_round_id: number, strokes: number) => void;
-}) {
-  const total = (key: keyof ScorecardHole) =>
-    props.holes.reduce((t, h) => t + (Number(h[key]) || 0), 0);
+const total = (holes: ScorecardTableHole[], key: keyof ScorecardTableHole) =>
+  holes.reduce((sum, hole) => sum + (Number(hole[key]) || 0), 0);
 
+export default function BackNineTable(props: BackNineTableProps) {
   return (
-    <div class='max-w-full'>
-      <table class='text-center text-slate-700 dark:text-slate-600'>
+    <div class='w-full overflow-hidden'>
+      <table class='w-full table-fixed text-center text-[10px] text-slate-700 sm:text-sm'>
         <tbody>
           <tr>
-            <td class='p-0 font-bold text-slate-800 dark:text-slate-600'>
-              Hole
-            </td>
+            <td class='px-0.5 py-2 font-bold text-slate-800 sm:px-2'>Hole</td>
             <For each={props.holes}>
-              {(h) => (
-                <td class='font-semibold text-slate-800 dark:text-slate-600'>
-                  {h.hole_number}
+              {(hole) => (
+                <td class='px-0.5 py-2 font-semibold text-slate-800 sm:px-2'>
+                  {hole.hole_number}
                 </td>
               )}
             </For>
-            <td class='font-bold text-slate-800 dark:text-slate-600'>IN</td>
+            <td class='px-0.5 py-2 font-bold text-slate-800 sm:px-2'>IN</td>
           </tr>
 
           <tr>
-            <td class='font-bold text-slate-700 dark:text-slate-600'>Yds</td>
+            <td class='px-0.5 py-2 font-bold text-slate-600 sm:px-2'>Yds</td>
             <For each={props.holes}>
-              {(h) => <td class='p-1'>{h.yardage}</td>}
+              {(hole) => <td class='px-0.5 py-2 sm:px-2'>{hole.yardage}</td>}
             </For>
-            <td class='font-semibold text-slate-800 dark:text-slate-600'>
-              {total("yardage")}
+            <td class='px-0.5 py-2 font-semibold text-slate-800 sm:px-2'>
+              {total(props.holes, "yardage")}
             </td>
           </tr>
 
           <tr>
-            <td class='font-bold text-slate-700 dark:text-slate-600'>Par</td>
-            <For each={props.holes}>{(h) => <td>{h.par}</td>}</For>
-            <td class='font-semibold text-slate-800 dark:text-slate-600'>
-              {total("par")}
-            </td>
-          </tr>
-
-          <tr>
-            <td class='font-bold text-slate-700  dark:text-slate-600'>Score</td>
+            <td class='px-0.5 py-2 font-bold text-slate-600 sm:px-2'>Par</td>
             <For each={props.holes}>
-              {(h) => (
-                <td>
-                  {props.onChange ? (
-                    <input
-                      type='number'
-                      min='0'
-                      value={h.strokes?.toString()}
-                      class='w-8 rounded border border-slate-300 bg-white text-center text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'
-                      onInput={(e) =>
-                        props.onChange?.(
-                          h.hole_round_id,
-                          Number(e.currentTarget.value),
-                        )
-                      }
-                    />
-                  ) : (
-                    <span class='inline-block min-w-6 px-1 py-0.5 text-center bg-gray-700 rounded-sm text-white '>
-                      {h.strokes ?? 0}
-                    </span>
-                  )}
+              {(hole) => <td class='px-0.5 py-2 sm:px-2'>{hole.par}</td>}
+            </For>
+            <td class='px-0.5 py-2 font-semibold text-slate-800 sm:px-2'>
+              {total(props.holes, "par")}
+            </td>
+          </tr>
+
+          <tr>
+            <td class='px-0.5 py-2 font-bold text-slate-600 sm:px-2'>Score</td>
+            <For each={props.holes}>
+              {(hole) => (
+                <td class='px-0.5 py-2 sm:px-2'>
+                  <span class='inline-flex min-w-0 justify-center rounded-md bg-white px-1 py-0.5 font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 sm:px-2 sm:py-1'>
+                    {hole.score ?? "-"}
+                  </span>
                 </td>
               )}
             </For>
-            <td class='bg-slate-500 rounded-sm p-0 font-semibold text-white'>
-              {total("strokes")}
+            <td class='px-0.5 py-2 font-semibold text-slate-800 sm:px-2'>
+              <Show
+                when={props.holes.some((hole) => hole.score != null)}
+                fallback="-"
+              >
+                {total(props.holes, "score")}
+              </Show>
             </td>
           </tr>
         </tbody>
