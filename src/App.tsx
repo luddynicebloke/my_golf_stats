@@ -26,6 +26,7 @@ const ScorecardEntry = lazy(
   () => import("./components/scoreEntry/ScorecardEntry"),
 );
 const User = lazy(() => import("./components/admin/user"));
+const Rounds = lazy(() => import("./pages/Rounds"));
 
 const App: Component = () => {
   return (
@@ -75,6 +76,14 @@ const App: Component = () => {
             component={(props) => (
               <ProtectedRoute>
                 <NewRound />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path='/rounds'
+            component={(props) => (
+              <ProtectedRoute>
+                <Rounds />
               </ProtectedRoute>
             )}
           />

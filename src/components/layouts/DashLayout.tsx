@@ -4,7 +4,7 @@ import Sidenav from "./sidenav";
 const DashLayout: ParentComponent = (props) => {
   return (
     <div class='min-h-screen bg-slate-100'>
-      <div class='mx-auto flex min-h-screen w-full max-w-[1600px] flex-col md:flex-row md:overflow-hidden'>
+      <div class='mx-auto flex min-h-screen w-full max-w-400 flex-col md:flex-row md:overflow-hidden'>
         <div class='w-full flex-none border-b border-slate-200 bg-white md:w-72 md:border-b-0 md:border-r'>
           <Sidenav />
         </div>
