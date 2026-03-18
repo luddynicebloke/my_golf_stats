@@ -1,33 +1,16 @@
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  onMount,
-  Show,
-} from "solid-js";
+import { createMemo, createSignal, onMount, Show } from "solid-js";
 import { A } from "@solidjs/router";
 
 import { supabase } from "../../supabase/client";
 import BackNineTable from "./BackNineTable";
 import FrontNineTable from "./FrontNineTable";
-import Slider from "./Slider";
-
-type ScorecardHole = {
-  round_hole_id: number;
-  hole_number: number;
-  par: number;
-  yardage: number;
-  score: number | null;
-  completed: boolean;
-};
+import LocalShotPanel from "./LocalShotPanel";
+import { type LocalShot, type ScorecardHole } from "../../lib/scoreEntryTypes";
 
 type RoundHeader = {
   courseName: string;
   teeColor: string;
 };
-
-type BallLie = "Tee" | "Fairway" | "Rough" | "Bunker" | "Green" | "Recovery";
 
 type RoundRow = {
   id: number;
@@ -51,27 +34,13 @@ const emptyHeader: RoundHeader = {
   teeColor: "",
 };
 
-const ballLies: BallLie[] = [
-  "Tee",
-  "Fairway",
-  "Rough",
-  "Bunker",
-  "Green",
-  "Recovery",
-];
-
-const activeButtonClass =
-  "border-cyan-300 bg-cyan-50 text-cyan-800";
+const activeButtonClass = "border-cyan-300 bg-cyan-50 text-cyan-800";
 const inactiveButtonClass =
   "border-slate-300 bg-white text-slate-700 hover:bg-slate-100";
 
-/*
-T is a generic type, meaning "whatever object shape you expect"
-if value is an array, it returns the first item
-if the array is empty, it returns null
-if value is already a single object, it returns that object
-if value is null or undefined, it returns null
-*/
+const getHoleScore = (shots: LocalShot[]): number =>
+  shots.reduce((total, shot) => total + 1 + shot.penaltyShots, 0);
+
 const getSingleRelation = <T,>(value: T | T[] | null | undefined): T | null => {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
@@ -84,48 +53,25 @@ export default function ScorecardEntry(props: { id: string }) {
   const [selectedHoleNumber, setSelectedHoleNumber] = createSignal(1);
   const [scorecard, setScorecard] = createSignal<ScorecardHole[]>([]);
   const [roundHeader, setRoundHeader] = createSignal<RoundHeader>(emptyHeader);
-  const [ballLie, setBallLie] = createSignal<BallLie>("Tee");
-  const [sliderValue, setSliderValue] = createSignal(1);
-  const [penaltyEnabled, setPenaltyEnabled] = createSignal(false);
-  const [penaltyShots, setPenaltyShots] = createSignal<number | null>(null);
-  const [holedOut, setHoledOut] = createSignal(false);
   const [loading, setLoading] = createSignal(true);
   const [loadError, setLoadError] = createSignal<string | null>(null);
+  const [entryError, setEntryError] = createSignal<string | null>(null);
+  const [savingHole, setSavingHole] = createSignal(false);
 
-  const resetShotInputs = (yardage: number) => {
-    setBallLie("Tee");
-    setSliderValue(yardage);
-    setPenaltyEnabled(false);
-    setPenaltyShots(null);
-    setHoledOut(false);
-  };
-
-  const setActiveHole = (holeNumber: number) => {
-    setSelectedHoleNumber(holeNumber);
-  };
+  const frontNine = createMemo(() =>
+    scorecard().filter((hole) => hole.hole_number <= 9),
+  );
+  const backNine = createMemo(() =>
+    scorecard().filter((hole) => hole.hole_number >= 10),
+  );
+  const selectedHole = createMemo(
+    () =>
+      scorecard().find((hole) => hole.hole_number === selectedHoleNumber()) ??
+      scorecard()[0],
+  );
 
   const setNine = (nine: "front" | "back") => {
     setActiveNine(nine);
-
-    const firstVisibleHole =
-      nine === "front" ? frontNine()[0] : backNine()[0];
-    if (firstVisibleHole) {
-      setActiveHole(firstVisibleHole.hole_number);
-    }
-  };
-
-  const togglePenalty = () => {
-    const nextEnabled = !penaltyEnabled();
-    setPenaltyEnabled(nextEnabled);
-
-    if (!nextEnabled) {
-      setPenaltyShots(null);
-      return;
-    }
-
-    if (penaltyShots() == null) {
-      setPenaltyShots(1);
-    }
   };
 
   const loadScorecard = async () => {
@@ -196,6 +142,7 @@ export default function ScorecardEntry(props: { id: string }) {
 
         return {
           round_hole_id: Number(row.id),
+          hole_id: Number(row.hole_id),
           hole_number: Number(hole.hole_number),
           par: Number(hole.par),
           yardage: yardageByHoleId.get(Number(row.hole_id)) ?? 0,
@@ -208,57 +155,106 @@ export default function ScorecardEntry(props: { id: string }) {
 
     setScorecard(rows);
     if (rows.length > 0) {
-      const firstHole = rows[0];
-      setActiveNine(firstHole.hole_number <= 9 ? "front" : "back");
-      setSelectedHoleNumber(firstHole.hole_number);
+      const nextHole = rows.find((hole) => !hole.completed) ?? rows[rows.length - 1];
+      setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
+      setSelectedHoleNumber(nextHole.hole_number);
     }
     setLoading(false);
   };
 
+  const updateScorecardHole = (
+    holeNumber: number,
+    updates: Partial<ScorecardHole>,
+  ) => {
+    setScorecard((current) =>
+      current.map((hole) =>
+        hole.hole_number === holeNumber ? { ...hole, ...updates } : hole,
+      ),
+    );
+  };
+
+  const moveToNextHole = (completedHoleNumber: number) => {
+    const nextHole = scorecard().find(
+      (hole) => hole.hole_number > completedHoleNumber && !hole.completed,
+    );
+
+    if (!nextHole) return;
+
+    setSelectedHoleNumber(nextHole.hole_number);
+    setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
+  };
+
+  const persistCompletedHole = async (
+    hole: ScorecardHole,
+    completedShots: LocalShot[],
+  ): Promise<boolean> => {
+    setEntryError(null);
+    setSavingHole(true);
+
+    try {
+      const shotRows = completedShots.map((shot) => ({
+        round_hole_id: hole.round_hole_id,
+        shot_number: shot.shotNumber,
+        distance_to_pin: shot.distanceToPin,
+        lie_type: shot.lieType,
+        penalty_strokes: shot.penaltyShots,
+        holed_out: shot.holedOut,
+      }));
+
+      const score = getHoleScore(completedShots);
+
+      const { error: deleteExistingError } = await supabase
+        .from("shots")
+        .delete()
+        .eq("round_hole_id", hole.round_hole_id);
+
+      if (deleteExistingError) {
+        throw new Error(deleteExistingError.message);
+      }
+
+      const { error: insertShotsError } = await supabase
+        .from("shots")
+        .insert(shotRows);
+
+      if (insertShotsError) {
+        throw new Error(insertShotsError.message);
+      }
+
+      const { data: updatedHoles, error: updateHoleError } = await supabase
+        .from("round_holes")
+        .update({
+          score,
+          completed: true,
+        })
+        .eq("round_id", roundId)
+        .eq("hole_id", hole.hole_id)
+        .select("id");
+
+      if (updateHoleError) {
+        throw new Error(updateHoleError.message);
+      }
+
+      if (!updatedHoles || updatedHoles.length === 0) {
+        throw new Error("No round_holes row was updated.");
+      }
+
+      updateScorecardHole(hole.hole_number, {
+        score,
+        completed: true,
+      });
+      moveToNextHole(hole.hole_number);
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error.";
+      setEntryError(`Failed to complete hole: ${message}`);
+      return false;
+    } finally {
+      setSavingHole(false);
+    }
+  };
+
   onMount(() => {
     void loadScorecard();
-  });
-
-  const frontNine = createMemo(() =>
-    scorecard().filter((hole) => hole.hole_number <= 9),
-  );
-  const backNine = createMemo(() =>
-    scorecard().filter((hole) => hole.hole_number >= 10),
-  );
-  const visibleHoles = createMemo(() =>
-    activeNine() === "front" ? frontNine() : backNine(),
-  );
-  const selectedHole = createMemo(
-    () =>
-      scorecard().find((hole) => hole.hole_number === selectedHoleNumber()) ??
-      scorecard()[0],
-  );
-  const isGreenLie = createMemo(() => ballLie() === "Green");
-  const sliderLabel = createMemo(() =>
-    isGreenLie() ? "Distance to hole" : "Distance to pin",
-  );
-  const sliderMax = createMemo(() =>
-    isGreenLie() ? 100 : Math.max(selectedHole()?.yardage ?? 1, 600),
-  );
-  const sliderStep = createMemo(() => Math.max(1, Math.round(sliderMax() / 6)));
-  const sliderMarks = createMemo(() =>
-    Array.from({ length: 7 }, (_, index) => sliderStep() * index),
-  );
-
-  createEffect(() => {
-    const hole = selectedHole();
-    if (!hole) return;
-
-    resetShotInputs(hole.yardage);
-  });
-
-  createEffect(() => {
-    if (isGreenLie()) {
-      setSliderValue(15);
-      return;
-    }
-
-    setSliderValue((currentValue) => Math.min(currentValue, sliderMax()));
   });
 
   return (
@@ -301,9 +297,7 @@ export default function ScorecardEntry(props: { id: string }) {
               <button
                 type='button'
                 class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
-                  activeNine() === "front"
-                    ? activeButtonClass
-                    : inactiveButtonClass
+                  activeNine() === "front" ? activeButtonClass : inactiveButtonClass
                 }`}
                 onClick={() => setNine("front")}
               >
@@ -312,9 +306,7 @@ export default function ScorecardEntry(props: { id: string }) {
               <button
                 type='button'
                 class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
-                  activeNine() === "back"
-                    ? activeButtonClass
-                    : inactiveButtonClass
+                  activeNine() === "back" ? activeButtonClass : inactiveButtonClass
                 }`}
                 onClick={() => setNine("back")}
               >
@@ -328,24 +320,6 @@ export default function ScorecardEntry(props: { id: string }) {
               ) : (
                 <BackNineTable holes={backNine()} />
               )}
-            </div>
-
-            <div class='mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5'>
-              <For each={visibleHoles()}>
-                {(hole) => (
-                  <button
-                    type='button'
-                    class={`rounded-md border px-2 py-2 text-left text-xs font-semibold ${
-                      selectedHoleNumber() === hole.hole_number
-                        ? activeButtonClass
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
-                    onClick={() => setActiveHole(hole.hole_number)}
-                  >
-                    H{hole.hole_number}
-                  </button>
-                )}
-              </For>
             </div>
           </Show>
         </Show>
@@ -365,99 +339,12 @@ export default function ScorecardEntry(props: { id: string }) {
               </div>
             </div>
 
-            <div class='rounded-xl border border-slate-200 bg-slate-50 p-4'>
-              <Slider
-                id={`hole-${hole().hole_number}-distance`}
-                label={sliderLabel()}
-                value={sliderValue()}
-                onChange={setSliderValue}
-                max={sliderMax()}
-                r1={sliderMarks()[0]}
-                r2={sliderMarks()[1]}
-                r3={sliderMarks()[2]}
-                r4={sliderMarks()[3]}
-                r5={sliderMarks()[4]}
-                r6={sliderMarks()[5]}
-                r7={sliderMarks()[6]}
-              />
-
-              <div class='mt-2'>
-                <p class='mb-3 text-sm font-medium text-slate-700'>Ball lie</p>
-                <div class='grid grid-cols-6 gap-2'>
-                  <For each={ballLies}>
-                    {(lie) => (
-                      <button
-                        type='button'
-                        class={`justify-center rounded-md border px-2 py-3 text-center text-xs font-semibold transition-colors sm:text-sm ${
-                          ballLie() === lie
-                            ? activeButtonClass
-                            : inactiveButtonClass
-                        }`}
-                        onClick={() => setBallLie(lie)}
-                      >
-                        {lie}
-                      </button>
-                    )}
-                  </For>
-                </div>
-
-                <div class='mt-4 flex items-end gap-3'>
-                  <button
-                    type='button'
-                    class={`rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
-                      penaltyEnabled()
-                        ? activeButtonClass
-                        : inactiveButtonClass
-                    }`}
-                    onClick={togglePenalty}
-                  >
-                    Penalty
-                  </button>
-
-                  <Show when={penaltyEnabled()}>
-                    <div class='w-24'>
-                      <input
-                        id='penalty-shots'
-                        type='number'
-                        min='1'
-                        step='1'
-                        value={penaltyShots() ?? ""}
-                        onInput={(event) => {
-                          const value = event.currentTarget.value;
-                          setPenaltyShots(value === "" ? null : Number(value));
-                        }}
-                        class='block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-100'
-                      />
-                    </div>
-                  </Show>
-
-                  <label
-                    for='holed-out'
-                    class='ml-auto flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700'
-                  >
-                    <input
-                      id='holed-out'
-                      type='checkbox'
-                      checked={holedOut()}
-                      onChange={(event) =>
-                        setHoledOut(event.currentTarget.checked)
-                      }
-                      class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
-                    />
-                    Holed out
-                  </label>
-                </div>
-
-                <div class='mt-4'>
-                  <button
-                    type='button'
-                    class='rounded-md border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800 transition-colors hover:bg-cyan-100'
-                  >
-                    Next shot
-                  </button>
-                </div>
-              </div>
-            </div>
+            <LocalShotPanel
+              entryError={entryError()}
+              hole={hole()}
+              onCompleteHole={persistCompletedHole}
+              savingHole={savingHole()}
+            />
           </div>
         )}
       </Show>
