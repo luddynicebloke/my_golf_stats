@@ -248,6 +248,15 @@ export default function ScorecardEntry(props: { id: string }) {
 
       const hasNextHole = moveToNextHole(hole.hole_number);
       if (!hasNextHole) {
+        const { error: finalizeRoundError } = await supabase
+          .from("rounds")
+          .update({ is_finalised: true })
+          .eq("id", roundId);
+
+        if (finalizeRoundError) {
+          throw new Error(finalizeRoundError.message);
+        }
+
         setRoundCompleted(true);
       }
       return true;

@@ -8,13 +8,7 @@ export type ScorecardHole = {
   completed: boolean;
 };
 
-export type BallLie =
-  | "Tee"
-  | "Fairway"
-  | "Rough"
-  | "Bunker"
-  | "Green"
-  | "Recovery";
+export type BallLie = "Tee" | "Fairway" | "Rough" | "Bunker" | "Green";
 
 export type LocalShot = {
   shotNumber: number;
@@ -30,5 +24,4 @@ export const ballLies: BallLie[] = [
   "Rough",
   "Bunker",
   "Green",
-  "Recovery",
 ];

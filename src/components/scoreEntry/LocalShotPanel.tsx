@@ -26,7 +26,9 @@ const getDefaultDistance = (hole: ScorecardHole, lie: BallLie): number =>
   lie === "Green" ? 15 : hole.yardage;
 
 export default function LocalShotPanel(props: LocalShotPanelProps) {
-  const [ballLie, setBallLie] = createSignal<BallLie>(getDefaultLie(props.hole));
+  const [ballLie, setBallLie] = createSignal<BallLie>(
+    getDefaultLie(props.hole),
+  );
   const [sliderValue, setSliderValue] = createSignal(1);
   const [penaltyEnabled, setPenaltyEnabled] = createSignal(false);
   const [penaltyShots, setPenaltyShots] = createSignal<number | null>(null);
@@ -172,7 +174,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
             </For>
           </div>
 
-          <div class='mt-4 flex items-end gap-3'>
+          <div class='mt-4 flex flex-wrap items-end gap-3'>
             <button
               type='button'
               class={`rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
@@ -200,22 +202,15 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
               </div>
             </Show>
 
-            <label
-              for='holed-out'
-              class='ml-auto flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700'
+            <button
+              type='button'
+              class={`ml-auto rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${inactiveButtonClass}`}
             >
-              <input
-                id='holed-out'
-                type='checkbox'
-                checked={holedOut()}
-                onChange={(event) => setHoledOut(event.currentTarget.checked)}
-                class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
-              />
-              Holed out
-            </label>
+              Revovery
+            </button>
           </div>
 
-          <div class='mt-4'>
+          <div class='mt-4 flex flex-wrap items-center justify-between gap-3'>
             <button
               type='button'
               class='rounded-md border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800 transition-colors hover:bg-cyan-100'
@@ -228,6 +223,19 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                   ? "Next hole"
                   : "Next shot"}
             </button>
+            <label
+              for='holed-out'
+              class='flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700'
+            >
+              <input
+                id='holed-out'
+                type='checkbox'
+                checked={holedOut()}
+                onChange={(event) => setHoledOut(event.currentTarget.checked)}
+                class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
+              />
+              Holed out
+            </label>
           </div>
         </div>
       </div>
