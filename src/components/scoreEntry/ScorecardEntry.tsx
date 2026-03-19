@@ -57,6 +57,7 @@ export default function ScorecardEntry(props: { id: string }) {
   const [loadError, setLoadError] = createSignal<string | null>(null);
   const [entryError, setEntryError] = createSignal<string | null>(null);
   const [savingHole, setSavingHole] = createSignal(false);
+  const [roundCompleted, setRoundCompleted] = createSignal(false);
 
   const frontNine = createMemo(() =>
     scorecard().filter((hole) => hole.hole_number <= 9),
@@ -159,6 +160,7 @@ export default function ScorecardEntry(props: { id: string }) {
       setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
       setSelectedHoleNumber(nextHole.hole_number);
     }
+    setRoundCompleted(rows.length > 0 && rows.every((hole) => hole.completed));
     setLoading(false);
   };
 
@@ -178,10 +180,11 @@ export default function ScorecardEntry(props: { id: string }) {
       (hole) => hole.hole_number > completedHoleNumber && !hole.completed,
     );
 
-    if (!nextHole) return;
+    if (!nextHole) return false;
 
     setSelectedHoleNumber(nextHole.hole_number);
     setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
+    return true;
   };
 
   const persistCompletedHole = async (
@@ -242,7 +245,11 @@ export default function ScorecardEntry(props: { id: string }) {
         score,
         completed: true,
       });
-      moveToNextHole(hole.hole_number);
+
+      const hasNextHole = moveToNextHole(hole.hole_number);
+      if (!hasNextHole) {
+        setRoundCompleted(true);
+      }
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error.";
@@ -339,12 +346,32 @@ export default function ScorecardEntry(props: { id: string }) {
               </div>
             </div>
 
-            <LocalShotPanel
-              entryError={entryError()}
-              hole={hole()}
-              onCompleteHole={persistCompletedHole}
-              savingHole={savingHole()}
-            />
+            <Show
+              when={!roundCompleted()}
+              fallback={
+                <div class='rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center'>
+                  <h3 class='font-rubik text-xl font-semibold text-emerald-800'>
+                    Round completed
+                  </h3>
+                  <p class='mt-2 text-sm text-emerald-700'>
+                    All 18 holes have been saved successfully.
+                  </p>
+                  <A
+                    href='/dashboard'
+                    class='mt-4 inline-flex rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100'
+                  >
+                    Return to Dashboard
+                  </A>
+                </div>
+              }
+            >
+              <LocalShotPanel
+                entryError={entryError()}
+                hole={hole()}
+                onCompleteHole={persistCompletedHole}
+                savingHole={savingHole()}
+              />
+            </Show>
           </div>
         )}
       </Show>
