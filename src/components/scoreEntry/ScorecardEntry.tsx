@@ -314,7 +314,7 @@ export default function ScorecardEntry(props: { id: string }) {
               </button>
             </div>
 
-            <div class='mt-4 overflow-x-auto'>
+            <div class='mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-2 sm:p-3'>
               {activeNine() === "front" ? (
                 <FrontNineTable holes={frontNine()} />
               ) : (
