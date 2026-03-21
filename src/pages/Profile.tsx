@@ -3,32 +3,41 @@ import { supabase } from "../supabase/client";
 import { useAuth } from "../context/AuthProvider";
 import ChangeEmailModal from "../components/profile/ChangeEmailModal";
 
-const categoryOptions = [
-  "Pro M",
-  "Am M",
-  "Senior M",
-  "Pro F",
-  "Am F",
-  "Senior F",
-];
-
-const distanceOptions = ["yards", "meters"];
+const distanceOptions = ["yards", "metres"];
 
 type SaveState = {
   type: "success" | "error";
   message: string;
 } | null;
 
+type CategoryOption = {
+  id: number;
+  name: string;
+};
+
+type ProfileData = {
+  user_name: string | null;
+  avatar_url: string | null;
+  preferred_distance_unit: string | null;
+  category: {
+    id: number;
+    name: string;
+  };
+};
+
 const Profile = () => {
   const { user, refreshProfile } = useAuth();
   let hasLoadedProfileOnce = false;
 
   const [loading, setLoading] = createSignal(true);
+  const [categoryOptions, setCategoryOptions] = createSignal<CategoryOption[]>(
+    [],
+  );
 
   const [avatar, setAvatar] = createSignal("");
   const [username, setUsername] = createSignal("");
-  const [category, setCategory] = createSignal("Am M");
-  const [distance, setDistance] = createSignal("yards");
+  const [category, setCategory] = createSignal(0);
+  const [distance, setDistance] = createSignal("");
   const [email, setEmail] = createSignal("");
   const [emailDraft, setEmailDraft] = createSignal("");
   const [emailModalOpen, setEmailModalOpen] = createSignal(false);
@@ -59,26 +68,43 @@ const Profile = () => {
       }
 
       try {
-        const { data, error } = await supabase
-          .from("user_profiles")
-          .select("user_name, avatar_url, category, preferred_distance_unit")
-          .eq("id", currentUser.id)
-          .single();
+        const [
+          { data: profileData, error: profileError },
+          { data: categories, error: categoryError },
+        ] = await Promise.all([
+          supabase
+            .from("user_profiles")
+            .select(
+              "user_name, avatar_url, preferred_distance_unit, category(id, name)",
+            )
+            .eq("id", currentUser.id)
+            .single<ProfileData>(),
+          supabase.from("category").select("id, name").order("id"),
+        ]);
 
         if (cancelled) return;
 
-        if (error) {
+        if (profileError) {
           setProfileState({
             type: "error",
-            message: `Failed to load profile: ${error.message}`,
+            message: `Failed to load profile: ${profileError.message}`,
           });
           return;
         }
 
-        setUsername(data.user_name ?? "");
-        setAvatar(data.avatar_url ?? "");
-        setCategory(data.category ?? "Am M");
-        setDistance(data.preferred_distance_unit ?? "yards");
+        if (categoryError) {
+          setProfileState({
+            type: "error",
+            message: `Failed to load categories: ${categoryError.message}`,
+          });
+          return;
+        }
+
+        setCategoryOptions(categories ?? []);
+        setUsername(profileData.user_name ?? "");
+        setAvatar(profileData.avatar_url ?? "");
+        setCategory(profileData.category.id ?? "");
+        setDistance(profileData.preferred_distance_unit ?? "yards");
       } catch (error) {
         if (!cancelled) {
           setProfileState({
@@ -113,12 +139,20 @@ const Profile = () => {
       return;
     }
 
+    if (!category()) {
+      setProfileState({
+        type: "error",
+        message: "Category is required.",
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from("user_profiles")
       .update({
         user_name: username().trim(),
         avatar_url: avatar().trim() || null,
-        category: category(),
+        category_id: category(),
         preferred_distance_unit: distance(),
       })
       .eq("id", currentUser.id);
@@ -274,11 +308,12 @@ const Profile = () => {
                 </span>
                 <select
                   value={category()}
-                  onChange={(e) => setCategory(e.currentTarget.value)}
+                  onChange={(e) => setCategory(Number(e.currentTarget.value))}
                   class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800'
                 >
-                  {categoryOptions.map((option) => (
-                    <option value={option}>{option}</option>
+                  <option value=''>Select category</option>
+                  {categoryOptions().map((option) => (
+                    <option value={option.id}>{option.name}</option>
                   ))}
                 </select>
               </label>

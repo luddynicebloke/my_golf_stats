@@ -2,41 +2,49 @@ import { createSignal, Show } from "solid-js";
 import { supabase } from "../../supabase/client";
 
 type UserType = {
-  id: string;
-  created_at: string;
-  email: string;
-  avatar_url: string;
-  category: string;
-  role: string;
-  preferred_distance_unit: string;
-  user_name: string;
+  id: string | null;
+  created_at: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  category: {
+    id: number | null;
+    name: string | null;
+  };
+  role: string | null;
+  preferred_distance_unit: string | null;
+  user_name: string | null;
+};
+
+type CategoryOption = {
+  id: number;
+  name: string;
 };
 
 type UserProps = {
   user: UserType;
   onUpdated: (
     id: string,
-    updates: Partial<Omit<UserType, "id" | "created_at">>,
+    updates: {
+      email?: string;
+      avatar_url?: string | null;
+      role?: string;
+      preferred_distance_unit?: string;
+      user_name?: string;
+      category_id?: number;
+    },
   ) => void;
+  categoryOptions: CategoryOption[];
 };
 
 const roleOptions = ["admin", "user"] as const;
-const distanceOptions = ["yards", "meters"] as const;
-const categoryOptions = [
-  "Pro M",
-  "Am M",
-  "Senior M",
-  "Pro F",
-  "Am F",
-  "Senior F",
-] as const;
+const distanceOptions = ["yards", "metres"] as const;
 
 const User = (props: UserProps) => {
   const [editing, setEditing] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [errorMessage, setErrorMessage] = createSignal("");
 
-  const [email, setEmail] = createSignal(props.user.email);
+  const [email, setEmail] = createSignal(props.user.email ?? "");
   const [avatar, setAvatar] = createSignal(props.user.avatar_url || "");
   const [user_name, setUser_name] = createSignal(
     props.user.user_name || "golfer",
@@ -45,15 +53,19 @@ const User = (props: UserProps) => {
   const [distance, setDistance] = createSignal(
     props.user.preferred_distance_unit || "yards",
   );
-  const [category, setCategory] = createSignal(props.user.category || "Am M");
+  const [category, setCategory] = createSignal(
+    props.user.category?.id != null ? String(props.user.category.id) : "",
+  );
 
   const resetForm = () => {
-    setEmail(props.user.email);
+    setEmail(props.user.email ?? "");
     setAvatar(props.user.avatar_url || "");
-    setUser_name(props.user.user_name);
+    setUser_name(props.user.user_name || "golfer");
     setRole(props.user.role || "user");
     setDistance(props.user.preferred_distance_unit || "yards");
-    setCategory(props.user.category || "Am M");
+    setCategory(
+      props.user.category?.id != null ? String(props.user.category.id) : "",
+    );
 
     setErrorMessage("");
   };
@@ -61,13 +73,20 @@ const User = (props: UserProps) => {
   const saveUser = async () => {
     setErrorMessage("");
     setSaving(true);
+
+    if (!category()) {
+      setErrorMessage("Category is required.");
+      setSaving(false);
+      return;
+    }
+
     const updates = {
       email: email().trim(),
-      avatar_url: avatar().trim(),
+      avatar_url: avatar().trim() || null,
       role: role(),
       preferred_distance_unit: distance(),
-      category: category(),
-      user_name: user_name(),
+      category_id: Number(category()),
+      user_name: user_name().trim(),
     };
 
     const { error } = await supabase
@@ -81,7 +100,9 @@ const User = (props: UserProps) => {
       return;
     }
 
-    props.onUpdated(props.user.id, updates);
+    if (props.user.id) {
+      props.onUpdated(props.user.id, updates);
+    }
     setEditing(false);
     setSaving(false);
   };
@@ -93,12 +114,14 @@ const User = (props: UserProps) => {
           scope='row'
           class='whitespace-nowrap px-6 py-4 font-medium text-slate-700'
         >
-          {props.user.email}
+          {props.user.email ?? ""}
         </th>
         <td class='px-6 py-4'>
-          {new Date(props.user.created_at).toLocaleDateString()}
+          {props.user.created_at
+            ? new Date(props.user.created_at).toLocaleDateString()
+            : ""}
         </td>
-        <td class='px-6 py-4'>{props.user.category}</td>
+        <td class='px-6 py-4'>{props.user.category?.name ?? ""}</td>
         <td class='px-6 py-4'>{props.user.role}</td>
         <td class='px-6 py-4'>{props.user.preferred_distance_unit}</td>
         <td class='px-6 py-4'>{props.user.avatar_url}</td>
@@ -129,6 +152,7 @@ const User = (props: UserProps) => {
                   Email
                 </span>
                 <input
+                  disabled
                   type='email'
                   value={email()}
                   onInput={(e) => setEmail(e.currentTarget.value)}
@@ -198,8 +222,9 @@ const User = (props: UserProps) => {
                   onChange={(e) => setCategory(e.currentTarget.value)}
                   class='w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-800'
                 >
-                  {categoryOptions.map((c) => (
-                    <option value={c}>{c}</option>
+                  <option value=''>Select category</option>
+                  {props.categoryOptions.map((option) => (
+                    <option value={String(option.id)}>{option.name}</option>
                   ))}
                 </select>
               </label>

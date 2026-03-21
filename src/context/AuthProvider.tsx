@@ -13,7 +13,7 @@ import {
 type UserProfile = {
   email: string;
   avatar_url: string;
-  category: string;
+  category_id: string;
   units: string;
   user_role: string;
 };
@@ -28,7 +28,7 @@ type ProfileData = {
   user_name: string | null;
   email: string | null;
   avatar_url: string | null;
-  category: string | null;
+  category_id: string | null;
   preferred_distance_unit: string | null;
 };
 
@@ -79,7 +79,9 @@ export const AuthProvider: ParentComponent = (props) => {
 
     const { data, error } = await supabase
       .from("user_profiles")
-      .select("user_name, email, avatar_url, category, preferred_distance_unit")
+      .select(
+        "user_name, email, avatar_url, category_id, preferred_distance_unit",
+      )
       .eq("id", currentUser.id)
       .single();
 

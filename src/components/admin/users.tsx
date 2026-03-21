@@ -3,42 +3,90 @@ import User from "./user";
 
 import { supabase } from "../../supabase/client";
 
-type UserType = {
-  id: string;
-  created_at: string;
-  email: string;
-  avatar_url: string;
-  category: string;
-  role: string;
-  preferred_distance_unit: string;
-  user_name: string;
+type CategoryOption = {
+  id: number;
+  name: string;
 };
 
-const fetchCourses = async () => {
-  const { data, error } = await supabase.from("user_profiles").select("*");
+type UserType = {
+  id: string | null;
+  created_at: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  category: {
+    id: number | null;
+    name: string | null;
+  };
+  role: string | null;
+  preferred_distance_unit: string | null;
+  user_name: string | null;
+};
 
-  if (error) {
-    console.error("Error fetching courses:", error);
+type UserUpdates = {
+  email?: string;
+  avatar_url?: string | null;
+  role?: string;
+  preferred_distance_unit?: string;
+  user_name?: string;
+  category_id?: number;
+};
+
+const fetchUsers = async () => {
+  const [
+    { data: users, error: usersError },
+    { data: categories, error: categoriesError },
+  ] = await Promise.all([
+    supabase
+      .from("user_profiles")
+      .select(
+        "id, created_at, email, avatar_url, category(id, name), role, preferred_distance_unit, user_name",
+      ),
+    supabase.from("category").select("id, name").order("id"),
+  ]);
+
+  if (usersError) {
+    console.error("Error fetching users:", usersError);
   }
 
-  return { users: data as UserType[] };
+  if (categoriesError) {
+    console.error("Error fetching categories:", categoriesError);
+  }
+
+  return {
+    users: users as UserType[] | null,
+    categories: (categories as CategoryOption[] | null) ?? [],
+  };
 };
 
 const Users = () => {
-  const [users, { mutate }] = createResource(fetchCourses);
+  const [users, { mutate }] = createResource(fetchUsers);
 
   const handleUserUpdated = (
     id: string,
-    updates: Partial<Omit<UserType, "id" | "created_at">>,
+    updates: UserUpdates,
   ) => {
     mutate((prev) => {
       if (!prev?.users) return prev;
+      const nextCategory =
+        updates.category_id == null
+          ? null
+          : prev.categories.find((category) => category.id === updates.category_id) ??
+            null;
+
       return {
+        ...prev,
         users: prev.users.map((u) =>
           u.id === id
             ? {
                 ...u,
                 ...updates,
+                category:
+                  nextCategory == null
+                    ? u.category
+                    : {
+                        id: nextCategory.id,
+                        name: nextCategory.name,
+                      },
               }
             : u,
         ),
@@ -85,7 +133,13 @@ const Users = () => {
             </thead>
             <tbody>
               <For each={users()?.users}>
-                {(user) => <User user={user} onUpdated={handleUserUpdated} />}
+                {(user) => (
+                  <User
+                    user={user}
+                    onUpdated={handleUserUpdated}
+                    categoryOptions={users()?.categories ?? []}
+                  />
+                )}
               </For>
             </tbody>
           </table>
