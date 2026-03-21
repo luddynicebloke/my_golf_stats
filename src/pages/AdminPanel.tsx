@@ -2,6 +2,7 @@ import { createSignal, Match, Switch } from "solid-js";
 
 import Courses from "../components/admin/courses";
 import Users from "../components/admin/users";
+import Stokes_expectation from "../components/admin/stokes_expectation";
 import { A } from "@solidjs/router";
 
 type View = "courses" | "add_course" | "users" | "other";
@@ -22,7 +23,7 @@ const AdminPanel = () => {
     {
       key: "other",
       label: "Other",
-      description: " Reserved for future admin actions",
+      description: "Review strokes gained table and categories",
     },
   ];
 
@@ -83,7 +84,7 @@ const AdminPanel = () => {
             <Users />
           </Match>
           <Match when={view() === "other"}>
-            <div class='font-grotesk text-slate-600'>Other</div>
+            <Stokes_expectation />
           </Match>
         </Switch>
       </div>
