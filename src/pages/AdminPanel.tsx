@@ -22,8 +22,8 @@ const AdminPanel = () => {
     },
     {
       key: "other",
-      label: "Other",
-      description: "Review strokes gained table and categories",
+      label: "Strokes Gained",
+      description: "Review ratios and categories",
     },
   ];
 

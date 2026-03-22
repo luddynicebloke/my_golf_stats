@@ -1,4 +1,11 @@
-import { createMemo, createResource, createSignal, For, Show } from "solid-js";
+import {
+  createMemo,
+  createResource,
+  createSignal,
+  For,
+  onCleanup,
+  Show,
+} from "solid-js";
 
 import { supabase } from "../../supabase/client";
 
@@ -30,7 +37,13 @@ type StrokesGainedRow = {
   lie_type: string;
   min_distance: number;
   max_distance: number;
-  byCategoryId: Record<number, number | null>;
+  byCategoryId: Record<
+    number,
+    {
+      id: number;
+      expected_strokes: number;
+    }
+  >;
 };
 
 const tabOptions = ["categories", "strokes-gained"] as const;
@@ -197,6 +210,93 @@ const CategoryRow = (props: CategoryRowProps) => {
   );
 };
 
+type StrokesGainedCellProps = {
+  cell:
+    | {
+        id: number;
+        expected_strokes: number;
+      }
+    | undefined;
+};
+
+const StrokesGainedCell = (props: StrokesGainedCellProps) => {
+  const [savedValue, setSavedValue] = createSignal(
+    props.cell ? String(props.cell.expected_strokes) : "",
+  );
+  const [value, setValue] = createSignal(savedValue());
+  const [saving, setSaving] = createSignal(false);
+  const [flashSuccess, setFlashSuccess] = createSignal(false);
+  const [error, setError] = createSignal(false);
+  let flashTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  onCleanup(() => {
+    if (flashTimeout) {
+      clearTimeout(flashTimeout);
+    }
+  });
+
+  const saveOnBlur = async () => {
+    const cell = props.cell;
+    if (!cell) return;
+
+    const nextValue = value().trim();
+    if (nextValue === savedValue()) {
+      setError(false);
+      return;
+    }
+
+    const parsed = Number(nextValue);
+    if (nextValue === "" || Number.isNaN(parsed)) {
+      setValue(savedValue());
+      setError(true);
+      return;
+    }
+
+    setSaving(true);
+    setError(false);
+    const { error: updateError } = await supabase
+      .from("sg_expectation_yds")
+      .update({ expected_strokes: parsed })
+      .eq("id", cell.id);
+
+    setSaving(false);
+
+    if (updateError) {
+      setValue(savedValue());
+      setError(true);
+      return;
+    }
+
+    setSavedValue(nextValue);
+    setValue(nextValue);
+    setFlashSuccess(true);
+    flashTimeout = setTimeout(() => setFlashSuccess(false), 900);
+  };
+
+  if (!props.cell) {
+    return <td class='px-2 py-2 text-center text-sm text-slate-300'>-</td>;
+  }
+
+  return (
+    <td class='px-2 py-2 text-center'>
+      <input
+        type='number'
+        step='any'
+        value={value()}
+        onInput={(e) => setValue(e.currentTarget.value)}
+        onBlur={() => void saveOnBlur()}
+        class={`mx-auto block w-14 rounded-md border px-2 py-1 text-center text-sm transition ${
+          flashSuccess()
+            ? "border-emerald-400 bg-emerald-100 text-emerald-900"
+            : error()
+              ? "border-rose-300 bg-rose-50 text-rose-900"
+              : "border-slate-300 bg-white text-slate-800"
+        } ${saving() ? "opacity-70" : ""}`}
+      />
+    </td>
+  );
+};
+
 export default function Stokes_expectation() {
   const [sgData, { refetch }] = createResource(fetchUsers);
   const [activeTab, setActiveTab] = createSignal<ActiveTab>("categories");
@@ -229,7 +329,10 @@ export default function Stokes_expectation() {
 
       if (existing) {
         if (row.category?.id != null) {
-          existing.byCategoryId[row.category.id] = row.expected_strokes;
+          existing.byCategoryId[row.category.id] = {
+            id: row.id,
+            expected_strokes: row.expected_strokes,
+          };
         }
         continue;
       }
@@ -242,7 +345,10 @@ export default function Stokes_expectation() {
       };
 
       if (row.category?.id != null) {
-        nextRow.byCategoryId[row.category.id] = row.expected_strokes;
+        nextRow.byCategoryId[row.category.id] = {
+          id: row.id,
+          expected_strokes: row.expected_strokes,
+        };
       }
 
       grouped.set(key, nextRow);
@@ -328,10 +434,10 @@ export default function Stokes_expectation() {
         </div>
 
         <div class='overflow-x-auto rounded-xl border border-slate-200'>
-          <table class='w-full min-w-245 text-left text-sm text-slate-700'>
+          <table class='w-full table-fixed text-left text-sm text-slate-700'>
             <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
               <tr>
-                <th class='px-4 py-3 font-semibold'>
+                <th class='w-20 px-2 py-2 font-semibold'>
                   <div class='flex flex-col gap-2'>
                     <span>Lie Type</span>
                     <select
@@ -339,7 +445,7 @@ export default function Stokes_expectation() {
                       onChange={(e) =>
                         setSelectedLieType(e.currentTarget.value)
                       }
-                      class='rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-700'
+                      class='w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-normal text-slate-700'
                     >
                       <option value='all'>All lie types</option>
                       <For each={lieTypes()}>
@@ -350,11 +456,23 @@ export default function Stokes_expectation() {
                     </select>
                   </div>
                 </th>
-                <th class='px-4 py-3 font-semibold'>Min Distance</th>
-                <th class='px-4 py-3 font-semibold'>Max Distance</th>
+                <th class='w-10 px-1 py-2 text-center font-semibold'>
+                  <span class='block'>Min</span>
+                  <span class='block text-xs font-normal text-slate-500'>
+                    Dist
+                  </span>
+                </th>
+                <th class='w-10 px-1 py-2 text-center font-semibold'>
+                  <span class='block'>Max</span>
+                  <span class='block text-xs font-normal text-slate-500'>
+                    Dist
+                  </span>
+                </th>
                 <For each={sgData()?.categories}>
                   {(category) => (
-                    <th class='px-4 py-3 font-semibold'>{category.code}</th>
+                    <th class='w-18 px-2 py-2 text-center font-semibold'>
+                      {category.code}
+                    </th>
                   )}
                 </For>
               </tr>
@@ -363,14 +481,14 @@ export default function Stokes_expectation() {
               <For each={strokesGainedRows()}>
                 {(row) => (
                   <tr class='border-b border-slate-200 odd:bg-white even:bg-slate-50'>
-                    <td class='px-4 py-3'>{row.lie_type}</td>
-                    <td class='px-4 py-3'>{row.min_distance}</td>
-                    <td class='px-4 py-3'>{row.max_distance}</td>
+                    <td class='px-2 py-2'>{row.lie_type}</td>
+                    <td class='px-2 py-2 text-center'>{row.min_distance}</td>
+                    <td class='px-2 py-2 text-center'>{row.max_distance}</td>
                     <For each={sgData()?.categories}>
                       {(category) => (
-                        <td class='px-4 py-3'>
-                          {row.byCategoryId[category.id] ?? ""}
-                        </td>
+                        <StrokesGainedCell
+                          cell={row.byCategoryId[category.id]}
+                        />
                       )}
                     </For>
                   </tr>
