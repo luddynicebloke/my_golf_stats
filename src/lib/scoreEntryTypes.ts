@@ -15,6 +15,7 @@ export type LocalShot = {
   lieType: BallLie;
   distanceToPin: number;
   penaltyShots: number;
+  recovery: boolean;
   holedOut: boolean;
 };
 

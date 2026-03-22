@@ -20,14 +20,14 @@ const getScoreClass = (score: number | null | undefined, par: number) => {
   }
 
   if (score > par) {
-    return "bg-slate-900 text-white ring-slate-900";
+    return "bg-slate-600 text-white ring-slate-900";
   }
 
   if (score === par) {
-    return "bg-white font-bold text-slate-800 ring-slate-300";
+    return "bg-green-200 font-bold text-slate-800 ring-slate-300";
   }
 
-  return "bg-rose-600 text-white ring-rose-600";
+  return "bg-rose-400 text-white ring-rose-600";
 };
 
 export default function FrontNineTable(props: FrontNineTableProps) {

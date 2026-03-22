@@ -15,6 +15,8 @@ type LocalShotPanelProps = {
   savingHole: boolean;
 };
 
+type PenaltyType = "oob-lost-ball" | "hazard-unplayable" | null;
+
 const activeButtonClass = "border-cyan-300 bg-cyan-50 text-cyan-800";
 const inactiveButtonClass =
   "border-slate-300 bg-white text-slate-700 hover:bg-slate-100";
@@ -25,13 +27,24 @@ const getDefaultLie = (hole: ScorecardHole): BallLie =>
 const getDefaultDistance = (hole: ScorecardHole, lie: BallLie): number =>
   lie === "Green" ? 15 : hole.yardage;
 
+const getPenaltyShotsForType = (penaltyType: PenaltyType): number => {
+  if (penaltyType === "oob-lost-ball") return 2;
+  if (penaltyType === "hazard-unplayable") return 1;
+  return 0;
+};
+
+const getTotalShotCount = (shots: LocalShot[]): number =>
+  shots.reduce((total, shot) => total + 1 + shot.penaltyShots, 0);
+
 export default function LocalShotPanel(props: LocalShotPanelProps) {
   const [ballLie, setBallLie] = createSignal<BallLie>(
     getDefaultLie(props.hole),
   );
   const [sliderValue, setSliderValue] = createSignal(1);
   const [penaltyEnabled, setPenaltyEnabled] = createSignal(false);
+  const [penaltyType, setPenaltyType] = createSignal<PenaltyType>(null);
   const [penaltyShots, setPenaltyShots] = createSignal<number | null>(null);
+  const [recovery, setRecovery] = createSignal(false);
   const [holedOut, setHoledOut] = createSignal(false);
   const [shotsByHole, setShotsByHole] = createSignal<
     Record<number, LocalShot[]>
@@ -40,7 +53,9 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   const currentHoleShots = createMemo(
     () => shotsByHole()[props.hole.hole_number] ?? [],
   );
-  const currentShotNumber = createMemo(() => currentHoleShots().length + 1);
+  const currentShotNumber = createMemo(
+    () => getTotalShotCount(currentHoleShots()) + 1,
+  );
   const isGreenLie = createMemo(() => ballLie() === "Green");
   const sliderLabel = createMemo(() =>
     isGreenLie() ? "Distance to hole" : "Distance to pin",
@@ -55,7 +70,9 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
 
   const resetFlags = () => {
     setPenaltyEnabled(false);
+    setPenaltyType(null);
     setPenaltyShots(null);
+    setRecovery(false);
     setHoledOut(false);
   };
 
@@ -71,21 +88,45 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
     setPenaltyEnabled(nextEnabled);
 
     if (!nextEnabled) {
+      setPenaltyType(null);
       setPenaltyShots(null);
       return;
     }
 
     if (penaltyShots() == null) {
+      setPenaltyType("hazard-unplayable");
       setPenaltyShots(1);
     }
   };
 
+  const selectPenaltyType = (nextPenaltyType: Exclude<PenaltyType, null>) => {
+    setPenaltyEnabled(true);
+    setPenaltyType(nextPenaltyType);
+    setPenaltyShots(getPenaltyShotsForType(nextPenaltyType));
+  };
+
+  const adjustPenaltyShots = (
+    nextPenaltyType: Exclude<PenaltyType, null>,
+    delta: number,
+  ) => {
+    setPenaltyEnabled(true);
+    setPenaltyType(nextPenaltyType);
+    setPenaltyShots((current) => {
+      const baseValue =
+        penaltyType() === nextPenaltyType
+          ? (current ?? getPenaltyShotsForType(nextPenaltyType))
+          : getPenaltyShotsForType(nextPenaltyType);
+      return Math.max(0, baseValue + delta);
+    });
+  };
+
   const addLocalShot = async () => {
     const nextShot: LocalShot = {
-      shotNumber: currentHoleShots().length + 1,
+      shotNumber: currentShotNumber(),
       lieType: ballLie(),
       distanceToPin: sliderValue(),
       penaltyShots: penaltyEnabled() ? Math.max(0, penaltyShots() ?? 0) : 0,
+      recovery: recovery(),
       holedOut: holedOut(),
     };
     const updatedShots = [...currentHoleShots(), nextShot];
@@ -157,13 +198,13 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
         />
 
         <div class='mt-2'>
-          <p class='mb-3 text-sm font-medium text-slate-700'>Ball lie</p>
-          <div class='grid grid-cols-6 gap-2'>
+          {/* <p class='mb-3 text-sm font-medium text-slate-700'>Ball lie</p> */}
+          <div class='grid grid-cols-5 gap-2'>
             <For each={ballLies}>
               {(lie) => (
                 <button
                   type='button'
-                  class={`justify-center rounded-md border px-2 py-3 text-center text-xs font-semibold transition-colors sm:text-sm ${
+                  class={`w-full justify-center rounded-md border px-2 py-3 text-center text-xs font-semibold transition-colors sm:text-sm ${
                     ballLie() === lie ? activeButtonClass : inactiveButtonClass
                   }`}
                   onClick={() => setBallLie(lie)}
@@ -186,28 +227,94 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
             </button>
 
             <Show when={penaltyEnabled()}>
-              <div class='w-24'>
-                <input
-                  id='penalty-shots'
-                  type='number'
-                  min='1'
-                  step='1'
-                  value={penaltyShots() ?? ""}
-                  onInput={(event) => {
-                    const value = event.currentTarget.value;
-                    setPenaltyShots(value === "" ? null : Number(value));
-                  }}
-                  class='block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-100'
-                />
+              <div class='flex-1 space-y-3 rounded-lg border border-slate-200 bg-white p-3'>
+                <div class='space-y-2'>
+                  <div class='flex items-center justify-between gap-3'>
+                    <label
+                      class={`flex flex-1 items-center gap-3 rounded-md border px-3 py-3 text-sm font-semibold transition-colors ${
+                        penaltyType() === "oob-lost-ball"
+                          ? activeButtonClass
+                          : inactiveButtonClass
+                      }`}
+                    >
+                      <input
+                        type='radio'
+                        name={`penalty-type-${props.hole.hole_number}`}
+                        checked={penaltyType() === "oob-lost-ball"}
+                        onChange={() => selectPenaltyType("oob-lost-ball")}
+                        class='h-4 w-4 border-slate-300 text-cyan-600 focus:ring-cyan-200'
+                      />
+                      <span>OOB / Lost Ball</span>
+                    </label>
+                    <div class='flex items-center gap-2 text-sm font-semibold text-slate-700'>
+                      <button
+                        type='button'
+                        onClick={() => adjustPenaltyShots("oob-lost-ball", 2)}
+                        class=' text-gray-800 rounded-md border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100'
+                      >
+                        +
+                      </button>
+                      <span class='min-w-5 text-center'>
+                        {penaltyType() === "oob-lost-ball"
+                          ? (penaltyShots() ?? 2)
+                          : 2}
+                      </span>
+                      <button
+                        type='button'
+                        onClick={() => adjustPenaltyShots("oob-lost-ball", -2)}
+                        class='text-gray-800 rounded-md border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100'
+                      >
+                        -
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class='flex items-center justify-between gap-3'>
+                    <label
+                      class={`flex flex-1 items-center gap-3 rounded-md border px-3 py-3 text-sm font-semibold transition-colors ${
+                        penaltyType() === "hazard-unplayable"
+                          ? activeButtonClass
+                          : inactiveButtonClass
+                      }`}
+                    >
+                      <input
+                        type='radio'
+                        name={`penalty-type-${props.hole.hole_number}`}
+                        checked={penaltyType() === "hazard-unplayable"}
+                        onChange={() => selectPenaltyType("hazard-unplayable")}
+                        class='h-4 w-4 border-slate-300 text-cyan-600 focus:ring-cyan-200'
+                      />
+                      <span>Hazard / Unplayable</span>
+                    </label>
+                    <div class='flex items-center gap-2 text-sm font-semibold text-slate-700'>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          adjustPenaltyShots("hazard-unplayable", 1)
+                        }
+                        class='text-gray-800 rounded-md border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100'
+                      >
+                        +
+                      </button>
+                      <span class='min-w-5 text-center'>
+                        {penaltyType() === "hazard-unplayable"
+                          ? (penaltyShots() ?? 1)
+                          : 1}
+                      </span>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          adjustPenaltyShots("hazard-unplayable", -1)
+                        }
+                        class='text-gray-800 rounded-md border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100'
+                      >
+                        -
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </Show>
-
-            <button
-              type='button'
-              class={`ml-auto rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${inactiveButtonClass}`}
-            >
-              Revovery
-            </button>
           </div>
 
           <div class='mt-4 flex flex-wrap items-center justify-between gap-3'>
@@ -223,19 +330,34 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                   ? "Next hole"
                   : "Next shot"}
             </button>
-            <label
-              for='holed-out'
-              class='flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700'
-            >
-              <input
-                id='holed-out'
-                type='checkbox'
-                checked={holedOut()}
-                onChange={(event) => setHoledOut(event.currentTarget.checked)}
-                class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
-              />
-              Holed out
-            </label>
+            <div class='flex flex-wrap items-center gap-3'>
+              <label
+                for='recovery-shot'
+                class='flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700'
+              >
+                <input
+                  id='recovery-shot'
+                  type='checkbox'
+                  checked={recovery()}
+                  onChange={(event) => setRecovery(event.currentTarget.checked)}
+                  class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
+                />
+                Recovery
+              </label>
+              <label
+                for='holed-out'
+                class='flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700'
+              >
+                <input
+                  id='holed-out'
+                  type='checkbox'
+                  checked={holedOut()}
+                  onChange={(event) => setHoledOut(event.currentTarget.checked)}
+                  class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
+                />
+                Holed out
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -286,6 +408,9 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                     </span>
                     <Show when={shot.penaltyShots > 0}>
                       <span>Penalty {shot.penaltyShots}</span>
+                    </Show>
+                    <Show when={shot.recovery}>
+                      <span class='font-semibold text-amber-700'>Recovery</span>
                     </Show>
                     <Show when={shot.holedOut}>
                       <span class='font-semibold text-emerald-700'>

@@ -201,6 +201,7 @@ export default function ScorecardEntry(props: { id: string }) {
         distance_to_pin: shot.distanceToPin,
         lie_type: shot.lieType,
         penalty_strokes: shot.penaltyShots,
+        recovery: shot.recovery,
         holed_out: shot.holedOut,
       }));
 
