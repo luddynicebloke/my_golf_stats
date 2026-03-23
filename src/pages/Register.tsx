@@ -4,6 +4,10 @@ import { createSignal } from "solid-js";
 
 import LogoSG from "../assets/logo.png";
 import TextInput from "../components/forms/TextInput";
+import {
+  distanceUnitOptions,
+  normalizeDistanceUnit,
+} from "../lib/distance";
 import { supabase } from "../supabase/client";
 
 type RegisterFormProps = {
@@ -24,8 +28,6 @@ const categoryOptions = [
   "Am F",
   "Senior F",
 ];
-
-const distanceOptions = ["yards", "meters"];
 
 export default function Register() {
   const [loading, setLoading] = createSignal(false);
@@ -80,7 +82,7 @@ export default function Register() {
               email: values.email.trim(),
               user_name: values.username.trim(),
               category: category(),
-              preferred_distance_unit: distanceUnit(),
+              preferred_distance_unit: normalizeDistanceUnit(distanceUnit()),
               avatar_url: avatar().trim() || null,
               role: "user",
             },
@@ -255,7 +257,7 @@ export default function Register() {
                     <option value='' disabled>
                       Select distance unit
                     </option>
-                    {distanceOptions.map((option) => (
+                    {distanceUnitOptions.map((option) => (
                       <option value={option}>{option}</option>
                     ))}
                   </select>

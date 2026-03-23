@@ -2,6 +2,12 @@ import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
 
 import Slider from "./Slider";
 import {
+  convertMetresToUnit,
+  convertUnitToMetres,
+  getDistanceUnitLabel,
+  type DistanceUnit,
+} from "../../lib/distance";
+import {
   ballLies,
   type BallLie,
   type LocalShot,
@@ -9,6 +15,7 @@ import {
 } from "../../lib/scoreEntryTypes";
 
 type LocalShotPanelProps = {
+  distanceUnit: DistanceUnit;
   entryError: string | null;
   hole: ScorecardHole;
   onCompleteHole: (hole: ScorecardHole, shots: LocalShot[]) => Promise<boolean>;
@@ -24,8 +31,12 @@ const inactiveButtonClass =
 const getDefaultLie = (hole: ScorecardHole): BallLie =>
   hole.par === 3 ? "Fairway" : "Tee";
 
-const getDefaultDistance = (hole: ScorecardHole, lie: BallLie): number =>
-  lie === "Green" ? 15 : hole.yardage;
+const getDefaultDistance = (
+  hole: ScorecardHole,
+  lie: BallLie,
+  distanceUnit: DistanceUnit,
+): number =>
+  lie === "Green" ? 15 : convertMetresToUnit(hole.distanceMetres, distanceUnit);
 
 const getPenaltyShotsForType = (penaltyType: PenaltyType): number => {
   if (penaltyType === "oob-lost-ball") return 2;
@@ -60,8 +71,16 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   const sliderLabel = createMemo(() =>
     isGreenLie() ? "Distance to hole" : "Distance to pin",
   );
+  const sliderUnitLabel = createMemo(() =>
+    isGreenLie() ? "ft" : getDistanceUnitLabel(props.distanceUnit).toLowerCase(),
+  );
   const sliderMax = createMemo(() =>
-    isGreenLie() ? 100 : Math.max(props.hole.yardage, 600),
+    isGreenLie()
+      ? 100
+      : Math.max(
+          convertMetresToUnit(props.hole.distanceMetres, props.distanceUnit),
+          convertMetresToUnit(549, props.distanceUnit),
+        ),
   );
   const sliderStep = createMemo(() => Math.max(1, Math.round(sliderMax() / 6)));
   const sliderMarks = createMemo(() =>
@@ -79,7 +98,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   const resetInputsForHole = (hole: ScorecardHole) => {
     const defaultLie = getDefaultLie(hole);
     setBallLie(defaultLie);
-    setSliderValue(getDefaultDistance(hole, defaultLie));
+    setSliderValue(getDefaultDistance(hole, defaultLie, props.distanceUnit));
     resetFlags();
   };
 
@@ -121,10 +140,14 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   };
 
   const addLocalShot = async () => {
+    const storedDistanceToPin = isGreenLie()
+      ? sliderValue()
+      : convertUnitToMetres(sliderValue(), props.distanceUnit);
+
     const nextShot: LocalShot = {
       shotNumber: currentShotNumber(),
       lieType: ballLie(),
-      distanceToPin: sliderValue(),
+      distanceToPin: storedDistanceToPin,
       penaltyShots: penaltyEnabled() ? Math.max(0, penaltyShots() ?? 0) : 0,
       recovery: recovery(),
       holedOut: holedOut(),
@@ -188,6 +211,8 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
           value={sliderValue()}
           onChange={setSliderValue}
           max={sliderMax()}
+          valueSuffix={sliderUnitLabel()}
+          marksSuffix=''
           r1={sliderMarks()[0]}
           r2={sliderMarks()[1]}
           r3={sliderMarks()[2]}
@@ -403,8 +428,15 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                     </span>
                     <span>{shot.lieType}</span>
                     <span>
-                      {shot.distanceToPin}{" "}
-                      {shot.lieType === "Green" ? "ft" : "yds"}
+                      {shot.lieType === "Green"
+                        ? shot.distanceToPin
+                        : convertMetresToUnit(
+                            shot.distanceToPin,
+                            props.distanceUnit,
+                          )}{" "}
+                      {shot.lieType === "Green"
+                        ? "ft"
+                        : getDistanceUnitLabel(props.distanceUnit).toLowerCase()}
                     </span>
                     <Show when={shot.penaltyShots > 0}>
                       <span>Penalty {shot.penaltyShots}</span>

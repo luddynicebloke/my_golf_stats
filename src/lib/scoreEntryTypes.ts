@@ -3,7 +3,7 @@ export type ScorecardHole = {
   hole_id: number;
   hole_number: number;
   par: number;
-  yardage: number;
+  distanceMetres: number;
   score: number | null;
   completed: boolean;
 };

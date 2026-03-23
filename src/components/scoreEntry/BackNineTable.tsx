@@ -1,13 +1,28 @@
 import { For, Show } from "solid-js";
 
+import {
+  convertMetresToUnit,
+  getDistanceUnitLabel,
+  type DistanceUnit,
+} from "../../lib/distance";
 import type { ScorecardTableHole } from "./FrontNineTable";
 
 type BackNineTableProps = {
   holes: ScorecardTableHole[];
+  distanceUnit: DistanceUnit;
 };
 
 const total = (holes: ScorecardTableHole[], key: keyof ScorecardTableHole) =>
   holes.reduce((sum, hole) => sum + (Number(hole[key]) || 0), 0);
+
+const totalDisplayedDistance = (
+  holes: ScorecardTableHole[],
+  distanceUnit: DistanceUnit,
+) =>
+  holes.reduce(
+    (sum, hole) => sum + convertMetresToUnit(hole.distanceMetres, distanceUnit),
+    0,
+  );
 
 const getScoreClass = (score: number | null | undefined, par: number) => {
   if (score == null || score === 0) {
@@ -48,13 +63,17 @@ export default function BackNineTable(props: BackNineTableProps) {
 
           <tr class='border-b border-slate-100'>
             <td class='w-10 px-1 py-2 font-bold whitespace-nowrap text-slate-600 sm:w-auto sm:px-3 sm:py-4'>
-              Yds
+              {getDistanceUnitLabel(props.distanceUnit)}
             </td>
             <For each={props.holes}>
-              {(hole) => <td class='px-1 py-2 sm:px-3 sm:py-4'>{hole.yardage}</td>}
+              {(hole) => (
+                <td class='px-1 py-2 sm:px-3 sm:py-4'>
+                  {convertMetresToUnit(hole.distanceMetres, props.distanceUnit)}
+                </td>
+              )}
             </For>
             <td class='w-10 px-1 py-2 font-semibold text-slate-800 sm:w-auto sm:px-3 sm:py-4'>
-              {total(props.holes, "yardage")}
+              {totalDisplayedDistance(props.holes, props.distanceUnit)}
             </td>
           </tr>
 

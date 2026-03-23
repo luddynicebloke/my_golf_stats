@@ -2,8 +2,10 @@ import { Show, createEffect, createSignal, onCleanup } from "solid-js";
 import { supabase } from "../supabase/client";
 import { useAuth } from "../context/AuthProvider";
 import ChangeEmailModal from "../components/profile/ChangeEmailModal";
-
-const distanceOptions = ["yards", "metres"];
+import {
+  distanceUnitOptions,
+  normalizeDistanceUnit,
+} from "../lib/distance";
 
 type SaveState = {
   type: "success" | "error";
@@ -104,7 +106,7 @@ const Profile = () => {
         setUsername(profileData.user_name ?? "");
         setAvatar(profileData.avatar_url ?? "");
         setCategory(profileData.category.id ?? "");
-        setDistance(profileData.preferred_distance_unit ?? "yards");
+        setDistance(normalizeDistanceUnit(profileData.preferred_distance_unit));
       } catch (error) {
         if (!cancelled) {
           setProfileState({
@@ -153,7 +155,7 @@ const Profile = () => {
         user_name: username().trim(),
         avatar_url: avatar().trim() || null,
         category_id: category(),
-        preferred_distance_unit: distance(),
+        preferred_distance_unit: normalizeDistanceUnit(distance()),
       })
       .eq("id", currentUser.id);
 
@@ -327,7 +329,7 @@ const Profile = () => {
                   onChange={(e) => setDistance(e.currentTarget.value)}
                   class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800'
                 >
-                  {distanceOptions.map((option) => (
+                  {distanceUnitOptions.map((option) => (
                     <option value={option}>{option}</option>
                   ))}
                 </select>

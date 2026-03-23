@@ -19,6 +19,8 @@ type SliderProps = {
 
   label?: string;
   showValue?: boolean;
+  valueSuffix?: string;
+  marksSuffix?: string;
 
   id?: string;
   class?: string;
@@ -52,7 +54,17 @@ const Slider = (props: SliderProps) => {
             value={props.value}
             onInput={handleInput}
             class='bg-white text-gray-700 p-3 w-24 rounded-md font-bold'
+            aria-label={
+              props.valueSuffix
+                ? `${props.label ?? "Slider"} in ${props.valueSuffix}`
+                : props.label
+            }
           />
+          {props.valueSuffix ? (
+            <span class='ml-2 min-w-8 text-right text-sm font-medium text-slate-500'>
+              {props.valueSuffix}
+            </span>
+          ) : null}
         </div>
         <input
           id={id()}
@@ -66,24 +78,31 @@ const Slider = (props: SliderProps) => {
         />
         <span class='text-sm text-gray-800 text-body absolute start-0 -bottom-6'>
           {props.r1}
+          {props.marksSuffix ?? ""}
         </span>
         <span class='text-sm text-gray-800 text-body absolute start-1/6 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6'>
           {props.r2}
+          {props.marksSuffix ?? ""}
         </span>
         <span class='text-sm text-gray-800 text-body absolute start-2/6 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6'>
           {props.r3}
+          {props.marksSuffix ?? ""}
         </span>
         <span class='text-sm text-gray-800 text-body absolute start-3/6 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6'>
           {props.r4}
+          {props.marksSuffix ?? ""}
         </span>
         <span class='text-sm text-gray-800 text-body absolute start-4/6 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6'>
           {props.r5}
+          {props.marksSuffix ?? ""}
         </span>
         <span class='text-sm text-gray-800 text-body absolute start-5/6 -translate-x-1/1 rtl:translate-x-1/2 -bottom-6'>
           {props.r6}
+          {props.marksSuffix ?? ""}
         </span>
         <span class='text-sm text-gray-800 text-body absolute end-0 -bottom-6'>
-          {props.r7}+
+          {props.r7}
+          {props.marksSuffix ?? ""}+
         </span>
       </div>
     </>

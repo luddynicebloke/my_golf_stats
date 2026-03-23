@@ -1,6 +1,11 @@
 import { createMemo, createSignal, onMount, Show } from "solid-js";
 import { A } from "@solidjs/router";
 
+import { useAuth } from "../../context/AuthProvider";
+import {
+  formatMetresForDisplay,
+  normalizeDistanceUnit,
+} from "../../lib/distance";
 import { supabase } from "../../supabase/client";
 import BackNineTable from "./BackNineTable";
 import FrontNineTable from "./FrontNineTable";
@@ -48,6 +53,7 @@ const getSingleRelation = <T,>(value: T | T[] | null | undefined): T | null => {
 
 export default function ScorecardEntry(props: { id: string }) {
   const roundId = Number(props.id);
+  const { profile } = useAuth();
 
   const [activeNine, setActiveNine] = createSignal<"front" | "back">("front");
   const [selectedHoleNumber, setSelectedHoleNumber] = createSignal(1);
@@ -69,6 +75,9 @@ export default function ScorecardEntry(props: { id: string }) {
     () =>
       scorecard().find((hole) => hole.hole_number === selectedHoleNumber()) ??
       scorecard()[0],
+  );
+  const distanceUnit = createMemo(() =>
+    normalizeDistanceUnit(profile()?.preferred_distance_unit),
   );
 
   const setNine = (nine: "front" | "back") => {
@@ -146,7 +155,7 @@ export default function ScorecardEntry(props: { id: string }) {
           hole_id: Number(row.hole_id),
           hole_number: Number(hole.hole_number),
           par: Number(hole.par),
-          yardage: yardageByHoleId.get(Number(row.hole_id)) ?? 0,
+          distanceMetres: yardageByHoleId.get(Number(row.hole_id)) ?? 0,
           score: row.score == null ? null : Number(row.score),
           completed: Boolean(row.completed),
         } satisfies ScorecardHole;
@@ -333,9 +342,15 @@ export default function ScorecardEntry(props: { id: string }) {
 
             <div class='mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-2 sm:p-3'>
               {activeNine() === "front" ? (
-                <FrontNineTable holes={frontNine()} />
+                <FrontNineTable
+                  holes={frontNine()}
+                  distanceUnit={distanceUnit()}
+                />
               ) : (
-                <BackNineTable holes={backNine()} />
+                <BackNineTable
+                  holes={backNine()}
+                  distanceUnit={distanceUnit()}
+                />
               )}
             </div>
           </Show>
@@ -351,7 +366,11 @@ export default function ScorecardEntry(props: { id: string }) {
                   Hole {hole().hole_number}
                 </h2>
                 <p class='text-sm text-slate-500'>
-                  Par {hole().par} | {hole().yardage} yds
+                  Par {hole().par} |{" "}
+                  {formatMetresForDisplay(
+                    hole().distanceMetres,
+                    distanceUnit(),
+                  )}
                 </p>
               </div>
             </div>
@@ -376,6 +395,7 @@ export default function ScorecardEntry(props: { id: string }) {
               }
             >
               <LocalShotPanel
+                distanceUnit={distanceUnit()}
                 entryError={entryError()}
                 hole={hole()}
                 onCompleteHole={persistCompletedHole}
