@@ -36,7 +36,11 @@ const getDefaultDistance = (
   lie: BallLie,
   distanceUnit: DistanceUnit,
 ): number =>
-  lie === "Green" ? 15 : convertMetresToUnit(hole.distanceMetres, distanceUnit);
+  lie === "Green"
+    ? distanceUnit === "metres"
+      ? 0.5
+      : 15
+    : convertMetresToUnit(hole.distanceMetres, distanceUnit);
 
 const getPenaltyShotsForType = (penaltyType: PenaltyType): number => {
   if (penaltyType === "oob-lost-ball") return 2;
@@ -72,19 +76,34 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
     isGreenLie() ? "Distance to hole" : "Distance to pin",
   );
   const sliderUnitLabel = createMemo(() =>
-    isGreenLie() ? "ft" : getDistanceUnitLabel(props.distanceUnit).toLowerCase(),
+    isGreenLie()
+      ? "ft"
+      : getDistanceUnitLabel(props.distanceUnit).toLowerCase(),
+  );
+  const sliderMin = createMemo(() =>
+    isGreenLie() && props.distanceUnit === "metres" ? 0.5 : 1,
   );
   const sliderMax = createMemo(() =>
     isGreenLie()
-      ? 100
+      ? props.distanceUnit === "metres"
+        ? 30
+        : 100
       : Math.max(
           convertMetresToUnit(props.hole.distanceMetres, props.distanceUnit),
           convertMetresToUnit(549, props.distanceUnit),
         ),
   );
-  const sliderStep = createMemo(() => Math.max(1, Math.round(sliderMax() / 6)));
+  const sliderStep = createMemo(() => {
+    if (isGreenLie() && props.distanceUnit === "metres") {
+      return 4.5;
+    }
+
+    return Math.max(1, Math.round(sliderMax() / 6));
+  });
   const sliderMarks = createMemo(() =>
-    Array.from({ length: 7 }, (_, index) => sliderStep() * index),
+    Array.from({ length: 7 }, (_, index) =>
+      Number((sliderMin() + sliderStep() * index).toFixed(1)),
+    ),
   );
 
   const resetFlags = () => {
@@ -189,11 +208,13 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
 
   createEffect(() => {
     if (isGreenLie()) {
-      setSliderValue(15);
+      setSliderValue(props.distanceUnit === "metres" ? 5 : 15);
       return;
     }
 
-    setSliderValue((currentValue) => Math.min(currentValue, sliderMax()));
+    setSliderValue((currentValue) =>
+      Math.min(sliderMax(), Math.max(sliderMin(), currentValue)),
+    );
   });
 
   return (
@@ -210,8 +231,13 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
           label={sliderLabel()}
           value={sliderValue()}
           onChange={setSliderValue}
+          min={sliderMin()}
           max={sliderMax()}
-          valueSuffix={sliderUnitLabel()}
+          valueSuffix={
+            isGreenLie() && props.distanceUnit === "metres"
+              ? "m"
+              : sliderUnitLabel()
+          }
           marksSuffix=''
           r1={sliderMarks()[0]}
           r2={sliderMarks()[1]}
@@ -435,8 +461,12 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                             props.distanceUnit,
                           )}{" "}
                       {shot.lieType === "Green"
-                        ? "ft"
-                        : getDistanceUnitLabel(props.distanceUnit).toLowerCase()}
+                        ? props.distanceUnit === "metres"
+                          ? "m"
+                          : "ft"
+                        : getDistanceUnitLabel(
+                            props.distanceUnit,
+                          ).toLowerCase()}
                     </span>
                     <Show when={shot.penaltyShots > 0}>
                       <span>Penalty {shot.penaltyShots}</span>

@@ -28,15 +28,23 @@ type SGExpectationRow = {
   category: Player_Category;
 };
 
+const METRES_TO_YARDS = 1.09361;
+
+const getLookupDistance = (shot: Pick<ShotRow, "distance_to_pin" | "lie_type">) =>
+  shot.lie_type === "Green"
+    ? shot.distance_to_pin
+    : shot.distance_to_pin * METRES_TO_YARDS;
+
 function getExpectedStrokes(
   expectations: SGExpectationRow[],
-  distanceToPin: number,
+  shot: Pick<ShotRow, "distance_to_pin" | "lie_type">,
   lieType: BallLie,
   category?: string,
 ): number {
+  const lookupDistance = getLookupDistance(shot);
   const match = expectations.find((row) => {
     const distanceMatch =
-      distanceToPin >= row.min_distance && distanceToPin <= row.max_distance;
+      lookupDistance >= row.min_distance && lookupDistance <= row.max_distance;
 
     const lieMatch = row.lie_type === lieType;
 
@@ -48,7 +56,7 @@ function getExpectedStrokes(
 
   if (!match) {
     throw new Error(
-      `No SG expectation found for distance=${distanceToPin}, lie=${lieType}, category=${category ?? "default"}`,
+      `No SG expectation found for lookupDistance=${lookupDistance}, lie=${lieType}, category=${category ?? "default"}`,
     );
   }
 
@@ -67,7 +75,7 @@ function calculateHoleSG(
 
     const startExpectation = getExpectedStrokes(
       expectations,
-      shot.distance_to_pin,
+      shot,
       shot.lie_type,
       category,
     );
@@ -75,7 +83,7 @@ function calculateHoleSG(
     const endExpectation = nextShot
       ? getExpectedStrokes(
           expectations,
-          nextShot.distance_to_pin,
+          nextShot,
           nextShot.lie_type,
           category,
         )

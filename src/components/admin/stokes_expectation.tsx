@@ -383,7 +383,7 @@ export default function Stokes_expectation() {
               : "border-slate-300 bg-white text-slate-700 hover:border-cyan-300 hover:text-cyan-700"
           }`}
         >
-          Strokes Gained (yds)
+          Strokes Gained (yards / feet)
         </button>
       </div>
 
@@ -428,8 +428,8 @@ export default function Stokes_expectation() {
             Strokes Gained
           </h2>
           <p class='mt-1 text-sm text-slate-500'>
-            Review the strokes gained expectation ranges and linked category
-            values.
+            Review the expectation ranges used for strokes gained: yards for
+            tee-to-green lies and feet on the green.
           </p>
         </div>
 
