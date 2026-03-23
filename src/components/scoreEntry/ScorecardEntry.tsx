@@ -1,7 +1,8 @@
-import { createMemo, createSignal, onMount, Show } from "solid-js";
+import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js";
 import { A } from "@solidjs/router";
 
 import { useAuth } from "../../context/AuthProvider";
+import { calculateAndSaveRoundSG } from "../../hooks/useCalcSG";
 import {
   formatMetresForDisplay,
   normalizeDistanceUnit,
@@ -258,6 +259,8 @@ export default function ScorecardEntry(props: { id: string }) {
 
       const hasNextHole = moveToNextHole(hole.hole_number);
       if (!hasNextHole) {
+        await calculateAndSaveRoundSG(roundId);
+
         const { error: finalizeRoundError } = await supabase
           .from("rounds")
           .update({ is_finalised: true })
@@ -281,6 +284,24 @@ export default function ScorecardEntry(props: { id: string }) {
 
   onMount(() => {
     void loadScorecard();
+
+    const handleWindowFocus = () => {
+      void loadScorecard();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadScorecard();
+      }
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    onCleanup(() => {
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    });
   });
 
   return (
@@ -303,6 +324,15 @@ export default function ScorecardEntry(props: { id: string }) {
           >
             Back to Dashboard
           </A>
+        </div>
+        <div class='mt-3'>
+          <button
+            type='button'
+            onClick={() => void loadScorecard()}
+            class='inline-flex rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100'
+          >
+            Refresh Scorecard
+          </button>
         </div>
 
         <Show
