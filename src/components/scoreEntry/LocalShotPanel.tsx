@@ -27,6 +27,8 @@ type PenaltyType = "oob-lost-ball" | "hazard-unplayable" | null;
 const activeButtonClass = "border-cyan-300 bg-cyan-50 text-cyan-800";
 const inactiveButtonClass =
   "border-slate-300 bg-white text-slate-700 hover:bg-slate-100";
+const FEET_TO_METRES = 0.3048;
+const METRES_TO_FEET = 3.28084;
 
 const getDefaultLie = (hole: ScorecardHole): BallLie =>
   hole.par === 3 ? "Fairway" : "Tee";
@@ -160,7 +162,9 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
 
   const addLocalShot = async () => {
     const storedDistanceToPin = isGreenLie()
-      ? sliderValue()
+      ? props.distanceUnit === "metres"
+        ? Number((sliderValue() * METRES_TO_FEET).toFixed(2))
+        : sliderValue()
       : convertUnitToMetres(sliderValue(), props.distanceUnit);
 
     const nextShot: LocalShot = {
@@ -455,7 +459,9 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                     <span>{shot.lieType}</span>
                     <span>
                       {shot.lieType === "Green"
-                        ? shot.distanceToPin
+                        ? props.distanceUnit === "metres"
+                          ? Number((shot.distanceToPin * FEET_TO_METRES).toFixed(1))
+                          : shot.distanceToPin
                         : convertMetresToUnit(
                             shot.distanceToPin,
                             props.distanceUnit,
