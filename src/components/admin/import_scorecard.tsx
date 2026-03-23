@@ -116,7 +116,7 @@ const Import_scorecard = () => {
               Import Scorecard
             </h1>
             <p class='mt-2 max-w-2xl font-grotesk text-sm text-slate-300 md:text-base'>
-              Upload a CSV scorecard and map yardages to existing tee colors.
+              Upload a CSV scorecard and map distances to existing tee colors.
             </p>
           </div>
           <A
@@ -149,6 +149,9 @@ const Import_scorecard = () => {
           <p class='font-grotesk text-sm text-amber-900'>
             Important: every tee color in the CSV must already exist in the list
             above. Add missing tees before importing.
+          </p>
+          <p class='font-grotesk text-sm text-amber-900'>
+            Very Important: Load scorecard distances in metres!
           </p>
         </div>
 

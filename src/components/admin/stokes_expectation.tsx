@@ -383,7 +383,7 @@ export default function Stokes_expectation() {
               : "border-slate-300 bg-white text-slate-700 hover:border-cyan-300 hover:text-cyan-700"
           }`}
         >
-          Strokes Gained
+          Strokes Gained (yds)
         </button>
       </div>
 
