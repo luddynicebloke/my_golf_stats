@@ -10,7 +10,7 @@ import Welcome from "./pages/Welcome";
 import SignIn from "./pages/SignIn";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import LatestRounds from "./pages/LatestRounds";
+import LatestRounds from "./components/dashboard/latestRounds";
 import testpage from "./hooks/testpage";
 
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));

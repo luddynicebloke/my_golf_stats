@@ -1,4 +1,4 @@
-import { TLatestRound } from "../lib/definitions";
+import { TLatestRound } from "../../lib/definitions";
 
 export const LatestRounds = (props: { recent: TLatestRound[] }) => {
   return (
@@ -8,7 +8,7 @@ export const LatestRounds = (props: { recent: TLatestRound[] }) => {
       </h2>
 
       <div class='w-full overflow-x-auto'>
-        <table class='w-full min-w-[420px] table-auto text-sm sm:text-base'>
+        <table class='w-full min-w-105 table-auto text-sm sm:text-base'>
           <thead>
             <tr class='border-b border-slate-200'>
               <th class='min-w-24 pb-2 text-left'>Date</th>
@@ -22,8 +22,12 @@ export const LatestRounds = (props: { recent: TLatestRound[] }) => {
               <tr class='border-b border-slate-200'>
                 <td class='py-2'>{round.date}</td>
                 <td class='py-2'>{round.course}</td>
-                <td class='py-2'>{round.score}</td>
-                <td class='py-2 text-right'>{round.strokesGained}</td>
+                <td class='py-2'>{round.score ?? "-"}</td>
+                <td class='py-2 text-right'>
+                  {round.strokesGained == null
+                    ? "-"
+                    : round.strokesGained.toFixed(3)}
+                </td>
               </tr>
             ))}
           </tbody>

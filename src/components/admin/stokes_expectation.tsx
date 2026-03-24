@@ -58,7 +58,7 @@ const fetchAllStrokesGained = async () => {
     const { data, error } = await supabase
       .from("sg_expectation_yds")
       .select(
-        "id, min_distance, max_distance, expected_strokes, lie_type, category(id,code, name)",
+        "id, min_distance, max_distance, expected_strokes, lie_type, category:category_id(id,code, name)",
       )
       .order("lie_type")
       .order("min_distance")

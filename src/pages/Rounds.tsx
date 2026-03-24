@@ -33,6 +33,7 @@ type RoundListItem = {
   playedDate: string;
   course: string;
   tee: string;
+  score: number | null;
   sgTotal: number | null;
 };
 
@@ -58,21 +59,32 @@ const fetchRounds = async (userId: string) => {
   }
 
   const roundIds = ((data ?? []) as RoundRow[]).map((round) => Number(round.id));
+  const scoreByRoundId = new Map<number, number>();
   const sgTotalByRoundId = new Map<number, number>();
 
   if (roundIds.length > 0) {
     const { data: roundHoleRows, error: roundHoleError } = await supabase
       .from("round_holes")
-      .select("id, round_id")
+      .select("id, round_id, score")
       .in("round_id", roundIds);
 
     if (roundHoleError) {
-      console.error("Error fetching round holes for SG totals:", roundHoleError);
+      console.error(
+        "Error fetching round holes for round totals:",
+        roundHoleError,
+      );
     } else {
       const roundIdByRoundHoleId = new Map<number, number>();
       const roundHoleIds = (roundHoleRows ?? []).map((row) => {
         const roundHoleId = Number(row.id);
-        roundIdByRoundHoleId.set(roundHoleId, Number(row.round_id));
+        const roundId = Number(row.round_id);
+        roundIdByRoundHoleId.set(roundHoleId, roundId);
+
+        if (row.score != null) {
+          const currentScore = scoreByRoundId.get(roundId) ?? 0;
+          scoreByRoundId.set(roundId, currentScore + Number(row.score));
+        }
+
         return roundHoleId;
       });
 
@@ -109,6 +121,7 @@ const fetchRounds = async (userId: string) => {
     course: getSingleRelation(round.courses)?.name ?? "Unknown course",
     tee: getSingleRelation(round.tees)?.color ?? "Unknown tee",
     finished: getSingleRelation(round.is_finalised ?? "Not sure"),
+    score: scoreByRoundId.get(Number(round.id)) ?? null,
     sgTotal: sgTotalByRoundId.get(Number(round.id)) ?? null,
   }));
 
@@ -221,6 +234,9 @@ export default function Rounds() {
                         Completed
                       </th>
                       <th scope='col' class='px-4 py-3 font-semibold'>
+                        Score
+                      </th>
+                      <th scope='col' class='px-4 py-3 font-semibold'>
                         SG Total
                       </th>
                       <th
@@ -242,6 +258,7 @@ export default function Rounds() {
                           <td class='px-4 py-3'>
                             {round.finished ? "Yes" : "No"}
                           </td>
+                          <td class='px-4 py-3'>{round.score ?? "-"}</td>
                           <td class='px-4 py-3'>
                             {round.sgTotal == null
                               ? "-"

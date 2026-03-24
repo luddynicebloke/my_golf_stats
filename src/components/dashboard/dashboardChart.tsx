@@ -1,4 +1,5 @@
-import { onMount } from "solid-js";
+import { createMemo, onMount } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import {
   Chart,
@@ -24,9 +25,9 @@ Chart.register(
 );
 
 import { Bar } from "solid-chartjs";
-import { SGColors } from "../lib/graphColors";
+import { SGColors } from "../../lib/graphColors";
 
-import { TStrokesGained } from "../lib/definitions";
+import { TStrokesGained } from "../../lib/definitions";
 
 type SGChartProps = {
   currentSG: TStrokesGained[];
@@ -38,22 +39,26 @@ const css = (name: string) =>
 const rgb = (name: string, alpha = 1) => `rgb(${css(name)} / ${alpha})`;
 
 export default function DashboardChart(props: SGChartProps) {
+  const [t] = useTransContext();
+
   onMount(() => {
     Chart.register(Title, Tooltip, Legend, Colors);
   });
 
-  const chartData = {
-    labels: ["Driving", "Approach", "Chipping", "Putting", "Tee-to-green"],
+  const chartData = createMemo(() => ({
+    labels: props.currentSG.map((item) => item.title),
     datasets: [
       {
         minBarLength: 7,
-        data: [0.3, -0.9, 0.5, 0.0, -0.6],
-        backgroundColor: SGColors,
+        data: props.currentSG.map((item) => item.score),
+        backgroundColor: props.currentSG.map(
+          (_, index) => SGColors[index % SGColors.length],
+        ),
       },
     ],
-  };
+  }));
 
-  const chartOptions = {
+  const chartOptions = createMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     barPercentage: 0.8,
@@ -77,7 +82,7 @@ export default function DashboardChart(props: SGChartProps) {
       legend: { display: false },
       title: {
         display: false,
-        text: "Strokes Gained Overview",
+        text: t("dashboard.chart.title"),
       },
       tooltip: {
         backgroundColor: () => rgb("--chart-tooltip-bg"),
@@ -87,18 +92,20 @@ export default function DashboardChart(props: SGChartProps) {
         padding: 10,
       },
     },
-  };
+  }));
 
   return (
     <div class='w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
       <h2 class='mb-4 font-rubik text-lg font-semibold text-slate-800 sm:text-xl'>
-        Current Strokes Gained
+        {t("dashboard.chart.title")}
       </h2>
       <div class='h-65 sm:h-80'>
         <Bar
-          data={chartData}
-          options={chartOptions}
-          fallback={<div class='text-slate-600'>No data available</div>}
+          data={chartData()}
+          options={chartOptions()}
+          fallback={
+            <div class='text-slate-600'>{t("dashboard.chart.empty")}</div>
+          }
         />
       </div>
     </div>

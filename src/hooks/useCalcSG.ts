@@ -17,7 +17,7 @@ type SGExpectationRow = {
   max_distance: number;
   expected_strokes: number;
   lie_type: BallLie;
-  category: number | null;
+  category_id: number | null;
 };
 
 type NormalizedExpectationRow = {
@@ -199,7 +199,7 @@ export const calculateAndSaveRoundSG = async (
     const { data, error } = await supabase
       .from("sg_expectation_yds")
       .select(
-        "id, min_distance, max_distance, expected_strokes, lie_type, category",
+        "id, min_distance, max_distance, expected_strokes, lie_type, category_id",
       )
       .order("lie_type")
       .order("min_distance")
@@ -221,13 +221,13 @@ export const calculateAndSaveRoundSG = async (
   }
 
   const normalizedExpectations = expectations.map((row) => ({
-      id: Number(row.id),
-      min_distance: Number(row.min_distance),
-      max_distance: Number(row.max_distance),
-      expected_strokes: Number(row.expected_strokes),
-      lie_type: normalizeLieType(row.lie_type),
-      categoryId: row.category == null ? null : Number(row.category),
-    }));
+    id: Number(row.id),
+    min_distance: Number(row.min_distance),
+    max_distance: Number(row.max_distance),
+    expected_strokes: Number(row.expected_strokes),
+    lie_type: normalizeLieType(row.lie_type),
+    categoryId: row.category_id == null ? null : Number(row.category_id),
+  }));
 
   const shotsByRoundHole = new Map<number, ShotRow[]>();
   for (const shot of typedShots) {

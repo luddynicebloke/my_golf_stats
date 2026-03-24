@@ -6,8 +6,8 @@ export type TStrokesGained = {
 export type TLatestRound = {
   date: string;
   course: string;
-  score: number;
-  strokesGained: number;
+  score: number | null;
+  strokesGained: number | null;
 };
 
 export type TCourse = {

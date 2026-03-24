@@ -3,5 +3,11 @@
   "welcome": "Improve your game with",
   "sg": "Strokes Gained",
   "desc": "Enter your round details and see where you need to improve.",
-  "start": "Get Started"
+  "start": "Get Started",
+  "dashboard": {
+    "chart": {
+      "title": "Strokes Gained Last 10 Rounds",
+      "empty": "No data available"
+    }
+  }
 }
