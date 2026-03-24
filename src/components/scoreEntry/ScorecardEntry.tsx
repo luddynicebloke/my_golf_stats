@@ -35,6 +35,8 @@ type RoundRow = {
     | null;
 };
 
+type SaveStage = "savingHole" | "calculatingSg" | "finalisingRound" | null;
+
 const emptyHeader: RoundHeader = {
   courseName: "",
   teeColor: "",
@@ -65,6 +67,7 @@ export default function ScorecardEntry(props: { id: string }) {
   const [entryError, setEntryError] = createSignal<string | null>(null);
   const [savingHole, setSavingHole] = createSignal(false);
   const [roundCompleted, setRoundCompleted] = createSignal(false);
+  const [saveStage, setSaveStage] = createSignal<SaveStage>(null);
 
   const frontNine = createMemo(() =>
     scorecard().filter((hole) => hole.hole_number <= 9),
@@ -80,6 +83,18 @@ export default function ScorecardEntry(props: { id: string }) {
   const distanceUnit = createMemo(() =>
     normalizeDistanceUnit(profile()?.preferred_distance_unit),
   );
+  const saveStageLabel = createMemo(() => {
+    switch (saveStage()) {
+      case "savingHole":
+        return "Saving hole...";
+      case "calculatingSg":
+        return "Calculating strokes gained...";
+      case "finalisingRound":
+        return "Finalising round...";
+      default:
+        return "Saving...";
+    }
+  });
 
   const setNine = (nine: "front" | "back") => {
     setActiveNine(nine);
@@ -203,6 +218,7 @@ export default function ScorecardEntry(props: { id: string }) {
   ): Promise<boolean> => {
     setEntryError(null);
     setSavingHole(true);
+    setSaveStage("savingHole");
 
     try {
       const shotRows = completedShots.map((shot) => ({
@@ -259,8 +275,10 @@ export default function ScorecardEntry(props: { id: string }) {
 
       const hasNextHole = moveToNextHole(hole.hole_number);
       if (!hasNextHole) {
+        setSaveStage("calculatingSg");
         await calculateAndSaveRoundSG(roundId);
 
+        setSaveStage("finalisingRound");
         const { error: finalizeRoundError } = await supabase
           .from("rounds")
           .update({ is_finalised: true })
@@ -279,6 +297,7 @@ export default function ScorecardEntry(props: { id: string }) {
       return false;
     } finally {
       setSavingHole(false);
+      setSaveStage(null);
     }
   };
 
@@ -424,12 +443,27 @@ export default function ScorecardEntry(props: { id: string }) {
                 </div>
               }
             >
+              <Show when={savingHole() && selectedHole()?.completed}>
+                <div class='mb-4 rounded-xl border border-cyan-200 bg-cyan-50 p-4'>
+                  <h3 class='font-rubik text-base font-semibold text-cyan-900'>
+                    Finishing round
+                  </h3>
+                  <p class='mt-1 text-sm text-cyan-800'>
+                    {saveStage() === "calculatingSg"
+                      ? "Your last hole is saved. We are calculating strokes gained now."
+                      : saveStage() === "finalisingRound"
+                        ? "Strokes gained is ready. We are finalising the round."
+                        : "We are saving your final hole."}
+                  </p>
+                </div>
+              </Show>
               <LocalShotPanel
                 distanceUnit={distanceUnit()}
                 entryError={entryError()}
                 hole={hole()}
                 onCompleteHole={persistCompletedHole}
                 savingHole={savingHole()}
+                submitLabel={saveStageLabel()}
               />
             </Show>
           </div>

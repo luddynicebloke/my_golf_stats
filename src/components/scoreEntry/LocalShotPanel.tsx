@@ -20,6 +20,7 @@ type LocalShotPanelProps = {
   hole: ScorecardHole;
   onCompleteHole: (hole: ScorecardHole, shots: LocalShot[]) => Promise<boolean>;
   savingHole: boolean;
+  submitLabel?: string;
 };
 
 type PenaltyType = "oob-lost-ball" | "hazard-unplayable" | null;
@@ -380,7 +381,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
               onClick={() => void addLocalShot()}
             >
               {props.savingHole
-                ? "Saving..."
+                ? (props.submitLabel ?? "Saving...")
                 : holedOut()
                   ? "Next hole"
                   : "Next shot"}

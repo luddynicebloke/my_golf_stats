@@ -1,5 +1,6 @@
 import { supabase } from "../supabase/client";
 import type { BallLie } from "../lib/scoreEntryTypes";
+import { getStrokesGainedLookupDistance } from "../lib/strokesGained";
 
 type ShotRow = {
   id: number;
@@ -29,7 +30,6 @@ type NormalizedExpectationRow = {
   categoryId: number | null;
 };
 
-const METRES_TO_YARDS = 1.09361;
 const SG_PAGE_SIZE = 1000;
 
 const normalizeLieType = (lieType: string): BallLie => {
@@ -52,9 +52,7 @@ const normalizeLieType = (lieType: string): BallLie => {
 };
 
 const getLookupDistance = (shot: Pick<ShotRow, "distance_to_pin" | "lie_type">) =>
-  shot.lie_type === "Green"
-    ? shot.distance_to_pin
-    : shot.distance_to_pin * METRES_TO_YARDS;
+  getStrokesGainedLookupDistance(shot.distance_to_pin, shot.lie_type);
 
 const getExpectedStrokes = (
   expectations: NormalizedExpectationRow[],

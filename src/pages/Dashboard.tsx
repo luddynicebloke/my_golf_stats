@@ -1,10 +1,12 @@
-import { createResource } from "solid-js";
+import { createMemo, createResource } from "solid-js";
 
 import Card from "../components/dashboard/card";
 
 import DashboardChart from "../components/dashboard/dashboardChart";
 import LatestRounds from "../components/dashboard/latestRounds";
 import { useAuth } from "../context/AuthProvider";
+import { normalizeDistanceUnit, type DistanceUnit } from "../lib/distance";
+import { getStrokesGainedLookupDistance } from "../lib/strokesGained";
 import { supabase } from "../supabase/client";
 import type { TLatestRound, TStrokesGained } from "../lib/definitions";
 
@@ -67,9 +69,25 @@ type RoundHoleInfo = {
   par: number | null;
 };
 
-const METRES_TO_YARDS = 1.09361;
+type DashboardStatsParams = {
+  userId: string;
+  distanceUnit: DistanceUnit;
+};
 
-const strokesGainedCategoryLabels: Record<StrokesGainedCategory, string> = {
+const YARDS_TO_METRES = 0.9144;
+
+const strokesGainedCategoryOrder: StrokesGainedCategory[] = [
+  "offTheTee",
+  "approach",
+  "longApproach",
+  "mediumApproach",
+  "shortApproach",
+  "chipping",
+  "aroundTheGreen",
+  "putting",
+];
+
+const strokesGainedCategoryBaseLabels: Record<StrokesGainedCategory, string> = {
   offTheTee: "Off the Tee",
   approach: "Approach",
   longApproach: "Long Approach",
@@ -100,10 +118,44 @@ const formatAverage = (value: number | null, digits = 2) =>
 const formatSignedAverage = (value: number | null, digits = 2) =>
   value == null ? "-" : `${value > 0 ? "+" : ""}${value.toFixed(digits)}`;
 
-const getDistanceInYards = (distanceToPin: number, lieType: string) =>
-  lieType.trim().toLowerCase() === "green"
-    ? distanceToPin
-    : distanceToPin * METRES_TO_YARDS;
+const formatRangeValue = (yards: number, unit: DistanceUnit) =>
+  unit === "yards" ? yards : Math.round(yards * YARDS_TO_METRES);
+
+const getDistanceRangeLabel = (
+  minYards: number | null,
+  maxYards: number,
+  unit: DistanceUnit,
+) => {
+  const unitLabel = unit === "yards" ? "yds" : "m";
+  const maxLabel = formatRangeValue(maxYards, unit);
+
+  if (minYards == null) {
+    return `<=${maxLabel} ${unitLabel}`;
+  }
+
+  const minLabel = formatRangeValue(minYards, unit);
+  return `${minLabel}-${maxLabel} ${unitLabel}`;
+};
+
+const getCategoryLabel = (
+  category: StrokesGainedCategory,
+  unit: DistanceUnit,
+) => {
+  switch (category) {
+    case "aroundTheGreen":
+      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(null, 10, unit)})`;
+    case "chipping":
+      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(11, 30, unit)})`;
+    case "shortApproach":
+      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(31, 60, unit)})`;
+    case "mediumApproach":
+      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(61, 90, unit)})`;
+    case "longApproach":
+      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(91, 120, unit)})`;
+    default:
+      return strokesGainedCategoryBaseLabels[category];
+  }
+};
 
 const getShotCategory = (
   shot: Pick<ShotSummaryRow, "shot_number" | "distance_to_pin" | "lie_type">,
@@ -119,7 +171,7 @@ const getShotCategory = (
     return "offTheTee";
   }
 
-  const distanceInYards = getDistanceInYards(
+  const distanceInYards = getStrokesGainedLookupDistance(
     Number(shot.distance_to_pin),
     shot.lie_type,
   );
@@ -147,9 +199,10 @@ const getShotCategory = (
   return "approach";
 };
 
-const fetchDashboardCardStats = async (
-  userId: string,
-): Promise<DashboardCardStats> => {
+const fetchDashboardCardStats = async ({
+  userId,
+  distanceUnit,
+}: DashboardStatsParams): Promise<DashboardCardStats> => {
   if (!userId) {
     return emptyDashboardCardStats();
   }
@@ -287,20 +340,17 @@ const fetchDashboardCardStats = async (
     }));
 
   const latestRoundCount = latestRoundIds.size;
-  const strokesGainedByCategory = Object.entries(strokesGainedCategoryLabels).map(
-    ([category, title]) => ({
-      title,
+  const strokesGainedByCategory = strokesGainedCategoryOrder.map((category) => ({
+      title: getCategoryLabel(category, distanceUnit),
       score:
         latestRoundCount === 0
           ? 0
           : Number(
-              (
-                (sgTotalsByCategory.get(category as StrokesGainedCategory) ?? 0) /
-                latestRoundCount
-              ).toFixed(3),
+              ((sgTotalsByCategory.get(category) ?? 0) / latestRoundCount).toFixed(
+                3,
+              ),
             ),
-    }),
-  );
+    }));
 
   return {
     roundCount: roundIds.length,
@@ -317,9 +367,15 @@ const fetchDashboardCardStats = async (
 };
 
 export default function Dashboard() {
-  const { role, user } = useAuth();
+  const { profile, role, user } = useAuth();
+  const distanceUnit = createMemo(() =>
+    normalizeDistanceUnit(profile()?.preferred_distance_unit),
+  );
   const [cardStats] = createResource(
-    () => user()?.id ?? "",
+    () => ({
+      userId: user()?.id ?? "",
+      distanceUnit: distanceUnit(),
+    }),
     fetchDashboardCardStats,
   );
 
