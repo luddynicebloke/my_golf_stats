@@ -1,6 +1,6 @@
 import { createForm, required } from "@modular-forms/solid";
 import { A, useNavigate } from "@solidjs/router";
-import { createSignal } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 
 import LogoSG from "../assets/logo.png";
 import TextInput from "../components/forms/TextInput";
@@ -20,14 +20,11 @@ type RegisterFormProps = {
   username: string;
 };
 
-const categoryOptions = [
-  "Pro M",
-  "Am M",
-  "Senior M",
-  "Pro F",
-  "Am F",
-  "Senior F",
-];
+type CategoryOption = {
+  id: number;
+  code: string;
+  name: string;
+};
 
 export default function Register() {
   const [loading, setLoading] = createSignal(false);
@@ -35,9 +32,32 @@ export default function Register() {
   const [avatar, setAvatar] = createSignal("");
   const [category, setCategory] = createSignal("");
   const [distanceUnit, setDistanceUnit] = createSignal("");
+  const [categoryOptions, setCategoryOptions] = createSignal<CategoryOption[]>([]);
 
   const navigate = useNavigate();
   const [, { Form, Field }] = createForm<RegisterFormProps>();
+
+  onMount(() => {
+    void supabase
+      .from("category")
+      .select("id, code, name")
+      .order("id")
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Failed to load register categories:", error);
+          return;
+        }
+
+        setCategoryOptions((data as CategoryOption[] | null) ?? []);
+      });
+  });
+
+  const clearStoredSession = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    setSubmitError("");
+    window.location.reload();
+  };
 
   const handleRegister = async (values: RegisterFormProps) => {
     setSubmitError("");
@@ -62,9 +82,26 @@ export default function Register() {
 
     try {
       setLoading(true);
+      const selectedCategory = categoryOptions().find(
+        (option) => option.code === category(),
+      );
+
+      if (!selectedCategory) {
+        setSubmitError("Selected category is invalid.");
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
+        options: {
+          data: {
+            user_name: values.username.trim(),
+            avatar_url: avatar().trim() || null,
+            category_code: selectedCategory.code,
+            preferred_distance_unit: normalizeDistanceUnit(distanceUnit()),
+          },
+        },
       });
 
       if (error) {
@@ -81,7 +118,7 @@ export default function Register() {
               id: userId,
               email: values.email.trim(),
               user_name: values.username.trim(),
-              category: category(),
+              category_id: selectedCategory.id,
               preferred_distance_unit: normalizeDistanceUnit(distanceUnit()),
               avatar_url: avatar().trim() || null,
               role: "user",
@@ -90,8 +127,7 @@ export default function Register() {
           );
 
         if (profileError) {
-          setSubmitError(profileError.message);
-          return;
+          console.error("Profile setup during register failed:", profileError);
         }
       }
 
@@ -238,8 +274,10 @@ export default function Register() {
                     <option value='' disabled>
                       Select category
                     </option>
-                    {categoryOptions.map((option) => (
-                      <option value={option}>{option}</option>
+                    {categoryOptions().map((option) => (
+                      <option value={option.code}>
+                        {option.name}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -275,6 +313,16 @@ export default function Register() {
           </div>
 
           <div class='mt-5 font-grotesk text-sm'>
+            <button
+              type='button'
+              onClick={clearStoredSession}
+              class='mb-3 inline-flex rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100'
+            >
+              Start fresh on this device
+            </button>
+          </div>
+
+          <div class='font-grotesk text-sm'>
             <A
               class='text-slate-600 hover:text-slate-800 hover:underline'
               href='/signin'

@@ -22,6 +22,9 @@ type UserMetadata = {
   name?: string;
   email?: string;
   avatar_url?: string;
+  user_name?: string;
+  category_code?: string;
+  preferred_distance_unit?: string;
 };
 
 type ProfileData = {
@@ -59,6 +62,62 @@ export const AuthProvider: ParentComponent = (props) => {
   const [loading, setLoading] = createSignal<boolean>(true);
   const [initialized, setInitialized] = createSignal<boolean>(false);
 
+  const ensureProfileExists = async (
+    currentUser: User,
+    userMetadata: UserMetadata | null,
+  ): Promise<ProfileData | null> => {
+    const categoryCode = userMetadata?.category_code?.trim();
+    let categoryId: number | null = null;
+
+    if (categoryCode) {
+      const { data: categoryRow, error: categoryError } = await supabase
+        .from("category")
+        .select("id")
+        .eq("code", categoryCode)
+        .maybeSingle();
+
+      if (categoryError) {
+        console.error("Failed to resolve signup category:", categoryError);
+      } else {
+        categoryId = categoryRow?.id == null ? null : Number(categoryRow.id);
+      }
+    }
+
+    const profilePayload = {
+      id: currentUser.id,
+      email: currentUser.email ?? userMetadata?.email ?? null,
+      user_name: userMetadata?.user_name ?? userMetadata?.name ?? null,
+      avatar_url: userMetadata?.avatar_url ?? null,
+      category_id: categoryId,
+      preferred_distance_unit: userMetadata?.preferred_distance_unit ?? "yards",
+      role: "user",
+    };
+
+    const { error: upsertError } = await supabase
+      .from("user_profiles")
+      .upsert(profilePayload, { onConflict: "id" });
+
+    if (upsertError) {
+      console.error("Failed to create missing profile row:", upsertError);
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select(
+        "user_name, email, avatar_url, category_id, preferred_distance_unit",
+      )
+      .eq("id", currentUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Failed to reload profile after creation:", error);
+      return null;
+    }
+
+    return (data as ProfileData | null) ?? null;
+  };
+
   // fetch the user's role
   const fetchUserRole = async (userId: string) => {
     const { data, error } = await supabase
@@ -83,10 +142,16 @@ export const AuthProvider: ParentComponent = (props) => {
         "user_name, email, avatar_url, category_id, preferred_distance_unit",
       )
       .eq("id", currentUser.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       setProfile(null);
+      return;
+    }
+
+    if (!data) {
+      const createdProfile = await ensureProfileExists(currentUser, metaData());
+      setProfile(createdProfile);
       return;
     }
 

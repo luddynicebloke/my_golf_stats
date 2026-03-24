@@ -24,7 +24,7 @@ type ProfileData = {
   category: {
     id: number;
     name: string;
-  };
+  } | null;
 };
 
 const Profile = () => {
@@ -80,7 +80,7 @@ const Profile = () => {
               "user_name, avatar_url, preferred_distance_unit, category(id, name)",
             )
             .eq("id", currentUser.id)
-            .single<ProfileData>(),
+            .maybeSingle<ProfileData>(),
           supabase.from("category").select("id, name").order("id"),
         ]);
 
@@ -103,10 +103,12 @@ const Profile = () => {
         }
 
         setCategoryOptions(categories ?? []);
-        setUsername(profileData.user_name ?? "");
-        setAvatar(profileData.avatar_url ?? "");
-        setCategory(profileData.category.id ?? "");
-        setDistance(normalizeDistanceUnit(profileData.preferred_distance_unit));
+        setUsername(profileData?.user_name ?? "");
+        setAvatar(profileData?.avatar_url ?? "");
+        setCategory(profileData?.category?.id ?? 0);
+        setDistance(
+          normalizeDistanceUnit(profileData?.preferred_distance_unit),
+        );
       } catch (error) {
         if (!cancelled) {
           setProfileState({
@@ -151,13 +153,14 @@ const Profile = () => {
 
     const { error } = await supabase
       .from("user_profiles")
-      .update({
+      .upsert({
+        id: currentUser.id,
+        email: currentUser.email ?? email(),
         user_name: username().trim(),
         avatar_url: avatar().trim() || null,
         category_id: category(),
         preferred_distance_unit: normalizeDistanceUnit(distance()),
-      })
-      .eq("id", currentUser.id);
+      });
 
     if (error) {
       setProfileState({
