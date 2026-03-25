@@ -74,6 +74,20 @@ const getSingleRelation = <T,>(value: T | T[] | null | undefined): T | null => {
   return value ?? null;
 };
 
+const FEET_TO_METRES = 0.3048;
+
+const formatGreenDistanceForDisplay = (
+  feet: number,
+  unit: ReturnType<typeof normalizeDistanceUnit>,
+) => {
+  if (unit === "yards") {
+    return `${Math.round(feet)} ft`;
+  }
+
+  const metres = Math.round(feet * FEET_TO_METRES * 2) / 2;
+  return `${Number.isInteger(metres) ? metres.toFixed(0) : metres.toFixed(1)} m`;
+};
+
 const fetchRoundShots = async (roundId: number): Promise<RoundShotsData> => {
   const { data: roundHeader, error: roundHeaderError } = await supabase
     .from("rounds")
@@ -174,11 +188,10 @@ export default function RoundShots(props: { id: string }) {
     normalizeDistanceUnit(profile()?.preferred_distance_unit);
   const formatShotDistance = (shot: RoundShotItem) => {
     if (shot.lieType === "Green") {
-      if (distanceUnit() === "yards") {
-        return `${Math.round(shot.distanceToPin)} ft`;
-      }
-
-      return `${Math.round(shot.distanceToPin * 0.3048)} m`;
+      return formatGreenDistanceForDisplay(
+        shot.distanceToPin,
+        distanceUnit(),
+      );
     }
 
     if (distanceUnit() === "yards") {

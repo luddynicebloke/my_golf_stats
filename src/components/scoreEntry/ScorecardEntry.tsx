@@ -1,4 +1,4 @@
-import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { createMemo, createSignal, onMount, Show } from "solid-js";
 import { A } from "@solidjs/router";
 
 import { useAuth } from "../../context/AuthProvider";
@@ -54,9 +54,22 @@ const getSingleRelation = <T,>(value: T | T[] | null | undefined): T | null => {
   return value ?? null;
 };
 
+const isAbortLikeError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return (
+    error.name === "AbortError" ||
+    error.message.includes("AbortError") ||
+    error.message.includes("signal is aborted without reason")
+  );
+};
+
 export default function ScorecardEntry(props: { id: string }) {
   const roundId = Number(props.id);
   const { profile } = useAuth();
+  let latestLoadRequestId = 0;
 
   const [activeNine, setActiveNine] = createSignal<"front" | "back">("front");
   const [selectedHoleNumber, setSelectedHoleNumber] = createSignal(1);
@@ -101,6 +114,8 @@ export default function ScorecardEntry(props: { id: string }) {
   };
 
   const loadScorecard = async () => {
+    const requestId = ++latestLoadRequestId;
+
     if (Number.isNaN(roundId)) {
       setLoadError("Invalid round id.");
       setLoading(false);
@@ -110,83 +125,119 @@ export default function ScorecardEntry(props: { id: string }) {
     setLoading(true);
     setLoadError(null);
 
-    const { data: round, error: roundError } = await supabase
-      .from("rounds")
-      .select("tee_id, courses(name), tees(color)")
-      .eq("id", roundId)
-      .single();
+    try {
+      const { data: round, error: roundError } = await supabase
+        .from("rounds")
+        .select("tee_id, courses(name), tees(color)")
+        .eq("id", roundId)
+        .single();
 
-    if (roundError || !round) {
-      setLoadError(roundError?.message ?? "Failed to load round details.");
+      if (requestId !== latestLoadRequestId) return;
+
+      if (isAbortLikeError(roundError)) {
+        setLoading(false);
+        return;
+      }
+
+      if (roundError || !round) {
+        setLoadError(roundError?.message ?? "Failed to load round details.");
+        setLoading(false);
+        return;
+      }
+
+      const course = getSingleRelation<{ name: string }>(round.courses);
+      const tee = getSingleRelation<{ color: string }>(round.tees);
+
+      setRoundHeader({
+        courseName: course?.name ?? "",
+        teeColor: tee?.color ?? "",
+      });
+
+      const teeId = Number(round.tee_id);
+      const { data: holeRows, error: holeRowsError } = await supabase
+        .from("round_holes")
+        .select("id, hole_id, score, completed, holes(hole_number, par)")
+        .eq("round_id", roundId)
+        .order("id", { ascending: true });
+
+      if (requestId !== latestLoadRequestId) return;
+
+      if (isAbortLikeError(holeRowsError)) {
+        setLoading(false);
+        return;
+      }
+
+      if (holeRowsError) {
+        setLoadError(holeRowsError.message);
+        setLoading(false);
+        return;
+      }
+
+      const holeIds = (holeRows ?? []).map((row) => row.hole_id);
+      const { data: yardageRows, error: yardageError } = await supabase
+        .from("hole_tee")
+        .select("hole_id, yardage")
+        .eq("tee_id", teeId)
+        .in("hole_id", holeIds);
+
+      if (requestId !== latestLoadRequestId) return;
+
+      if (isAbortLikeError(yardageError)) {
+        setLoading(false);
+        return;
+      }
+
+      if (yardageError) {
+        setLoadError(yardageError.message);
+        setLoading(false);
+        return;
+      }
+
+      const yardageByHoleId = new Map<number, number>();
+      for (const row of yardageRows ?? []) {
+        yardageByHoleId.set(Number(row.hole_id), Number(row.yardage));
+      }
+
+      const rows = ((holeRows ?? []) as RoundRow[])
+        .map((row) => {
+          const hole = getSingleRelation(row.holes);
+          if (!hole) return null;
+
+          return {
+            round_hole_id: Number(row.id),
+            hole_id: Number(row.hole_id),
+            hole_number: Number(hole.hole_number),
+            par: Number(hole.par),
+            distanceMetres: yardageByHoleId.get(Number(row.hole_id)) ?? 0,
+            score: row.score == null ? null : Number(row.score),
+            completed: Boolean(row.completed),
+          } satisfies ScorecardHole;
+        })
+        .filter((row): row is ScorecardHole => row !== null)
+        .sort((a, b) => a.hole_number - b.hole_number);
+
+      setScorecard(rows);
+      if (rows.length > 0) {
+        const nextHole =
+          rows.find((hole) => !hole.completed) ?? rows[rows.length - 1];
+        setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
+        setSelectedHoleNumber(nextHole.hole_number);
+      }
+      setRoundCompleted(rows.length > 0 && rows.every((hole) => hole.completed));
       setLoading(false);
-      return;
-    }
+    } catch (error) {
+      if (requestId !== latestLoadRequestId) return;
 
-    const course = getSingleRelation<{ name: string }>(round.courses);
-    const tee = getSingleRelation<{ color: string }>(round.tees);
+      if (isAbortLikeError(error)) {
+        setLoading(false);
+        return;
+      }
 
-    setRoundHeader({
-      courseName: course?.name ?? "",
-      teeColor: tee?.color ?? "",
-    });
-
-    const teeId = Number(round.tee_id);
-    const { data: holeRows, error: holeRowsError } = await supabase
-      .from("round_holes")
-      .select("id, hole_id, score, completed, holes(hole_number, par)")
-      .eq("round_id", roundId)
-      .order("id", { ascending: true });
-
-    if (holeRowsError) {
-      setLoadError(holeRowsError.message);
+      setLoadError(
+        error instanceof Error ? error.message : "Failed to load scorecard.",
+      );
       setLoading(false);
-      return;
     }
-
-    const holeIds = (holeRows ?? []).map((row) => row.hole_id);
-    const { data: yardageRows, error: yardageError } = await supabase
-      .from("hole_tee")
-      .select("hole_id, yardage")
-      .eq("tee_id", teeId)
-      .in("hole_id", holeIds);
-
-    if (yardageError) {
-      setLoadError(yardageError.message);
-      setLoading(false);
-      return;
-    }
-
-    const yardageByHoleId = new Map<number, number>();
-    for (const row of yardageRows ?? []) {
-      yardageByHoleId.set(Number(row.hole_id), Number(row.yardage));
-    }
-
-    const rows = ((holeRows ?? []) as RoundRow[])
-      .map((row) => {
-        const hole = getSingleRelation(row.holes);
-        if (!hole) return null;
-
-        return {
-          round_hole_id: Number(row.id),
-          hole_id: Number(row.hole_id),
-          hole_number: Number(hole.hole_number),
-          par: Number(hole.par),
-          distanceMetres: yardageByHoleId.get(Number(row.hole_id)) ?? 0,
-          score: row.score == null ? null : Number(row.score),
-          completed: Boolean(row.completed),
-        } satisfies ScorecardHole;
-      })
-      .filter((row): row is ScorecardHole => row !== null)
-      .sort((a, b) => a.hole_number - b.hole_number);
-
-    setScorecard(rows);
-    if (rows.length > 0) {
-      const nextHole = rows.find((hole) => !hole.completed) ?? rows[rows.length - 1];
-      setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
-      setSelectedHoleNumber(nextHole.hole_number);
-    }
-    setRoundCompleted(rows.length > 0 && rows.every((hole) => hole.completed));
-    setLoading(false);
   };
 
   const updateScorecardHole = (
@@ -303,24 +354,6 @@ export default function ScorecardEntry(props: { id: string }) {
 
   onMount(() => {
     void loadScorecard();
-
-    const handleWindowFocus = () => {
-      void loadScorecard();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void loadScorecard();
-      }
-    };
-
-    window.addEventListener("focus", handleWindowFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    onCleanup(() => {
-      window.removeEventListener("focus", handleWindowFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    });
   });
 
   return (

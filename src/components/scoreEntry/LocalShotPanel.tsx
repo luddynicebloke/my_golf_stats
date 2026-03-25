@@ -30,6 +30,39 @@ const inactiveButtonClass =
   "border-slate-300 bg-white text-slate-700 hover:bg-slate-100";
 const FEET_TO_METRES = 0.3048;
 const METRES_TO_FEET = 3.28084;
+const GREEN_DEFAULT_FEET = 15;
+const GREEN_MIN_FEET = 1;
+const GREEN_MAX_FEET = 100;
+const MIN_TEE_SHOT_DISTANCE_METRES = 138;
+
+const roundMetresForGreenUi = (metres: number): number =>
+  Math.round(metres * 2) / 2;
+
+const convertFeetToGreenUiValue = (
+  feet: number,
+  distanceUnit: DistanceUnit,
+): number =>
+  distanceUnit === "metres"
+    ? roundMetresForGreenUi(feet * FEET_TO_METRES)
+    : Math.round(feet);
+
+const convertGreenUiValueToFeet = (
+  value: number,
+  distanceUnit: DistanceUnit,
+): number =>
+  distanceUnit === "metres"
+    ? Math.round(value * METRES_TO_FEET)
+    : Math.round(value);
+
+const formatGreenUiValue = (
+  feet: number,
+  distanceUnit: DistanceUnit,
+): string => {
+  const displayValue = convertFeetToGreenUiValue(feet, distanceUnit);
+  return Number.isInteger(displayValue)
+    ? String(displayValue)
+    : displayValue.toFixed(1);
+};
 
 const getDefaultLie = (hole: ScorecardHole): BallLie =>
   hole.par === 3 ? "Fairway" : "Tee";
@@ -40,9 +73,7 @@ const getDefaultDistance = (
   distanceUnit: DistanceUnit,
 ): number =>
   lie === "Green"
-    ? distanceUnit === "metres"
-      ? 0.5
-      : 15
+    ? convertFeetToGreenUiValue(GREEN_DEFAULT_FEET, distanceUnit)
     : convertMetresToUnit(hole.distanceMetres, distanceUnit);
 
 const getPenaltyShotsForType = (penaltyType: PenaltyType): number => {
@@ -51,10 +82,16 @@ const getPenaltyShotsForType = (penaltyType: PenaltyType): number => {
   return 0;
 };
 
+const clampTeeShotDistance = (distanceMetres: number, lie: BallLie): number =>
+  lie === "Tee"
+    ? Math.max(distanceMetres, MIN_TEE_SHOT_DISTANCE_METRES)
+    : distanceMetres;
+
 const getTotalShotCount = (shots: LocalShot[]): number =>
   shots.reduce((total, shot) => total + 1 + shot.penaltyShots, 0);
 
 export default function LocalShotPanel(props: LocalShotPanelProps) {
+  let latestShotElement: HTMLDivElement | undefined;
   const [ballLie, setBallLie] = createSignal<BallLie>(
     getDefaultLie(props.hole),
   );
@@ -74,23 +111,34 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   const currentShotNumber = createMemo(
     () => getTotalShotCount(currentHoleShots()) + 1,
   );
+  const currentHoleShotCount = createMemo(() => currentHoleShots().length);
+  const teeDisabled = createMemo(() => {
+    if (props.hole.par === 3) {
+      return true;
+    }
+
+    const lastShot = currentHoleShots()[currentHoleShots().length - 1];
+    return lastShot?.lieType === "Tee";
+  });
   const isGreenLie = createMemo(() => ballLie() === "Green");
   const sliderLabel = createMemo(() =>
     isGreenLie() ? "Distance to hole" : "Distance to pin",
   );
   const sliderUnitLabel = createMemo(() =>
     isGreenLie()
-      ? "ft"
+      ? props.distanceUnit === "metres"
+        ? "m"
+        : "ft"
       : getDistanceUnitLabel(props.distanceUnit).toLowerCase(),
   );
   const sliderMin = createMemo(() =>
-    isGreenLie() && props.distanceUnit === "metres" ? 0.5 : 1,
+    isGreenLie()
+      ? convertFeetToGreenUiValue(GREEN_MIN_FEET, props.distanceUnit)
+      : 1,
   );
   const sliderMax = createMemo(() =>
     isGreenLie()
-      ? props.distanceUnit === "metres"
-        ? 30
-        : 100
+      ? convertFeetToGreenUiValue(GREEN_MAX_FEET, props.distanceUnit)
       : Math.max(
           convertMetresToUnit(props.hole.distanceMetres, props.distanceUnit),
           convertMetresToUnit(549, props.distanceUnit),
@@ -98,7 +146,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   );
   const sliderStep = createMemo(() => {
     if (isGreenLie() && props.distanceUnit === "metres") {
-      return 4.5;
+      return 0.5;
     }
 
     return Math.max(1, Math.round(sliderMax() / 6));
@@ -163,10 +211,11 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
 
   const addLocalShot = async () => {
     const storedDistanceToPin = isGreenLie()
-      ? props.distanceUnit === "metres"
-        ? Math.round(sliderValue() * METRES_TO_FEET)
-        : sliderValue()
-      : convertUnitToMetres(sliderValue(), props.distanceUnit);
+      ? convertGreenUiValueToFeet(sliderValue(), props.distanceUnit)
+      : clampTeeShotDistance(
+          convertUnitToMetres(sliderValue(), props.distanceUnit),
+          ballLie(),
+        );
 
     const nextShot: LocalShot = {
       shotNumber: currentShotNumber(),
@@ -213,13 +262,32 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
 
   createEffect(() => {
     if (isGreenLie()) {
-      setSliderValue(props.distanceUnit === "metres" ? 5 : 15);
+      setSliderValue(
+        convertFeetToGreenUiValue(GREEN_DEFAULT_FEET, props.distanceUnit),
+      );
       return;
     }
 
     setSliderValue((currentValue) =>
       Math.min(sliderMax(), Math.max(sliderMin(), currentValue)),
     );
+  });
+
+  createEffect(() => {
+    if (teeDisabled() && ballLie() === "Tee") {
+      setBallLie("Fairway");
+    }
+  });
+
+  createEffect(() => {
+    currentHoleShotCount();
+
+    requestAnimationFrame(() => {
+      latestShotElement?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    });
   });
 
   return (
@@ -238,11 +306,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
           onChange={setSliderValue}
           min={sliderMin()}
           max={sliderMax()}
-          valueSuffix={
-            isGreenLie() && props.distanceUnit === "metres"
-              ? "m"
-              : sliderUnitLabel()
-          }
+          valueSuffix={sliderUnitLabel()}
           marksSuffix=''
           r1={sliderMarks()[0]}
           r2={sliderMarks()[1]}
@@ -260,9 +324,14 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
               {(lie) => (
                 <button
                   type='button'
+                  disabled={lie === "Tee" && teeDisabled()}
                   class={`w-full justify-center rounded-md border px-2 py-3 text-center text-xs font-semibold transition-colors sm:text-sm ${
                     ballLie() === lie ? activeButtonClass : inactiveButtonClass
                   }`}
+                  classList={{
+                    "cursor-not-allowed opacity-50":
+                      lie === "Tee" && teeDisabled(),
+                  }}
                   onClick={() => setBallLie(lie)}
                 >
                   {lie}
@@ -449,10 +518,19 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
             </p>
           }
         >
-          <div class='mt-3 space-y-2'>
+          <div
+            class='mt-3 max-h-72 space-y-2 overflow-y-auto pr-1'
+          >
             <For each={currentHoleShots()}>
-              {(shot) => (
-                <div class='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700'>
+              {(shot, index) => (
+                <div
+                  ref={(element) => {
+                    if (index() === currentHoleShots().length - 1) {
+                      latestShotElement = element;
+                    }
+                  }}
+                  class='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700'
+                >
                   <div class='flex flex-wrap items-center gap-3'>
                     <span class='font-semibold text-slate-800'>
                       Shot {shot.shotNumber}
@@ -460,9 +538,10 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                     <span>{shot.lieType}</span>
                     <span>
                       {shot.lieType === "Green"
-                        ? props.distanceUnit === "metres"
-                          ? Number((shot.distanceToPin * FEET_TO_METRES).toFixed(1))
-                          : shot.distanceToPin
+                        ? formatGreenUiValue(
+                            shot.distanceToPin,
+                            props.distanceUnit,
+                          )
                         : convertMetresToUnit(
                             shot.distanceToPin,
                             props.distanceUnit,
