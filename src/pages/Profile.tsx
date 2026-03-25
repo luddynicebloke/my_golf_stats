@@ -106,9 +106,7 @@ const Profile = () => {
         setUsername(profileData?.user_name ?? "");
         setAvatar(profileData?.avatar_url ?? "");
         setCategory(profileData?.category?.id ?? 0);
-        setDistance(
-          normalizeDistanceUnit(profileData?.preferred_distance_unit),
-        );
+        setDistance(profileData?.preferred_distance_unit ?? "");
       } catch (error) {
         if (!cancelled) {
           setProfileState({
@@ -147,6 +145,14 @@ const Profile = () => {
       setProfileState({
         type: "error",
         message: "Category is required.",
+      });
+      return;
+    }
+
+    if (!distance()) {
+      setProfileState({
+        type: "error",
+        message: "Distance unit is required.",
       });
       return;
     }
@@ -315,6 +321,7 @@ const Profile = () => {
                   value={category()}
                   onChange={(e) => setCategory(Number(e.currentTarget.value))}
                   class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800'
+                  required
                 >
                   <option value=''>Select category</option>
                   {categoryOptions().map((option) => (
@@ -331,7 +338,9 @@ const Profile = () => {
                   value={distance()}
                   onChange={(e) => setDistance(e.currentTarget.value)}
                   class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800'
+                  required
                 >
+                  <option value=''>Select distance unit</option>
                   {distanceUnitOptions.map((option) => (
                     <option value={option}>{option}</option>
                   ))}

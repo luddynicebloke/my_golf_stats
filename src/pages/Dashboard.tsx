@@ -12,6 +12,7 @@ import type { TLatestRound, TStrokesGained } from "../lib/definitions";
 
 type RoundSummaryRow = {
   id: number;
+  is_finalised: boolean | null;
   round_date: string | null;
   courses:
     | {
@@ -209,7 +210,7 @@ const fetchDashboardCardStats = async ({
 
   const { data: rounds, error: roundsError } = await supabase
     .from("rounds")
-    .select("id, round_date, courses(name)")
+    .select("id, is_finalised, round_date, courses(name)")
     .eq("user_id", userId);
 
   if (roundsError) {
@@ -218,6 +219,9 @@ const fetchDashboardCardStats = async ({
   }
 
   const typedRounds = (rounds ?? []) as RoundSummaryRow[];
+  const finalisedRoundIds = typedRounds
+    .filter((round) => Boolean(round.is_finalised))
+    .map((round) => Number(round.id));
   const roundIds = typedRounds.map((round) => Number(round.id));
 
   if (roundIds.length === 0) {
@@ -233,7 +237,7 @@ const fetchDashboardCardStats = async ({
     console.error("Error fetching dashboard round holes:", roundHolesError);
     return {
       ...emptyDashboardCardStats(),
-      roundCount: roundIds.length,
+      roundCount: finalisedRoundIds.length,
     };
   }
 
@@ -310,7 +314,7 @@ const fetchDashboardCardStats = async ({
   let totalScore = 0;
   let totalScoreToPar = 0;
 
-  for (const roundId of roundIds) {
+  for (const roundId of finalisedRoundIds) {
     const score = scoreTotalsByRoundId.get(roundId);
     const par = parTotalsByRoundId.get(roundId);
 
@@ -353,7 +357,7 @@ const fetchDashboardCardStats = async ({
     }));
 
   return {
-    roundCount: roundIds.length,
+    roundCount: finalisedRoundIds.length,
     averageScoreToPar:
       scoredRoundCount === 0 ? null : totalScoreToPar / scoredRoundCount,
     averageScore: scoredRoundCount === 0 ? null : totalScore / scoredRoundCount,

@@ -164,7 +164,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   const addLocalShot = async () => {
     const storedDistanceToPin = isGreenLie()
       ? props.distanceUnit === "metres"
-        ? Number((sliderValue() * METRES_TO_FEET).toFixed(2))
+        ? Math.round(sliderValue() * METRES_TO_FEET)
         : sliderValue()
       : convertUnitToMetres(sliderValue(), props.distanceUnit);
 

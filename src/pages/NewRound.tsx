@@ -1,13 +1,31 @@
-import { createMemo, createResource, createSignal, For, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  For,
+  onCleanup,
+  Show,
+} from "solid-js";
 import { useNavigate } from "@solidjs/router";
 
 import { TCourse, TTee } from "../lib/definitions";
 import { supabase } from "../supabase/client";
 import { toDMYDash, toSlash } from "../hooks/useDateFormat";
 import { useAuth } from "../context/AuthProvider";
-import LoadingCss from "../components/LoadingCss";
 
-const fetchCourses = async () => {
+type CoursesResult = {
+  data: TCourse[];
+  error: string | null;
+};
+
+type TeesResult = {
+  data: TTee[];
+  error: string | null;
+};
+
+const fetchCourses = async (): Promise<CoursesResult> => {
+  const startedAt = performance.now();
   const { data, error } = await supabase
     .from("courses")
     .select("id, name, city")
@@ -15,12 +33,20 @@ const fetchCourses = async () => {
 
   if (error) {
     console.error("Error fetching courses:", error);
+    return { data: [], error: error.message };
   }
 
-  return { data: (data as TCourse[]) ?? [] };
+  console.info(
+    `NewRound: fetched ${(data ?? []).length} courses in ${Math.round(
+      performance.now() - startedAt,
+    )}ms`,
+  );
+
+  return { data: (data as TCourse[]) ?? [], error: null };
 };
 
-const fetchTees = async (courseId: number) => {
+const fetchTees = async (courseId: number): Promise<TeesResult> => {
+  const startedAt = performance.now();
   const { data, error } = await supabase
     .from("tees")
     .select("id, color, total_yardage, course_id")
@@ -29,9 +55,16 @@ const fetchTees = async (courseId: number) => {
 
   if (error) {
     console.error("Error fetching tees:", error);
+    return { data: [], error: error.message };
   }
 
-  return { data: (data as TTee[]) ?? [] };
+  console.info(
+    `NewRound: fetched ${(data ?? []).length} tees for course ${courseId} in ${Math.round(
+      performance.now() - startedAt,
+    )}ms`,
+  );
+
+  return { data: (data as TTee[]) ?? [], error: null };
 };
 
 const fetchUnfinishedRounds = async (userId: string) => {
@@ -86,6 +119,9 @@ export default function NewRound() {
   const [startingRound, setStartingRound] = createSignal(false);
   const [deletingRoundId, setDeletingRoundId] = createSignal<string>("");
   const [startError, setStartError] = createSignal("");
+  const [coursesTakingTooLong, setCoursesTakingTooLong] = createSignal(false);
+  const [coursesError, setCoursesError] = createSignal("");
+  const [teesError, setTeesError] = createSignal("");
 
   const pageSize = 5;
 
@@ -118,6 +154,22 @@ export default function NewRound() {
     ),
   );
 
+  createEffect(() => {
+    if (!courses.loading) {
+      setCoursesTakingTooLong(false);
+      setCoursesError(courses()?.error ?? "");
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCoursesTakingTooLong(true);
+    }, 8000);
+
+    onCleanup(() => {
+      window.clearTimeout(timeoutId);
+    });
+  });
+
   const handleSearch = (value: string) => {
     setSearch(value);
     setPage(1);
@@ -125,6 +177,7 @@ export default function NewRound() {
 
   const handleCourseSelect = async (id: string, name: string) => {
     setStartError("");
+    setTeesError("");
     setSelectedCourse({ id, name });
     setSelectedTee({ id: "", color: "" });
     setTees([]);
@@ -137,6 +190,7 @@ export default function NewRound() {
 
     const result = await fetchTees(numericCourseId);
     setTees(result.data ?? []);
+    setTeesError(result.error ?? "");
   };
 
   const handleTeeSelect = (id: string, color: string) => {
@@ -354,36 +408,71 @@ export default function NewRound() {
             <Show
               when={!courses.loading}
               fallback={
-                <div class='p-4'>
-                  <LoadingCss />
+                <div class='flex min-h-40 flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center'>
+                  <div class='lds-dual-ring'></div>
+                  <p class='font-grotesk text-sm text-slate-600'>
+                    Loading courses...
+                  </p>
+                  <Show when={coursesTakingTooLong()}>
+                    <div class='space-y-3'>
+                      <p class='max-w-md text-sm text-slate-500'>
+                        Course data is taking longer than expected to load.
+                      </p>
+                      <button
+                        type='button'
+                        class='mx-auto rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100'
+                        onClick={() => window.location.reload()}
+                      >
+                        Reload page
+                      </button>
+                    </div>
+                  </Show>
                 </div>
               }
             >
-              <table class='w-full text-sm text-slate-700'>
-                <tbody>
-                  <For each={paginatedCourses()}>
-                    {(course) => (
-                      <tr
-                        class={`cursor-pointer border-b border-slate-100 last:border-b-0 ${
-                          selectedCourse().id === course.id
-                            ? "bg-cyan-50"
-                            : "bg-white hover:bg-slate-50"
-                        }`}
-                        onClick={() =>
-                          handleCourseSelect(course.id, course.name)
-                        }
-                      >
-                        <td class='px-4 py-3 font-medium text-slate-800'>
-                          {course.name}
-                        </td>
-                        <td class='px-4 py-3 text-slate-500'>
-                          {course.city || "-"}
-                        </td>
-                      </tr>
-                    )}
-                  </For>
-                </tbody>
-              </table>
+              <Show
+                when={!coursesError()}
+                fallback={
+                  <div class='bg-rose-50 p-4 text-sm text-rose-700'>
+                    Failed to load courses: {coursesError()}
+                  </div>
+                }
+              >
+                <Show
+                  when={paginatedCourses().length > 0}
+                  fallback={
+                    <div class='bg-slate-50 p-4 text-sm text-slate-500'>
+                      No courses found.
+                    </div>
+                  }
+                >
+                  <table class='w-full text-sm text-slate-700'>
+                    <tbody>
+                      <For each={paginatedCourses()}>
+                        {(course) => (
+                          <tr
+                            class={`cursor-pointer border-b border-slate-100 last:border-b-0 ${
+                              selectedCourse().id === course.id
+                                ? "bg-cyan-50"
+                                : "bg-white hover:bg-slate-50"
+                            }`}
+                            onClick={() =>
+                              handleCourseSelect(course.id, course.name)
+                            }
+                          >
+                            <td class='px-4 py-3 font-medium text-slate-800'>
+                              {course.name}
+                            </td>
+                            <td class='px-4 py-3 text-slate-500'>
+                              {course.city || "-"}
+                            </td>
+                          </tr>
+                        )}
+                      </For>
+                    </tbody>
+                  </table>
+                </Show>
+              </Show>
             </Show>
           </div>
 
@@ -419,8 +508,10 @@ export default function NewRound() {
           <Show
             when={tees().length > 0}
             fallback={
-              <p class='mt-3 text-sm text-slate-500'>
-                Select a course to view tees.
+              <p class={`mt-3 text-sm ${teesError() ? "text-rose-700" : "text-slate-500"}`}>
+                {teesError()
+                  ? `Failed to load tees: ${teesError()}`
+                  : "Select a course to view tees."}
               </p>
             }
           >
