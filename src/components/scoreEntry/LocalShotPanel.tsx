@@ -82,6 +82,9 @@ const getPenaltyShotsForType = (penaltyType: PenaltyType): number => {
   return 0;
 };
 
+const greenPresetFeet = [1, 3, 5, 8, 12, 20] as const;
+const shortGamePresetMetres = [5, 10, 20, 30, 50] as const;
+
 const clampTeeShotDistance = (distanceMetres: number, lie: BallLie): number =>
   lie === "Tee"
     ? Math.max(distanceMetres, MIN_TEE_SHOT_DISTANCE_METRES)
@@ -156,6 +159,35 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       Number((sliderMin() + sliderStep() * index).toFixed(1)),
     ),
   );
+  const showDistancePresets = createMemo(() => {
+    if (isGreenLie()) {
+      return true;
+    }
+
+    const currentDistanceMetres = convertUnitToMetres(
+      sliderValue(),
+      props.distanceUnit,
+    );
+    return currentDistanceMetres <= 50;
+  });
+  const distancePresets = createMemo(() => {
+    if (isGreenLie()) {
+      return greenPresetFeet.map((feet) => ({
+        label:
+          props.distanceUnit === "metres"
+            ? `${formatGreenUiValue(feet, props.distanceUnit)} m`
+            : `${feet} ft`,
+        value: convertFeetToGreenUiValue(feet, props.distanceUnit),
+      }));
+    }
+
+    return shortGamePresetMetres.map((metres) => ({
+      label: `${convertMetresToUnit(metres, props.distanceUnit)} ${getDistanceUnitLabel(
+        props.distanceUnit,
+      ).toLowerCase()}`,
+      value: convertMetresToUnit(metres, props.distanceUnit),
+    }));
+  });
 
   const resetFlags = () => {
     setPenaltyEnabled(false);
@@ -316,6 +348,22 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
           r6={sliderMarks()[5]}
           r7={sliderMarks()[6]}
         />
+
+        <Show when={showDistancePresets()}>
+          <div class='mb-4 flex flex-wrap gap-2'>
+            <For each={distancePresets()}>
+              {(preset) => (
+                <button
+                  type='button'
+                  class='rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100'
+                  onClick={() => setSliderValue(preset.value)}
+                >
+                  {preset.label}
+                </button>
+              )}
+            </For>
+          </div>
+        </Show>
 
         <div class='mt-2'>
           {/* <p class='mb-3 text-sm font-medium text-slate-700'>Ball lie</p> */}
