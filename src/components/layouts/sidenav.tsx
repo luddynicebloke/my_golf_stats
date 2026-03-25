@@ -31,9 +31,14 @@ export default function Sidenav() {
         <p class='font-grotesk text-xs font-semibold uppercase tracking-[0.12em] text-slate-500'>
           Signed in as
         </p>
-        <p class='truncate font-grotesk text-sm text-slate-700'>
-          {profile()?.user_name || user()?.email || "Unknown user"}
-        </p>
+        <div class='flex sm:inline'>
+          <p class='truncate font-grotesk text-sm text-slate-700'>
+            {profile()?.user_name || user()?.email || "Unknown user"}
+          </p>
+          <p class='truncate font-grotesk text-sm text-slate-700'>
+            {profile()?.category?.name ? `(${profile()?.category?.name})` : ""}
+          </p>
+        </div>
       </div>
 
       <div class='flex flex-row justify-between gap-2 md:flex-col'>
