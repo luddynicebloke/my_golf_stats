@@ -256,7 +256,17 @@ export default function Rounds() {
                           <td class='px-4 py-3'>{round.course}</td>
                           <td class='px-4 py-3'>{round.tee}</td>
                           <td class='px-4 py-3'>
-                            {round.finished ? "Yes" : "No"}
+                            <div class='flex items-center gap-2'>
+                              <span>{round.finished ? "Yes" : "No"}</span>
+                              <Show when={!round.finished}>
+                                <A
+                                  href={`/scorecard-entry/${round.id}`}
+                                  class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100'
+                                >
+                                  Complete
+                                </A>
+                              </Show>
+                            </div>
                           </td>
                           <td class='px-4 py-3'>{round.score ?? "-"}</td>
                           <td class='px-4 py-3'>
