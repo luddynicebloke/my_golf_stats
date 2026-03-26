@@ -223,7 +223,9 @@ export default function ScorecardEntry(props: { id: string }) {
         setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
         setSelectedHoleNumber(nextHole.hole_number);
       }
-      setRoundCompleted(rows.length > 0 && rows.every((hole) => hole.completed));
+      setRoundCompleted(
+        rows.length > 0 && rows.every((hole) => hole.completed),
+      );
       setLoading(false);
     } catch (error) {
       if (requestId !== latestLoadRequestId) return;
@@ -281,6 +283,8 @@ export default function ScorecardEntry(props: { id: string }) {
         recovery: shot.recovery,
         holed_out: shot.holedOut,
       }));
+
+      console.log(shotRows);
 
       const score = getHoleScore(completedShots);
 
@@ -405,7 +409,9 @@ export default function ScorecardEntry(props: { id: string }) {
               <button
                 type='button'
                 class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
-                  activeNine() === "front" ? activeButtonClass : inactiveButtonClass
+                  activeNine() === "front"
+                    ? activeButtonClass
+                    : inactiveButtonClass
                 }`}
                 onClick={() => setNine("front")}
               >
@@ -414,7 +420,9 @@ export default function ScorecardEntry(props: { id: string }) {
               <button
                 type='button'
                 class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
-                  activeNine() === "back" ? activeButtonClass : inactiveButtonClass
+                  activeNine() === "back"
+                    ? activeButtonClass
+                    : inactiveButtonClass
                 }`}
                 onClick={() => setNine("back")}
               >
