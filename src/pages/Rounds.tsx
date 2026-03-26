@@ -5,28 +5,6 @@ import ConfirmationModal from "../components/ConfirmationModal";
 import { useAuth } from "../context/AuthProvider";
 import { supabase } from "../supabase/client";
 
-type RoundRow = {
-  id: number;
-  round_date: string;
-  is_finalised: boolean;
-  courses:
-    | {
-        name: string;
-      }
-    | {
-        name: string;
-      }[]
-    | null;
-  tees:
-    | {
-        color: string;
-      }
-    | {
-        color: string;
-      }[]
-    | null;
-};
-
 type RoundListItem = {
   id: number;
   finished: boolean;
@@ -37,9 +15,14 @@ type RoundListItem = {
   sgTotal: number | null;
 };
 
-const getSingleRelation = <T,>(value: T | T[] | null | undefined): T | null => {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
+type RoundSummaryRow = {
+  id: number | string | null;
+  played_date: string | null;
+  course: string | null;
+  tee: string | null;
+  finished: boolean | null;
+  score: number | null;
+  sg_total: number | null;
 };
 
 const fetchRounds = async (userId: string) => {
@@ -48,81 +31,21 @@ const fetchRounds = async (userId: string) => {
   }
 
   const { data, error } = await supabase
-    .from("rounds")
-    .select("id, round_date, is_finalised, courses(name), tees(color)")
-    .eq("user_id", userId)
-    .order("round_date", { ascending: false });
+    .rpc("get_round_summary_list", { p_user_id: userId });
 
   if (error) {
     console.error("Error fetching rounds:", error);
     return { rounds: [] as RoundListItem[] };
   }
 
-  const roundIds = ((data ?? []) as RoundRow[]).map((round) => Number(round.id));
-  const scoreByRoundId = new Map<number, number>();
-  const sgTotalByRoundId = new Map<number, number>();
-
-  if (roundIds.length > 0) {
-    const { data: roundHoleRows, error: roundHoleError } = await supabase
-      .from("round_holes")
-      .select("id, round_id, score")
-      .in("round_id", roundIds);
-
-    if (roundHoleError) {
-      console.error(
-        "Error fetching round holes for round totals:",
-        roundHoleError,
-      );
-    } else {
-      const roundIdByRoundHoleId = new Map<number, number>();
-      const roundHoleIds = (roundHoleRows ?? []).map((row) => {
-        const roundHoleId = Number(row.id);
-        const roundId = Number(row.round_id);
-        roundIdByRoundHoleId.set(roundHoleId, roundId);
-
-        if (row.score != null) {
-          const currentScore = scoreByRoundId.get(roundId) ?? 0;
-          scoreByRoundId.set(roundId, currentScore + Number(row.score));
-        }
-
-        return roundHoleId;
-      });
-
-      if (roundHoleIds.length > 0) {
-        const { data: shotRows, error: shotsError } = await supabase
-          .from("shots")
-          .select("round_hole_id, sg_value")
-          .in("round_hole_id", roundHoleIds);
-
-        if (shotsError) {
-          console.error("Error fetching SG totals:", shotsError);
-        } else {
-          for (const shot of shotRows ?? []) {
-            if (shot.sg_value == null) continue;
-
-            const roundHoleId = Number(shot.round_hole_id);
-            const roundId = roundIdByRoundHoleId.get(roundHoleId);
-            if (!roundId) continue;
-
-            const currentTotal = sgTotalByRoundId.get(roundId) ?? 0;
-            sgTotalByRoundId.set(
-              roundId,
-              Number((currentTotal + Number(shot.sg_value)).toFixed(3)),
-            );
-          }
-        }
-      }
-    }
-  }
-
-  const rounds = ((data ?? []) as RoundRow[]).map((round) => ({
+  const rounds = ((data ?? []) as RoundSummaryRow[]).map((round) => ({
     id: Number(round.id),
-    playedDate: round.round_date ?? "",
-    course: getSingleRelation(round.courses)?.name ?? "Unknown course",
-    tee: getSingleRelation(round.tees)?.color ?? "Unknown tee",
-    finished: getSingleRelation(round.is_finalised ?? "Not sure"),
-    score: scoreByRoundId.get(Number(round.id)) ?? null,
-    sgTotal: sgTotalByRoundId.get(Number(round.id)) ?? null,
+    playedDate: round.played_date ?? "",
+    course: round.course ?? "Unknown course",
+    tee: round.tee ?? "Unknown tee",
+    finished: Boolean(round.finished),
+    score: round.score == null ? null : Number(round.score),
+    sgTotal: round.sg_total == null ? null : Number(round.sg_total),
   }));
 
   return { rounds };

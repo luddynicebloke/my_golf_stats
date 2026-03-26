@@ -78,7 +78,10 @@ const CourseEditor = () => {
       >
         <div class='mt-6 grid gap-6 lg:grid-cols-12'>
           <div class='rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6 lg:col-span-5'>
-            <Course_details course={courseData()!.course} />
+            <Course_details
+              course={courseData()!.course}
+              onUpdated={refetch}
+            />
           </div>
           <div class='rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6 lg:col-span-7'>
             <TeeManager tees={courseData()!.tees} onDeleteTee={handleDeleteTee} />

@@ -2,7 +2,6 @@ import { createMemo, createSignal, onMount, Show } from "solid-js";
 import { A } from "@solidjs/router";
 
 import { useAuth } from "../../context/AuthProvider";
-import { calculateAndSaveRoundSG } from "../../hooks/useCalcSG";
 import {
   formatMetresForDisplay,
   normalizeDistanceUnit,
@@ -36,6 +35,12 @@ type RoundRow = {
 };
 
 type SaveStage = "savingHole" | "calculatingSg" | "finalisingRound" | null;
+
+type FinaliseRoundResponse = {
+  round_id: number;
+  updated_shot_count: number;
+  round_finalised: boolean;
+};
 
 const emptyHeader: RoundHeader = {
   courseName: "",
@@ -284,8 +289,6 @@ export default function ScorecardEntry(props: { id: string }) {
         holed_out: shot.holedOut,
       }));
 
-      console.log(shotRows);
-
       const score = getHoleScore(completedShots);
 
       const { error: deleteExistingError } = await supabase
@@ -331,16 +334,19 @@ export default function ScorecardEntry(props: { id: string }) {
       const hasNextHole = moveToNextHole(hole.hole_number);
       if (!hasNextHole) {
         setSaveStage("calculatingSg");
-        await calculateAndSaveRoundSG(roundId);
-
         setSaveStage("finalisingRound");
-        const { error: finalizeRoundError } = await supabase
-          .from("rounds")
-          .update({ is_finalised: true })
-          .eq("id", roundId);
 
-        if (finalizeRoundError) {
-          throw new Error(finalizeRoundError.message);
+        const { data: finaliseResult, error: finaliseRoundError } =
+          await supabase
+            .rpc("finalise_round_with_sg", { p_round_id: roundId })
+            .single<FinaliseRoundResponse>();
+
+        if (finaliseRoundError) {
+          throw new Error(finaliseRoundError.message);
+        }
+
+        if (!finaliseResult?.round_finalised) {
+          throw new Error("Round was not finalised.");
         }
 
         setRoundCompleted(true);
