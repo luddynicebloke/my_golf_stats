@@ -24,13 +24,9 @@ type SG_DataType = {
   category: CategoryType | null;
 };
 
-type SGQueryRow = {
-  id: number;
-  min_distance: number;
-  max_distance: number;
-  expected_strokes: number;
-  lie_type: string;
-  category: CategoryType | CategoryType[] | null;
+type StrokesExpectationRpcRow = {
+  categories: unknown;
+  strokes_gained: unknown;
 };
 
 type StrokesGainedRow = {
@@ -48,63 +44,68 @@ type StrokesGainedRow = {
 
 const tabOptions = ["categories", "strokes-gained"] as const;
 type ActiveTab = (typeof tabOptions)[number];
-const SG_PAGE_SIZE = 1000;
 
-const fetchAllStrokesGained = async () => {
-  const allRows: SG_DataType[] = [];
-  let from = 0;
+const isCategoryArray = (value: unknown): value is CategoryType[] =>
+  Array.isArray(value);
 
-  while (true) {
-    const { data, error } = await supabase
-      .from("sg_expectation_yds")
-      .select(
-        "id, min_distance, max_distance, expected_strokes, lie_type, category:category_id(id,code, name)",
-      )
-      .order("lie_type")
-      .order("min_distance")
-      .order("max_distance")
-      .range(from, from + SG_PAGE_SIZE - 1);
+const isStrokesGainedArray = (value: unknown): value is SG_DataType[] =>
+  Array.isArray(value);
 
-    if (error) {
-      return { data: null, error };
-    }
+const fetchCategories = async () => {
+  const { data, error } = await supabase
+    .from("category")
+    .select("id, code, name")
+    .order("id");
 
-    const rows = ((data as SGQueryRow[] | null) ?? []).map((row) => ({
-      ...row,
-      category: Array.isArray(row.category)
-        ? (row.category[0] ?? null)
-        : row.category,
-    }));
-    allRows.push(...rows);
-
-    if (rows.length < SG_PAGE_SIZE) {
-      return { data: allRows, error: null };
-    }
-
-    from += SG_PAGE_SIZE;
+  if (error) {
+    console.error("Error fetching categories:", error);
+    return [];
   }
+
+  return ((data ?? []) as CategoryType[]).map((category) => ({
+    id: Number(category.id),
+    code: category.code,
+    name: category.name,
+  }));
 };
 
-const fetchUsers = async () => {
-  const [
-    { data: sg_data, error: usersError },
-    { data: categories, error: categoriesError },
-  ] = await Promise.all([
-    fetchAllStrokesGained(),
-    supabase.from("category").select("id, code, name").order("id"),
-  ]);
+const fetchStrokesExpectationData = async () => {
+  const { data, error } = await supabase
+    .rpc("get_strokes_expectation_data")
+    .single<StrokesExpectationRpcRow>();
 
-  if (usersError) {
-    console.error("Error fetching users:", usersError);
-  }
-
-  if (categoriesError) {
-    console.error("Error fetching categories:", categoriesError);
+  if (error) {
+    console.error("Error fetching strokes expectation data:", error);
+    return {
+      categories: [] as CategoryType[],
+      strokesGained: [] as SG_DataType[],
+    };
   }
 
   return {
-    stroakes_gained: sg_data as SG_DataType[] | null,
-    categories: (categories as CategoryType[] | null) ?? [],
+    categories: isCategoryArray(data?.categories)
+      ? data.categories.map((category) => ({
+          id: Number(category.id),
+          code: category.code,
+          name: category.name,
+        }))
+      : [],
+    strokesGained: isStrokesGainedArray(data?.strokes_gained)
+      ? data.strokes_gained.map((row) => ({
+          id: Number(row.id),
+          min_distance: Number(row.min_distance),
+          max_distance: Number(row.max_distance),
+          expected_strokes: Number(row.expected_strokes),
+          lie_type: row.lie_type,
+          category: row.category
+            ? {
+                id: Number(row.category.id),
+                code: row.category.code,
+                name: row.category.name,
+              }
+            : null,
+        }))
+      : [],
   };
 };
 
@@ -298,20 +299,36 @@ const StrokesGainedCell = (props: StrokesGainedCellProps) => {
 };
 
 export default function Stokes_expectation() {
-  const [sgData, { refetch }] = createResource(fetchUsers);
   const [activeTab, setActiveTab] = createSignal<ActiveTab>("categories");
   const [selectedLieType, setSelectedLieType] = createSignal("all");
+  const [categories, { refetch: refetchCategories }] =
+    createResource(fetchCategories);
+  const [strokesExpectation, { refetch: refetchStrokesExpectation }] =
+    createResource(
+      () => (activeTab() === "strokes-gained" ? "strokes-gained" : null),
+      async () => fetchStrokesExpectationData(),
+    );
+
   const refreshCategories = async () => {
-    await refetch();
+    await refetchCategories();
+    if (strokesExpectation.state === "ready") {
+      await refetchStrokesExpectation();
+    }
   };
+
+  const displayCategories = createMemo(() => {
+    if (activeTab() === "strokes-gained") {
+      return strokesExpectation()?.categories ?? [];
+    }
+
+    return categories() ?? [];
+  });
 
   const lieTypes = createMemo(() => {
     const order = ["Tee", "Fairway", "Rough", "Bunker", "Green"];
-
     const rank = new Map(order.map((value, index) => [value, index]));
-
     const values = new Set(
-      (sgData()?.stroakes_gained ?? []).map((row) => row.lie_type),
+      (strokesExpectation()?.strokesGained ?? []).map((row) => row.lie_type),
     );
 
     return Array.from(values).sort(
@@ -320,7 +337,7 @@ export default function Stokes_expectation() {
   });
 
   const strokesGainedRows = createMemo<StrokesGainedRow[]>(() => {
-    const rows = sgData()?.stroakes_gained ?? [];
+    const rows = strokesExpectation()?.strokesGained ?? [];
     const grouped = new Map<string, StrokesGainedRow>();
 
     for (const row of rows) {
@@ -398,28 +415,33 @@ export default function Stokes_expectation() {
           </p>
         </div>
 
-        <div class='overflow-x-auto rounded-xl border border-slate-200'>
-          <table class='w-full min-w-160 text-left text-sm text-slate-700'>
-            <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
-              <tr>
-                <th class='px-4 py-3 font-semibold'>ID</th>
-                <th class='px-4 py-3 font-semibold'>Code</th>
-                <th class='px-4 py-3 font-semibold'>Name</th>
-                <th class='px-4 py-3 font-semibold'>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <For each={sgData()?.categories}>
-                {(category) => (
-                  <CategoryRow
-                    category={category}
-                    onSaved={refreshCategories}
-                  />
-                )}
-              </For>
-            </tbody>
-          </table>
-        </div>
+        <Show
+          when={!categories.loading}
+          fallback={<div class='text-sm text-slate-500'>Loading categories...</div>}
+        >
+          <div class='overflow-x-auto rounded-xl border border-slate-200'>
+            <table class='w-full min-w-160 text-left text-sm text-slate-700'>
+              <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
+                <tr>
+                  <th class='px-4 py-3 font-semibold'>ID</th>
+                  <th class='px-4 py-3 font-semibold'>Code</th>
+                  <th class='px-4 py-3 font-semibold'>Name</th>
+                  <th class='px-4 py-3 font-semibold'>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <For each={displayCategories()}>
+                  {(category) => (
+                    <CategoryRow
+                      category={category}
+                      onSaved={refreshCategories}
+                    />
+                  )}
+                </For>
+              </tbody>
+            </table>
+          </div>
+        </Show>
       </Show>
 
       <Show when={activeTab() === "strokes-gained"}>
@@ -433,70 +455,79 @@ export default function Stokes_expectation() {
           </p>
         </div>
 
-        <div class='overflow-x-auto rounded-xl border border-slate-200'>
-          <table class='w-full table-fixed text-left text-sm text-slate-700'>
-            <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
-              <tr>
-                <th class='w-20 px-2 py-2 font-semibold'>
-                  <div class='flex flex-col gap-2'>
-                    <span>Lie Type</span>
-                    <select
-                      value={selectedLieType()}
-                      onChange={(e) =>
-                        setSelectedLieType(e.currentTarget.value)
-                      }
-                      class='w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-normal text-slate-700'
-                    >
-                      <option value='all'>All lie types</option>
-                      <For each={lieTypes()}>
-                        {(lieType) => (
-                          <option value={lieType}>{lieType}</option>
+        <Show
+          when={!strokesExpectation.loading}
+          fallback={
+            <div class='text-sm text-slate-500'>
+              Loading strokes gained matrix...
+            </div>
+          }
+        >
+          <div class='overflow-x-auto rounded-xl border border-slate-200'>
+            <table class='w-full table-fixed text-left text-sm text-slate-700'>
+              <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
+                <tr>
+                  <th class='w-20 px-2 py-2 font-semibold'>
+                    <div class='flex flex-col gap-2'>
+                      <span>Lie Type</span>
+                      <select
+                        value={selectedLieType()}
+                        onChange={(e) =>
+                          setSelectedLieType(e.currentTarget.value)
+                        }
+                        class='w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-normal text-slate-700'
+                      >
+                        <option value='all'>All lie types</option>
+                        <For each={lieTypes()}>
+                          {(lieType) => (
+                            <option value={lieType}>{lieType}</option>
+                          )}
+                        </For>
+                      </select>
+                    </div>
+                  </th>
+                  <th class='w-10 px-1 py-2 text-center font-semibold'>
+                    <span class='block'>Min</span>
+                    <span class='block text-xs font-normal text-slate-500'>
+                      Dist
+                    </span>
+                  </th>
+                  <th class='w-10 px-1 py-2 text-center font-semibold'>
+                    <span class='block'>Max</span>
+                    <span class='block text-xs font-normal text-slate-500'>
+                      Dist
+                    </span>
+                  </th>
+                  <For each={displayCategories()}>
+                    {(category) => (
+                      <th class='w-18 px-2 py-2 text-center font-semibold'>
+                        {category.code}
+                      </th>
+                    )}
+                  </For>
+                </tr>
+              </thead>
+              <tbody>
+                <For each={strokesGainedRows()}>
+                  {(row) => (
+                    <tr class='border-b border-slate-200 odd:bg-white even:bg-slate-50'>
+                      <td class='px-2 py-2'>{row.lie_type}</td>
+                      <td class='px-2 py-2 text-center'>{row.min_distance}</td>
+                      <td class='px-2 py-2 text-center'>{row.max_distance}</td>
+                      <For each={displayCategories()}>
+                        {(category) => (
+                          <StrokesGainedCell
+                            cell={row.byCategoryId[category.id]}
+                          />
                         )}
                       </For>
-                    </select>
-                  </div>
-                </th>
-                <th class='w-10 px-1 py-2 text-center font-semibold'>
-                  <span class='block'>Min</span>
-                  <span class='block text-xs font-normal text-slate-500'>
-                    Dist
-                  </span>
-                </th>
-                <th class='w-10 px-1 py-2 text-center font-semibold'>
-                  <span class='block'>Max</span>
-                  <span class='block text-xs font-normal text-slate-500'>
-                    Dist
-                  </span>
-                </th>
-                <For each={sgData()?.categories}>
-                  {(category) => (
-                    <th class='w-18 px-2 py-2 text-center font-semibold'>
-                      {category.code}
-                    </th>
+                    </tr>
                   )}
                 </For>
-              </tr>
-            </thead>
-            <tbody>
-              <For each={strokesGainedRows()}>
-                {(row) => (
-                  <tr class='border-b border-slate-200 odd:bg-white even:bg-slate-50'>
-                    <td class='px-2 py-2'>{row.lie_type}</td>
-                    <td class='px-2 py-2 text-center'>{row.min_distance}</td>
-                    <td class='px-2 py-2 text-center'>{row.max_distance}</td>
-                    <For each={sgData()?.categories}>
-                      {(category) => (
-                        <StrokesGainedCell
-                          cell={row.byCategoryId[category.id]}
-                        />
-                      )}
-                    </For>
-                  </tr>
-                )}
-              </For>
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        </Show>
       </Show>
     </div>
   );

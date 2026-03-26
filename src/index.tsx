@@ -1,7 +1,6 @@
 /* @refresh reload */
 import "./index.css";
 import { render } from "solid-js/web";
-import "solid-devtools";
 
 // translating pages
 import { TransProvider, Trans } from "@mbarzda/solid-i18next";
@@ -9,6 +8,10 @@ import i18n from "./i18n/index";
 
 import App from "./App";
 import { AuthProvider } from "./context/AuthProvider";
+
+if (import.meta.env.DEV) {
+  void import("solid-devtools");
+}
 
 const root = document.getElementById("root");
 
