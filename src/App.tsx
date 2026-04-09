@@ -28,6 +28,7 @@ const ScorecardEntry = lazy(
 const User = lazy(() => import("./components/admin/user"));
 const Rounds = lazy(() => import("./pages/Rounds"));
 const RoundShots = lazy(() => import("./pages/RoundShots"));
+const Stats = lazy(() => import("./pages/Stats"));
 
 const App: Component = () => {
   return (
@@ -93,6 +94,22 @@ const App: Component = () => {
             component={(props) => (
               <ProtectedRoute>
                 {(RoundShots as any)({ id: props.params.id })}
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path='/stats'
+            component={() => (
+              <ProtectedRoute>
+                <Stats />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path='/stats/:id'
+            component={(props) => (
+              <ProtectedRoute>
+                {(Stats as any)({ id: props.params.id })}
               </ProtectedRoute>
             )}
           />

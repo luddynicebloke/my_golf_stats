@@ -9,5 +9,44 @@
       "title": "Strokes Gained sur les 10 derniers parcours",
       "empty": "Aucune donn\u00e9e disponible"
     }
+  },
+  "stats": {
+    "title": "Statistiques de distance des coups",
+    "subtitle": "Construites \u00e0 partir de vos {{count}} derniers parcours finalis\u00e9s.",
+    "loading": "Chargement des statistiques...",
+    "error": "Impossible de charger les statistiques de strokes gained.",
+    "putting": {
+      "title": "Putting",
+      "description": "Strokes gained au putting group\u00e9s par distance de d\u00e9part.",
+      "empty": "Aucune statistique de putting n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
+    },
+    "driving": {
+      "title": "Driving",
+      "description": "Strokes gained au drive group\u00e9s par distance de d\u00e9part, avec les fairways touch\u00e9s.",
+      "empty": "Aucune statistique de driving n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours.",
+      "fairwaysHit": "Fairways touch\u00e9s",
+      "fairwaysHitRate": "Taux de fairways touch\u00e9s"
+    },
+    "approach": {
+      "title": "Approches",
+      "description": "Strokes gained d'approche group\u00e9s par distance de d\u00e9part.",
+      "empty": "Aucune statistique d'approche n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
+    },
+    "chipping": {
+      "title": "Chipping",
+      "description": "Strokes gained de chipping de 1 \u00e0 30 group\u00e9s par distance de d\u00e9part.",
+      "empty": "Aucune statistique de chipping n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
+    },
+    "table": {
+      "distanceRange": "Plage de distance",
+      "shots": "Coups",
+      "average": "SG moyen",
+      "fairwaysHit": "Fairways touch\u00e9s",
+      "fairwayHitRate": "% fairways touch\u00e9s"
+    },
+    "chart": {
+      "title": "SG moyen par distance",
+      "average": "SG moyen"
+    }
   }
 }

@@ -231,9 +231,20 @@ export default function Rounds() {
                           >
                             View
                           </A>
+                          <Show when={round.finished}>
+                            <A
+                              href='/dashboard/stats'
+                              class='inline-flex items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100'
+                            >
+                              Stats
+                            </A>
+                          </Show>
+                          <Show when={!round.finished}>
+                            <div />
+                          </Show>
                           <button
                             type='button'
-                            class='inline-flex items-center justify-center rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
+                            class='col-span-2 inline-flex items-center justify-center rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
                             disabled={deletingRoundId() === round.id}
                             onClick={() => openDeleteModal(round.id)}
                           >
@@ -294,6 +305,14 @@ export default function Rounds() {
                                   class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100'
                                 >
                                   Complete
+                                </A>
+                              </Show>
+                              <Show when={round.finished}>
+                                <A
+                                  href='/dashboard/stats'
+                                  class='inline-flex rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100'
+                                >
+                                  Stats
                                 </A>
                               </Show>
                             </div>

@@ -24,7 +24,7 @@ export const links: NavLinkItem[] = [
     icon: FaSolidGolfBallTee,
   },
   { name: "Rounds", href: "/dashboard/rounds", icon: IoGolfOutline },
-  { name: "Statistics", href: "/dashboard/statistics", icon: ImStatsBars2 },
+  { name: "Statistics", href: "/dashboard/stats", icon: ImStatsBars2 },
   { name: "Profile", href: "/dashboard/profile", icon: CgProfile },
   { name: "Sign Out", href: "/", icon: VsSignOut, isSignOut: true },
 ];
