@@ -1,8 +1,12 @@
-create or replace function public.finalise_round_with_sg(p_round_id bigint)
+create or replace function public.finalise_round_with_sg(
+  p_round_id bigint,
+  p_part_finalised boolean default false
+)
 returns table (
   round_id bigint,
   updated_shot_count integer,
-  round_finalised boolean
+  round_finalised boolean,
+  part_finalised boolean
 )
 language plpgsql
 security invoker
@@ -14,6 +18,7 @@ declare
   v_round_id bigint;
   v_updated_shot_count integer;
   v_round_finalised boolean;
+  v_part_finalised boolean;
 begin
   select r.user_id
   into v_user_id
@@ -40,11 +45,13 @@ begin
     where rh.round_id = p_round_id
   ) then
     update rounds
-    set is_finalised = true
+    set
+      is_finalised = true,
+      part_finalised = p_part_finalised
     where id = p_round_id;
 
     return query
-    select p_round_id, 0, true;
+    select p_round_id, 0, true, p_part_finalised;
     return;
   end if;
 
@@ -118,16 +125,22 @@ begin
     returning s.id
   ),
   finalised_round as (
-    update rounds
-    set is_finalised = true
+    update rounds r
+    set
+      is_finalised = true,
+      part_finalised = p_part_finalised
     where id = p_round_id
-    returning id, is_finalised
+    returning
+      r.id,
+      r.is_finalised,
+      coalesce(r.part_finalised, false) as part_finalised
   )
   select
     fr.id,
     (select count(*)::integer from updated_shots),
-    fr.is_finalised
-  into v_round_id, v_updated_shot_count, v_round_finalised
+    fr.is_finalised,
+    fr.part_finalised
+  into v_round_id, v_updated_shot_count, v_round_finalised, v_part_finalised
   from finalised_round fr;
 
   if v_round_id is null then
@@ -137,6 +150,7 @@ begin
   round_id := v_round_id;
   updated_shot_count := v_updated_shot_count;
   round_finalised := v_round_finalised;
+  part_finalised := v_part_finalised;
 
   return next;
 end;

@@ -1,5 +1,5 @@
 import { createEffect, createResource, createSignal, For, Show } from "solid-js";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 
 import ConfirmationModal from "../components/ConfirmationModal";
 import { useAuth } from "../context/AuthProvider";
@@ -8,6 +8,8 @@ import { supabase } from "../supabase/client";
 type RoundListItem = {
   id: number;
   finished: boolean;
+  partFinalised: boolean;
+  holesPlayed: number;
   playedDate: string;
   course: string;
   tee: string;
@@ -21,8 +23,17 @@ type RoundSummaryRow = {
   course: string | null;
   tee: string | null;
   finished: boolean | null;
+  part_finalised: boolean | null;
+  holes_played: number | null;
   score: number | null;
   sg_total: number | null;
+};
+
+type FinaliseRoundResponse = {
+  round_id: number;
+  updated_shot_count: number;
+  round_finalised: boolean;
+  part_finalised: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -59,6 +70,8 @@ const fetchRounds = async ({
     course: round.course ?? "Unknown course",
     tee: round.tee ?? "Unknown tee",
     finished: Boolean(round.finished),
+    partFinalised: Boolean(round.part_finalised),
+    holesPlayed: Number(round.holes_played ?? 0),
     score: round.score == null ? null : Number(round.score),
     sgTotal: round.sg_total == null ? null : Number(round.sg_total),
   }));
@@ -71,6 +84,7 @@ const fetchRounds = async ({
 
 export default function Rounds() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const [page, setPage] = createSignal(1);
   const [rounds, { refetch }] = createResource(
     () => ({
@@ -82,7 +96,11 @@ export default function Rounds() {
   const [modalOpen, setModalOpen] = createSignal(false);
   const [selectedRoundId, setSelectedRoundId] = createSignal<number | null>(null);
   const [deletingRoundId, setDeletingRoundId] = createSignal<number | null>(null);
+  const [finalisingRoundId, setFinalisingRoundId] = createSignal<number | null>(null);
   const [deleteError, setDeleteError] = createSignal<string | null>(null);
+  const [finaliseError, setFinaliseError] = createSignal<string | null>(null);
+  const [roundActionOpen, setRoundActionOpen] = createSignal(false);
+  const [actionRoundId, setActionRoundId] = createSignal<number | null>(null);
 
   createEffect(() => {
     if (!rounds.loading && page() > 1 && (rounds()?.rounds.length ?? 0) === 0) {
@@ -94,6 +112,50 @@ export default function Rounds() {
     setDeleteError(null);
     setSelectedRoundId(roundId);
     setModalOpen(true);
+  };
+
+  const openRoundActionModal = (roundId: number) => {
+    setFinaliseError(null);
+    setActionRoundId(roundId);
+    setRoundActionOpen(true);
+  };
+
+  const formatRoundScore = (round: RoundListItem) => {
+    if (round.score == null) {
+      return "-";
+    }
+
+    if (round.partFinalised) {
+      return `${round.score} (${round.holesPlayed})`;
+    }
+
+    return round.score.toString();
+  };
+
+  const finalisePartialRound = async (roundId: number) => {
+    setFinaliseError(null);
+    setFinalisingRoundId(roundId);
+
+    const { data, error } = await supabase
+      .rpc("finalise_round_with_sg", {
+        p_round_id: roundId,
+        p_part_finalised: true,
+      })
+      .single<FinaliseRoundResponse>();
+
+    setFinalisingRoundId(null);
+
+    if (error) {
+      setFinaliseError(`Failed to finalise round: ${error.message}`);
+      return;
+    }
+
+    if (!data?.round_finalised) {
+      setFinaliseError("Failed to finalise round.");
+      return;
+    }
+
+    await refetch();
   };
 
   const deleteRound = async (roundId: number) => {
@@ -135,6 +197,63 @@ export default function Rounds() {
           }
         }}
       />
+      <Show when={roundActionOpen()}>
+        <div
+          class='fixed inset-0 z-50 flex items-center justify-center bg-black/50'
+          onClick={() => setRoundActionOpen(false)}
+        >
+          <div
+            class='w-full max-w-md rounded-2xl bg-white p-6 shadow-xl'
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 class='mb-3 text-xl font-semibold text-slate-900'>
+              Complete Round
+            </h2>
+            <p class='mb-6 text-sm text-slate-600'>
+              Continue entering holes, or finalise the round with the holes you
+              have already completed.
+            </p>
+            <div class='grid gap-3'>
+              <button
+                type='button'
+                class='rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+                onClick={() => {
+                  const roundId = actionRoundId();
+                  setRoundActionOpen(false);
+                  if (roundId != null) {
+                    navigate(`/scorecard-entry/${roundId}`);
+                  }
+                }}
+              >
+                Continue Round
+              </button>
+              <button
+                type='button'
+                class='rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-60'
+                disabled={finalisingRoundId() === actionRoundId()}
+                onClick={() => {
+                  const roundId = actionRoundId();
+                  setRoundActionOpen(false);
+                  if (roundId != null) {
+                    void finalisePartialRound(roundId);
+                  }
+                }}
+              >
+                {finalisingRoundId() === actionRoundId()
+                  ? "Finalising..."
+                  : "Finalise Played Holes"}
+              </button>
+              <button
+                type='button'
+                class='rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50'
+                onClick={() => setRoundActionOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </Show>
 
       <div class='mx-auto w-full max-w-5xl space-y-4'>
         <div class='rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
@@ -146,6 +265,13 @@ export default function Rounds() {
           <Show when={deleteError()}>
             {(message) => (
               <p class='mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700'>
+                {message()}
+              </p>
+            )}
+          </Show>
+          <Show when={finaliseError()}>
+            {(message) => (
+              <p class='mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800'>
                 {message()}
               </p>
             )}
@@ -200,7 +326,7 @@ export default function Rounds() {
                           <dt class='text-xs font-semibold uppercase tracking-wide text-slate-500'>
                             Score
                           </dt>
-                          <dd class='mt-1'>{round.score ?? "-"}</dd>
+                          <dd class='mt-1'>{formatRoundScore(round)}</dd>
                         </div>
                         <div class='col-span-2'>
                           <dt class='text-xs font-semibold uppercase tracking-wide text-slate-500'>
@@ -216,12 +342,13 @@ export default function Rounds() {
 
                       <div class='mt-4 grid gap-2'>
                         <Show when={!round.finished}>
-                          <A
-                            href={`/scorecard-entry/${round.id}`}
+                          <button
+                            type='button'
                             class='inline-flex items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+                            onClick={() => openRoundActionModal(round.id)}
                           >
                             Complete
-                          </A>
+                          </button>
                         </Show>
 
                         <div class='grid grid-cols-2 gap-2'>
@@ -300,12 +427,13 @@ export default function Rounds() {
                             <div class='flex items-center gap-2'>
                               <span>{round.finished ? "Yes" : "No"}</span>
                               <Show when={!round.finished}>
-                                <A
-                                  href={`/scorecard-entry/${round.id}`}
+                                <button
+                                  type='button'
                                   class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100'
+                                  onClick={() => openRoundActionModal(round.id)}
                                 >
                                   Complete
-                                </A>
+                                </button>
                               </Show>
                               <Show when={round.finished}>
                                 <A
@@ -317,7 +445,7 @@ export default function Rounds() {
                               </Show>
                             </div>
                           </td>
-                          <td class='px-4 py-3'>{round.score ?? "-"}</td>
+                          <td class='px-4 py-3'>{formatRoundScore(round)}</td>
                           <td class='px-4 py-3'>
                             {round.sgTotal == null
                               ? "-"

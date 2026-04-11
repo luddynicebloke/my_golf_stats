@@ -10,6 +10,8 @@ returns table (
   course text,
   tee text,
   finished boolean,
+  part_finalised boolean,
+  holes_played integer,
   score bigint,
   sg_total numeric
 )
@@ -22,6 +24,7 @@ with ordered_rounds as (
     r.id,
     r.round_date,
     r.is_finalised,
+    coalesce(r.part_finalised, false) as part_finalised,
     c.name as course_name,
     t.color as tee_color
   from rounds r
@@ -45,7 +48,8 @@ paged_rounds as (
 round_scores as (
   select
     rh.round_id,
-    sum(rh.score) as total_score
+    sum(case when coalesce(rh.completed, false) then rh.score else 0 end) as total_score,
+    count(*) filter (where coalesce(rh.completed, false))::integer as holes_played
   from round_holes rh
   join paged_rounds ur on ur.id = rh.round_id
   group by rh.round_id
@@ -66,6 +70,8 @@ select
   coalesce(ur.course_name, 'Unknown course') as course,
   coalesce(ur.tee_color, 'Unknown tee') as tee,
   coalesce(ur.is_finalised, false) as finished,
+  coalesce(ur.part_finalised, false) as part_finalised,
+  coalesce(rs.holes_played, 0) as holes_played,
   rs.total_score as score,
   rsg.total_sg as sg_total
 from paged_rounds ur
