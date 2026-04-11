@@ -41,6 +41,7 @@ export type RoundSgSummary = {
   fairwaysHitFromTee: number;
   greensInRegulation: number;
   offTeeAverage: number | null;
+  putts: number;
   puttingAverage: number | null;
   shortGameAverage: number | null;
   totalSg: number | null;
@@ -108,6 +109,7 @@ export const fetchRoundSgSummary = async (
       fairwaysHitFromTee: 0,
       greensInRegulation: 0,
       offTeeAverage: null,
+      putts: 0,
       puttingAverage: null,
       shortGameAverage: null,
       totalSg: null,
@@ -133,6 +135,7 @@ export const fetchRoundSgSummary = async (
   let totalSgCount = 0;
   let fairwaysHitFromTee = 0;
   let greensInRegulation = 0;
+  let putts = 0;
 
   const shotsByRoundHoleId = new Map<number, ShotRow[]>();
   const getComparisonDistance = (metres: number) =>
@@ -169,6 +172,7 @@ export const fetchRoundSgSummary = async (
     }
 
     if (normalizedLieType === "green") {
+      putts += 1;
       putting.sum += sgValue;
       putting.count += 1;
       continue;
@@ -221,6 +225,7 @@ export const fetchRoundSgSummary = async (
     fairwaysHitFromTee,
     greensInRegulation,
     offTeeAverage: averageFromStats(offTee),
+    putts,
     puttingAverage: averageFromStats(putting),
     shortGameAverage: averageFromStats(shortGame),
     totalSg: totalSgCount === 0 ? null : totalSgSum,

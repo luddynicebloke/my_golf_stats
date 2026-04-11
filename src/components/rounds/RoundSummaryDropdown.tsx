@@ -71,6 +71,10 @@ function SummaryContent(props: {
         label='Greens in regulation'
         value={formatCountValue(props.summary.greensInRegulation)}
       />
+      <SummaryRow
+        label='Number of putts'
+        value={formatCountValue(props.summary.putts)}
+      />
     </dl>
   );
 }
