@@ -26,6 +26,14 @@ export const convertMetresToUnit = (
   return Math.round(metres);
 };
 
+export const convertMetresToRoundedYardsStep = (
+  metres: number,
+  step = 5,
+): number => {
+  const yards = metres * METRES_TO_YARDS;
+  return Math.round(yards / step) * step;
+};
+
 export const convertUnitToMetres = (
   value: number,
   unit: DistanceUnit,

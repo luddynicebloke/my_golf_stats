@@ -4,6 +4,7 @@ import { A, useNavigate } from "@solidjs/router";
 import ConfirmationModal from "../components/ConfirmationModal";
 import RoundSummaryDropdown from "../components/rounds/RoundSummaryDropdown";
 import { useAuth } from "../context/AuthProvider";
+import { normalizeDistanceUnit } from "../lib/distance";
 import { supabase } from "../supabase/client";
 
 type RoundListItem = {
@@ -103,6 +104,8 @@ export default function Rounds() {
   const [roundActionOpen, setRoundActionOpen] = createSignal(false);
   const [actionRoundId, setActionRoundId] = createSignal<number | null>(null);
   const [expandedRoundId, setExpandedRoundId] = createSignal<number | null>(null);
+  const distanceUnit = () =>
+    normalizeDistanceUnit(auth.profile()?.preferred_distance_unit);
 
   createEffect(() => {
     if (!rounds.loading && page() > 1 && (rounds()?.rounds.length ?? 0) === 0) {
@@ -400,7 +403,10 @@ export default function Rounds() {
                         </button>
 
                         <Show when={expandedRoundId() === round.id}>
-                          <RoundSummaryDropdown roundId={round.id} />
+                          <RoundSummaryDropdown
+                            distanceUnit={distanceUnit()}
+                            roundId={round.id}
+                          />
                         </Show>
                       </div>
                     </article>
@@ -507,7 +513,10 @@ export default function Rounds() {
                           <Show when={expandedRoundId() === round.id}>
                             <tr class='border-b border-slate-100 bg-slate-50'>
                               <td colSpan={7} class='px-4 py-4'>
-                                <RoundSummaryDropdown roundId={round.id} />
+                                <RoundSummaryDropdown
+                                  distanceUnit={distanceUnit()}
+                                  roundId={round.id}
+                                />
                               </td>
                             </tr>
                           </Show>

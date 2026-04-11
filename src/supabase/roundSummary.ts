@@ -1,3 +1,7 @@
+import {
+  convertMetresToRoundedYardsStep,
+  type DistanceUnit,
+} from "../lib/distance";
 import { supabase } from "./client";
 
 type HoleRow = {
@@ -69,6 +73,7 @@ const getGirThreshold = (par: number | null) => {
 
 export const fetchRoundSgSummary = async (
   roundId: number,
+  distanceUnit: DistanceUnit,
 ): Promise<RoundSgSummary> => {
   const { data: holeRows, error: holesError } = await supabase
     .from("round_holes")
@@ -130,6 +135,10 @@ export const fetchRoundSgSummary = async (
   let greensInRegulation = 0;
 
   const shotsByRoundHoleId = new Map<number, ShotRow[]>();
+  const getComparisonDistance = (metres: number) =>
+    distanceUnit === "yards"
+      ? convertMetresToRoundedYardsStep(metres)
+      : Math.round(metres);
 
   for (const shot of (shotRows ?? []) as ShotRow[]) {
     const roundHoleId = Number(shot.round_hole_id);
@@ -165,7 +174,7 @@ export const fetchRoundSgSummary = async (
       continue;
     }
 
-    if (Number(shot.distance_to_pin) > 30) {
+    if (getComparisonDistance(Number(shot.distance_to_pin)) > 30) {
       approach.sum += sgValue;
       approach.count += 1;
       continue;

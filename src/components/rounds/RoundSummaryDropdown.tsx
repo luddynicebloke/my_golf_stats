@@ -4,6 +4,7 @@ import {
   type RoundSgSummary,
   fetchRoundSgSummary,
 } from "../../supabase/roundSummary";
+import type { DistanceUnit } from "../../lib/distance";
 
 const formatAverageValue = (value: number | null) => {
   if (value == null) {
@@ -27,7 +28,19 @@ function SummaryRow(props: {
   );
 }
 
-function SummaryContent(props: { summary: RoundSgSummary }) {
+function SummaryContent(props: {
+  distanceUnit: DistanceUnit;
+  summary: RoundSgSummary;
+}) {
+  const approachLabel =
+    props.distanceUnit === "yards"
+      ? "Approach average (>30 yds)"
+      : "Approach average (>30m)";
+  const shortGameLabel =
+    props.distanceUnit === "yards"
+      ? "Short game average (<=30 yds)"
+      : "Short game average (<=30m)";
+
   return (
     <dl class='mt-4'>
       <SummaryRow
@@ -35,11 +48,11 @@ function SummaryContent(props: { summary: RoundSgSummary }) {
         value={formatAverageValue(props.summary.offTeeAverage)}
       />
       <SummaryRow
-        label='Approach average (>30m)'
+        label={approachLabel}
         value={formatAverageValue(props.summary.approachAverage)}
       />
       <SummaryRow
-        label='Short game average (<=30m)'
+        label={shortGameLabel}
         value={formatAverageValue(props.summary.shortGameAverage)}
       />
       <SummaryRow
@@ -62,10 +75,17 @@ function SummaryContent(props: { summary: RoundSgSummary }) {
   );
 }
 
-export default function RoundSummaryDropdown(props: { roundId: number }) {
+export default function RoundSummaryDropdown(props: {
+  distanceUnit: DistanceUnit;
+  roundId: number;
+}) {
   const [summary] = createResource(
-    () => props.roundId,
-    async (roundId) => fetchRoundSgSummary(roundId),
+    () => ({
+      distanceUnit: props.distanceUnit,
+      roundId: props.roundId,
+    }),
+    async ({ distanceUnit, roundId }) =>
+      fetchRoundSgSummary(roundId, distanceUnit),
   );
 
   return (
@@ -95,7 +115,12 @@ export default function RoundSummaryDropdown(props: { roundId: number }) {
             </p>
           }
         >
-          {(data) => <SummaryContent summary={data()} />}
+          {(data) => (
+            <SummaryContent
+              distanceUnit={props.distanceUnit}
+              summary={data()}
+            />
+          )}
         </Show>
       </Show>
     </div>
