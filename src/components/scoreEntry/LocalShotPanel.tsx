@@ -111,6 +111,9 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   const currentHoleShots = createMemo(
     () => shotsByHole()[props.hole.hole_number] ?? [],
   );
+  const displayedHoleShots = createMemo(() =>
+    [...currentHoleShots()].reverse(),
+  );
   const currentShotNumber = createMemo(
     () => getTotalShotCount(currentHoleShots()) + 1,
   );
@@ -317,7 +320,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
     requestAnimationFrame(() => {
       latestShotElement?.scrollIntoView({
         behavior: "smooth",
-        block: "nearest",
+        block: "start",
       });
     });
   });
@@ -569,11 +572,11 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
           <div
             class='mt-3 max-h-72 space-y-2 overflow-y-auto pr-1'
           >
-            <For each={currentHoleShots()}>
+            <For each={displayedHoleShots()}>
               {(shot, index) => (
                 <div
                   ref={(element) => {
-                    if (index() === currentHoleShots().length - 1) {
+                    if (index() === 0) {
                       latestShotElement = element;
                     }
                   }}
