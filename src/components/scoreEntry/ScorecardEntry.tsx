@@ -15,6 +15,8 @@ import { type LocalShot, type ScorecardHole } from "../../lib/scoreEntryTypes";
 type RoundHeader = {
   courseName: string;
   teeColor: string;
+  isFinalised: boolean;
+  partFinalised: boolean;
 };
 
 type RoundRow = {
@@ -40,11 +42,14 @@ type FinaliseRoundResponse = {
   round_id: number;
   updated_shot_count: number;
   round_finalised: boolean;
+  part_finalised: boolean;
 };
 
 const emptyHeader: RoundHeader = {
   courseName: "",
   teeColor: "",
+  isFinalised: false,
+  partFinalised: false,
 };
 
 const activeButtonClass = "border-cyan-300 bg-cyan-50 text-cyan-800";
@@ -84,8 +89,11 @@ export default function ScorecardEntry(props: { id: string }) {
   const [loadError, setLoadError] = createSignal<string | null>(null);
   const [entryError, setEntryError] = createSignal<string | null>(null);
   const [savingHole, setSavingHole] = createSignal(false);
-  const [roundCompleted, setRoundCompleted] = createSignal(false);
   const [saveStage, setSaveStage] = createSignal<SaveStage>(null);
+  const [savedShotsByHoleNumber, setSavedShotsByHoleNumber] = createSignal<
+    Record<number, LocalShot[]>
+  >({});
+  const [updatingRoundStatus, setUpdatingRoundStatus] = createSignal(false);
 
   const frontNine = createMemo(() =>
     scorecard().filter((hole) => hole.hole_number <= 9),
@@ -101,6 +109,11 @@ export default function ScorecardEntry(props: { id: string }) {
   const distanceUnit = createMemo(() =>
     normalizeDistanceUnit(profile()?.preferred_distance_unit),
   );
+  const roundFinalised = createMemo(() => roundHeader().isFinalised);
+  const allHolesCompleted = createMemo(
+    () => scorecard().length > 0 && scorecard().every((hole) => hole.completed),
+  );
+  const canEditSelectedHole = createMemo(() => !roundFinalised());
   const saveStageLabel = createMemo(() => {
     switch (saveStage()) {
       case "savingHole":
@@ -133,7 +146,7 @@ export default function ScorecardEntry(props: { id: string }) {
     try {
       const { data: round, error: roundError } = await supabase
         .from("rounds")
-        .select("tee_id, courses(name), tees(color)")
+        .select("tee_id, is_finalised, part_finalised, courses(name), tees(color)")
         .eq("id", roundId)
         .single();
 
@@ -156,6 +169,8 @@ export default function ScorecardEntry(props: { id: string }) {
       setRoundHeader({
         courseName: course?.name ?? "",
         teeColor: tee?.color ?? "",
+        isFinalised: Boolean(round.is_finalised),
+        partFinalised: Boolean(round.part_finalised),
       });
 
       const teeId = Number(round.tee_id);
@@ -179,6 +194,7 @@ export default function ScorecardEntry(props: { id: string }) {
       }
 
       const holeIds = (holeRows ?? []).map((row) => row.hole_id);
+      const roundHoleIds = (holeRows ?? []).map((row) => Number(row.id));
       const { data: yardageRows, error: yardageError } = await supabase
         .from("hole_tee")
         .select("hole_id, yardage")
@@ -198,17 +214,41 @@ export default function ScorecardEntry(props: { id: string }) {
         return;
       }
 
+      const { data: shotRows, error: shotError } = await supabase
+        .from("shots")
+        .select(
+          "round_hole_id, shot_number, distance_to_pin, lie_type, penalty_strokes, recovery, holed_out",
+        )
+        .in("round_hole_id", roundHoleIds)
+        .order("round_hole_id", { ascending: true })
+        .order("shot_number", { ascending: true });
+
+      if (requestId !== latestLoadRequestId) return;
+
+      if (isAbortLikeError(shotError)) {
+        setLoading(false);
+        return;
+      }
+
+      if (shotError) {
+        setLoadError(shotError.message);
+        setLoading(false);
+        return;
+      }
+
       const yardageByHoleId = new Map<number, number>();
       for (const row of yardageRows ?? []) {
         yardageByHoleId.set(Number(row.hole_id), Number(row.yardage));
       }
+
+      const holeNumberByRoundHoleId = new Map<number, number>();
 
       const rows = ((holeRows ?? []) as RoundRow[])
         .map((row) => {
           const hole = getSingleRelation(row.holes);
           if (!hole) return null;
 
-          return {
+          const scorecardHole = {
             round_hole_id: Number(row.id),
             hole_id: Number(row.hole_id),
             hole_number: Number(hole.hole_number),
@@ -217,20 +257,41 @@ export default function ScorecardEntry(props: { id: string }) {
             score: row.score == null ? null : Number(row.score),
             completed: Boolean(row.completed),
           } satisfies ScorecardHole;
+
+          holeNumberByRoundHoleId.set(scorecardHole.round_hole_id, scorecardHole.hole_number);
+
+          return scorecardHole;
         })
         .filter((row): row is ScorecardHole => row !== null)
         .sort((a, b) => a.hole_number - b.hole_number);
 
       setScorecard(rows);
+      const shotsByHoleNumber: Record<number, LocalShot[]> = {};
+      for (const shot of shotRows ?? []) {
+        const roundHoleId = Number(shot.round_hole_id);
+        const holeNumber = holeNumberByRoundHoleId.get(roundHoleId);
+
+        if (holeNumber == null) continue;
+
+        shotsByHoleNumber[holeNumber] ??= [];
+        shotsByHoleNumber[holeNumber].push({
+          shotNumber: Number(shot.shot_number),
+          lieType:
+            (typeof shot.lie_type === "string" ? shot.lie_type : "Fairway") as LocalShot["lieType"],
+          distanceToPin: Number(shot.distance_to_pin),
+          penaltyShots:
+            shot.penalty_strokes == null ? 0 : Number(shot.penalty_strokes),
+          recovery: Boolean(shot.recovery),
+          holedOut: Boolean(shot.holed_out),
+        });
+      }
+      setSavedShotsByHoleNumber(shotsByHoleNumber);
       if (rows.length > 0) {
         const nextHole =
           rows.find((hole) => !hole.completed) ?? rows[rows.length - 1];
         setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
         setSelectedHoleNumber(nextHole.hole_number);
       }
-      setRoundCompleted(
-        rows.length > 0 && rows.every((hole) => hole.completed),
-      );
       setLoading(false);
     } catch (error) {
       if (requestId !== latestLoadRequestId) return;
@@ -268,6 +329,81 @@ export default function ScorecardEntry(props: { id: string }) {
     setSelectedHoleNumber(nextHole.hole_number);
     setActiveNine(nextHole.hole_number <= 9 ? "front" : "back");
     return true;
+  };
+
+  const updateRoundFinalisedState = (isFinalised: boolean, partFinalised: boolean) => {
+    setRoundHeader((current) => ({
+      ...current,
+      isFinalised,
+      partFinalised,
+    }));
+  };
+
+  const finaliseRound = async (partFinalised = false): Promise<boolean> => {
+    setSaveStage("calculatingSg");
+    setSaveStage("finalisingRound");
+
+    const { data: finaliseResult, error: finaliseRoundError } = await supabase
+      .rpc("finalise_round_with_sg", {
+        p_round_id: roundId,
+        p_part_finalised: partFinalised,
+      })
+      .single<FinaliseRoundResponse>();
+
+    if (finaliseRoundError) {
+      throw new Error(finaliseRoundError.message);
+    }
+
+    if (!finaliseResult?.round_finalised) {
+      throw new Error("Round was not finalised.");
+    }
+
+    updateRoundFinalisedState(true, Boolean(finaliseResult.part_finalised));
+    return true;
+  };
+
+  const markRoundIncomplete = async () => {
+    setEntryError(null);
+    setUpdatingRoundStatus(true);
+
+    try {
+      const { error } = await supabase
+        .from("rounds")
+        .update({
+          is_finalised: false,
+          part_finalised: false,
+        })
+        .eq("id", roundId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      updateRoundFinalisedState(false, false);
+    } catch (error) {
+      setEntryError(
+        error instanceof Error
+          ? error.message
+          : "Failed to mark round incomplete.",
+      );
+    } finally {
+      setUpdatingRoundStatus(false);
+    }
+  };
+
+  const completeRoundAfterEdits = async () => {
+    setEntryError(null);
+    setSavingHole(true);
+
+    try {
+      await finaliseRound(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error.";
+      setEntryError(`Failed to complete round: ${message}`);
+    } finally {
+      setSavingHole(false);
+      setSaveStage(null);
+    }
   };
 
   const persistCompletedHole = async (
@@ -330,26 +466,22 @@ export default function ScorecardEntry(props: { id: string }) {
         score,
         completed: true,
       });
+      setSavedShotsByHoleNumber((current) => ({
+        ...current,
+        [hole.hole_number]: [...completedShots],
+      }));
 
-      const hasNextHole = moveToNextHole(hole.hole_number);
-      if (!hasNextHole) {
-        setSaveStage("calculatingSg");
-        setSaveStage("finalisingRound");
+      const allOtherHolesCompleted = scorecard().every(
+        (scorecardHole) =>
+          scorecardHole.hole_number === hole.hole_number || scorecardHole.completed,
+      );
+      const shouldAutoFinalise =
+        !hole.completed && allOtherHolesCompleted && !roundFinalised();
 
-        const { data: finaliseResult, error: finaliseRoundError } =
-          await supabase
-            .rpc("finalise_round_with_sg", { p_round_id: roundId })
-            .single<FinaliseRoundResponse>();
-
-        if (finaliseRoundError) {
-          throw new Error(finaliseRoundError.message);
-        }
-
-        if (!finaliseResult?.round_finalised) {
-          throw new Error("Round was not finalised.");
-        }
-
-        setRoundCompleted(true);
+      if (shouldAutoFinalise) {
+        await finaliseRound(false);
+      } else {
+        moveToNextHole(hole.hole_number);
       }
       return true;
     } catch (error) {
@@ -441,14 +573,21 @@ export default function ScorecardEntry(props: { id: string }) {
                 <FrontNineTable
                   holes={frontNine()}
                   distanceUnit={distanceUnit()}
+                  onSelectHole={setSelectedHoleNumber}
+                  selectedHoleNumber={selectedHoleNumber()}
                 />
               ) : (
                 <BackNineTable
                   holes={backNine()}
                   distanceUnit={distanceUnit()}
+                  onSelectHole={setSelectedHoleNumber}
+                  selectedHoleNumber={selectedHoleNumber()}
                 />
               )}
             </div>
+            <p class='mt-3 text-sm text-slate-500'>
+              Click a hole number to review or edit the shots already entered for that hole.
+            </p>
           </Show>
         </Show>
       </div>
@@ -471,43 +610,77 @@ export default function ScorecardEntry(props: { id: string }) {
               </div>
             </div>
 
-            <Show
-              when={!roundCompleted()}
-              fallback={
-                <div class='rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center'>
-                  <h3 class='font-rubik text-xl font-semibold text-emerald-800'>
-                    Round completed
-                  </h3>
-                  <p class='mt-2 text-sm text-emerald-700'>
-                    All 18 holes have been saved successfully.
-                  </p>
-                  <A
-                    href='/dashboard'
-                    class='mt-4 inline-flex rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100'
+            <Show when={roundFinalised()}>
+              <div class='mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4'>
+                <div class='flex flex-wrap items-center justify-between gap-3'>
+                  <div>
+                    <h3 class='font-rubik text-base font-semibold text-emerald-900'>
+                      Round completed
+                    </h3>
+                    <p class='mt-1 text-sm text-emerald-800'>
+                      Mark the round incomplete to edit one or more holes, then complete it again to recalculate strokes gained.
+                    </p>
+                  </div>
+                  <button
+                    type='button'
+                    class='inline-flex rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-60'
+                    disabled={updatingRoundStatus()}
+                    onClick={() => void markRoundIncomplete()}
                   >
-                    Return to Dashboard
-                  </A>
+                    {updatingRoundStatus() ? "Updating..." : "Mark Incomplete"}
+                  </button>
                 </div>
+              </div>
+            </Show>
+            <Show when={!roundFinalised() && allHolesCompleted()}>
+              <div class='mb-4 rounded-xl border border-cyan-200 bg-cyan-50 p-4'>
+                <div class='flex flex-wrap items-center justify-between gap-3'>
+                  <div>
+                    <h3 class='font-rubik text-base font-semibold text-cyan-900'>
+                      Ready to complete
+                    </h3>
+                    <p class='mt-1 text-sm text-cyan-800'>
+                      All holes have shots saved. Complete the round to rerun strokes gained with any edits.
+                    </p>
+                  </div>
+                  <button
+                    type='button'
+                    class='inline-flex rounded-md border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-900 hover:bg-cyan-100 disabled:opacity-60'
+                    disabled={savingHole()}
+                    onClick={() => void completeRoundAfterEdits()}
+                  >
+                    {savingHole() ? saveStageLabel() : "Complete Round"}
+                  </button>
+                </div>
+              </div>
+            </Show>
+            <Show when={savingHole() && selectedHole()?.completed}>
+              <div class='mb-4 rounded-xl border border-cyan-200 bg-cyan-50 p-4'>
+                <h3 class='font-rubik text-base font-semibold text-cyan-900'>
+                  Finishing round
+                </h3>
+                <p class='mt-1 text-sm text-cyan-800'>
+                  {saveStage() === "calculatingSg"
+                    ? "Your last hole is saved. We are calculating strokes gained now."
+                    : saveStage() === "finalisingRound"
+                      ? "Strokes gained is ready. We are finalising the round."
+                      : "We are saving your final hole."}
+                </p>
+              </div>
+            </Show>
+            <Show
+              when={canEditSelectedHole()}
+              fallback={
+                <p class='rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600'>
+                  Mark the round incomplete to edit saved holes from the scorecard.
+                </p>
               }
             >
-              <Show when={savingHole() && selectedHole()?.completed}>
-                <div class='mb-4 rounded-xl border border-cyan-200 bg-cyan-50 p-4'>
-                  <h3 class='font-rubik text-base font-semibold text-cyan-900'>
-                    Finishing round
-                  </h3>
-                  <p class='mt-1 text-sm text-cyan-800'>
-                    {saveStage() === "calculatingSg"
-                      ? "Your last hole is saved. We are calculating strokes gained now."
-                      : saveStage() === "finalisingRound"
-                        ? "Strokes gained is ready. We are finalising the round."
-                        : "We are saving your final hole."}
-                  </p>
-                </div>
-              </Show>
               <LocalShotPanel
                 distanceUnit={distanceUnit()}
                 entryError={entryError()}
                 hole={hole()}
+                initialShots={savedShotsByHoleNumber()[hole().hole_number] ?? []}
                 onCompleteHole={persistCompletedHole}
                 savingHole={savingHole()}
                 submitLabel={saveStageLabel()}

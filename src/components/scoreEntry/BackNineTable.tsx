@@ -10,6 +10,8 @@ import type { ScorecardTableHole } from "./FrontNineTable";
 type BackNineTableProps = {
   holes: ScorecardTableHole[];
   distanceUnit: DistanceUnit;
+  onSelectHole?: (holeNumber: number) => void;
+  selectedHoleNumber?: number;
 };
 
 const total = (holes: ScorecardTableHole[], key: keyof ScorecardTableHole) =>
@@ -52,7 +54,21 @@ export default function BackNineTable(props: BackNineTableProps) {
             <For each={props.holes}>
               {(hole) => (
                 <td class='px-1 py-2 font-semibold text-slate-800 sm:px-3 sm:py-4'>
-                  {hole.hole_number}
+                  <button
+                    type='button'
+                    class='inline-flex min-w-[1.9rem] justify-center rounded-md px-1 py-0.5 transition-colors sm:min-w-[3.25rem] sm:px-3 sm:py-1.5'
+                    classList={{
+                      "bg-cyan-100 text-cyan-900 ring-1 ring-cyan-300":
+                        props.selectedHoleNumber === hole.hole_number,
+                      "hover:bg-slate-100":
+                        props.selectedHoleNumber !== hole.hole_number,
+                      "cursor-pointer": props.onSelectHole != null,
+                    }}
+                    disabled={props.onSelectHole == null}
+                    onClick={() => props.onSelectHole?.(hole.hole_number)}
+                  >
+                    {hole.hole_number}
+                  </button>
                 </td>
               )}
             </For>

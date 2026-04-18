@@ -18,6 +18,7 @@ type LocalShotPanelProps = {
   distanceUnit: DistanceUnit;
   entryError: string | null;
   hole: ScorecardHole;
+  initialShots?: LocalShot[];
   onCompleteHole: (hole: ScorecardHole, shots: LocalShot[]) => Promise<boolean>;
   savingHole: boolean;
   submitLabel?: string;
@@ -268,7 +269,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
 
       setShotsByHole((current) => ({
         ...current,
-        [props.hole.hole_number]: [],
+        [props.hole.hole_number]: updatedShots,
       }));
       resetInputsForHole(props.hole);
       return;
@@ -290,6 +291,18 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       [props.hole.hole_number]: shots.slice(0, -1),
     }));
   };
+
+  createEffect(() => {
+    const holeNumber = props.hole.hole_number;
+    const existingShots = shotsByHole()[holeNumber];
+
+    if (existingShots == null) {
+      setShotsByHole((current) => ({
+        ...current,
+        [holeNumber]: [...(props.initialShots ?? [])],
+      }));
+    }
+  });
 
   createEffect(() => {
     resetInputsForHole(props.hole);
