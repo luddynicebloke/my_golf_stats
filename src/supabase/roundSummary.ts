@@ -22,6 +22,7 @@ type ShotRow = {
   round_hole_id: number;
   shot_number: number;
   distance_to_pin: number;
+  holed_out: boolean | null;
   lie_type: string;
   sg_value: number | null;
 };
@@ -39,6 +40,7 @@ type CategoryStats = {
 export type RoundSgSummary = {
   approachAverage: number | null;
   fairwaysHitFromTee: number;
+  greenHoledOutDistanceFeet: number;
   greensInRegulation: number;
   offTeeAverage: number | null;
   putts: number;
@@ -107,6 +109,7 @@ export const fetchRoundSgSummary = async (
     return {
       approachAverage: null,
       fairwaysHitFromTee: 0,
+      greenHoledOutDistanceFeet: 0,
       greensInRegulation: 0,
       offTeeAverage: null,
       putts: 0,
@@ -118,7 +121,9 @@ export const fetchRoundSgSummary = async (
 
   const { data: shotRows, error: shotsError } = await supabase
     .from("shots")
-    .select("round_hole_id, shot_number, distance_to_pin, lie_type, sg_value")
+    .select(
+      "round_hole_id, shot_number, distance_to_pin, holed_out, lie_type, sg_value",
+    )
     .in("round_hole_id", roundHoleIds)
     .order("round_hole_id", { ascending: true })
     .order("shot_number", { ascending: true });
@@ -134,6 +139,7 @@ export const fetchRoundSgSummary = async (
   let totalSgSum = 0;
   let totalSgCount = 0;
   let fairwaysHitFromTee = 0;
+  let greenHoledOutDistanceFeet = 0;
   let greensInRegulation = 0;
   let putts = 0;
 
@@ -151,16 +157,22 @@ export const fetchRoundSgSummary = async (
       round_hole_id: roundHoleId,
       shot_number: Number(shot.shot_number),
       distance_to_pin: Number(shot.distance_to_pin),
+      holed_out: Boolean(shot.holed_out),
       sg_value: shot.sg_value == null ? null : Number(shot.sg_value),
     });
     shotsByRoundHoleId.set(roundHoleId, shotsForHole);
+
+    const normalizedLieType = normalizeLieType(shot.lie_type);
+
+    if (normalizedLieType === "green" && Boolean(shot.holed_out)) {
+      greenHoledOutDistanceFeet += Number(shot.distance_to_pin);
+    }
 
     if (shot.sg_value == null) {
       continue;
     }
 
     const sgValue = Number(shot.sg_value);
-    const normalizedLieType = normalizeLieType(shot.lie_type);
 
     totalSgSum += sgValue;
     totalSgCount += 1;
@@ -223,6 +235,7 @@ export const fetchRoundSgSummary = async (
   return {
     approachAverage: averageFromStats(approach),
     fairwaysHitFromTee,
+    greenHoledOutDistanceFeet,
     greensInRegulation,
     offTeeAverage: averageFromStats(offTee),
     putts,

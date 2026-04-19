@@ -16,6 +16,17 @@ const formatAverageValue = (value: number | null) => {
 
 const formatCountValue = (value: number) => value.toString();
 
+const formatGreenDistanceValue = (
+  feet: number,
+  distanceUnit: DistanceUnit,
+) => {
+  if (distanceUnit === "metres") {
+    return `${(feet * 0.3048).toFixed(1)} m`;
+  }
+
+  return `${Math.round(feet)} ft`;
+};
+
 function SummaryRow(props: {
   label: string;
   value: string;
@@ -74,6 +85,13 @@ function SummaryContent(props: {
       <SummaryRow
         label='Number of putts'
         value={formatCountValue(props.summary.putts)}
+      />
+      <SummaryRow
+        label='Green holed-out distance'
+        value={formatGreenDistanceValue(
+          props.summary.greenHoledOutDistanceFeet,
+          props.distanceUnit,
+        )}
       />
     </dl>
   );

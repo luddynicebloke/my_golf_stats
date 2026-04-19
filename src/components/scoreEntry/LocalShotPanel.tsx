@@ -246,6 +246,8 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   };
 
   const addLocalShot = async () => {
+    const activeHole = props.hole;
+    const activeHoleNumber = activeHole.hole_number;
     const storedDistanceToPin = isGreenLie()
       ? convertGreenUiValueToFeet(sliderValue(), props.distanceUnit)
       : clampTeeShotDistance(
@@ -264,12 +266,12 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
     const updatedShots = [...currentHoleShots(), nextShot];
 
     if (nextShot.holedOut) {
-      const completed = await props.onCompleteHole(props.hole, updatedShots);
+      const completed = await props.onCompleteHole(activeHole, updatedShots);
       if (!completed) return;
 
       setShotsByHole((current) => ({
         ...current,
-        [props.hole.hole_number]: updatedShots,
+        [activeHoleNumber]: updatedShots,
       }));
       resetInputsForHole(props.hole);
       return;
@@ -277,7 +279,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
 
     setShotsByHole((current) => ({
       ...current,
-      [props.hole.hole_number]: updatedShots,
+      [activeHoleNumber]: updatedShots,
     }));
     resetFlags();
   };
