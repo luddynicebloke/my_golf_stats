@@ -6,6 +6,13 @@ import {
   distanceUnitOptions,
   normalizeDistanceUnit,
 } from "../lib/distance";
+import {
+  fetchAssignedProIds,
+  fetchAvailablePros,
+  grantProAccess,
+  revokeProAccess,
+  type AvailablePro,
+} from "../supabase/proAccess";
 
 type SaveState = {
   type: "success" | "error";
@@ -49,6 +56,10 @@ const Profile = () => {
   const [profileState, setProfileState] = createSignal<SaveState>(null);
   const [emailState, setEmailState] = createSignal<SaveState>(null);
   const [passwordState, setPasswordState] = createSignal<SaveState>(null);
+  const [pros, setPros] = createSignal<AvailablePro[]>([]);
+  const [selectedProIds, setSelectedProIds] = createSignal<string[]>([]);
+  const [proAccessLoading, setProAccessLoading] = createSignal(false);
+  const [proAccessState, setProAccessState] = createSignal<SaveState>(null);
 
   createEffect(() => {
     const currentUser = user();
@@ -73,6 +84,8 @@ const Profile = () => {
         const [
           { data: profileData, error: profileError },
           { data: categories, error: categoryError },
+          availablePros,
+          assignedPros,
         ] = await Promise.all([
           supabase
             .from("user_profiles")
@@ -82,6 +95,8 @@ const Profile = () => {
             .eq("id", currentUser.id)
             .maybeSingle<ProfileData>(),
           supabase.from("category").select("id, name").order("id"),
+          fetchAvailablePros(),
+          fetchAssignedProIds(),
         ]);
 
         if (cancelled) return;
@@ -103,6 +118,8 @@ const Profile = () => {
         }
 
         setCategoryOptions(categories ?? []);
+        setPros(availablePros);
+        setSelectedProIds(assignedPros);
         setUsername(profileData?.user_name ?? "");
         setAvatar(profileData?.avatar_url ?? "");
         setCategory(profileData?.category?.id ?? 0);
@@ -264,6 +281,41 @@ const Profile = () => {
     });
   };
 
+  const toggleProAccess = async (proUserId: string, enabled: boolean) => {
+    setProAccessState(null);
+    setProAccessLoading(true);
+
+    if (enabled && !selectedProIds().includes(proUserId) && selectedProIds().length >= 2) {
+      setProAccessState({
+        type: "error",
+        message: "You can allow up to 2 pros.",
+      });
+      setProAccessLoading(false);
+      return;
+    }
+
+    const errorMessage = enabled
+      ? await grantProAccess(proUserId)
+      : await revokeProAccess(proUserId);
+
+    if (errorMessage) {
+      setProAccessState({
+        type: "error",
+        message: errorMessage,
+      });
+      setProAccessLoading(false);
+      return;
+    }
+
+    const assignedPros = await fetchAssignedProIds();
+    setSelectedProIds(assignedPros);
+    setProAccessState({
+      type: "success",
+      message: "Pro access updated.",
+    });
+    setProAccessLoading(false);
+  };
+
   return (
     <div class='mx-auto w-full max-w-4xl space-y-6'>
       <div class='rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
@@ -369,6 +421,61 @@ const Profile = () => {
             >
               Save Profile
             </button>
+          </div>
+        </div>
+
+        <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
+          <h2 class='font-rubik text-xl font-semibold text-slate-800'>
+            Pro Access
+          </h2>
+          <p class='mt-1 font-grotesk text-sm text-slate-500'>
+            Allow up to 2 pros to view your rounds and statistics in read-only
+            mode.
+          </p>
+
+          <Show when={proAccessState()}>
+            {(state) => (
+              <p
+                class={`mt-4 rounded-md px-3 py-2 text-sm ${
+                  state().type === "success"
+                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border border-rose-200 bg-rose-50 text-rose-700"
+                }`}
+              >
+                {state().message}
+              </p>
+            )}
+          </Show>
+
+          <div class='mt-4 space-y-3'>
+            {pros().map((pro) => {
+              const enabled = selectedProIds().includes(pro.id);
+              const disableEnable =
+                !enabled && selectedProIds().length >= 2;
+
+              return (
+                <div class='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4'>
+                  <div>
+                    <p class='font-medium text-slate-800'>
+                      {pro.user_name || pro.email || "Unnamed pro"}
+                    </p>
+                    <p class='text-sm text-slate-500'>{pro.email ?? "No email"}</p>
+                  </div>
+                  <button
+                    type='button'
+                    disabled={proAccessLoading() || disableEnable}
+                    onClick={() => void toggleProAccess(pro.id, !enabled)}
+                    class={`inline-flex rounded-md border px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
+                      enabled
+                        ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                        : "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
+                    }`}
+                  >
+                    {enabled ? "Remove Access" : "Allow Access"}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 

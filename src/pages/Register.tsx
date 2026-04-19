@@ -32,6 +32,7 @@ export default function Register() {
   const [avatar, setAvatar] = createSignal("");
   const [category, setCategory] = createSignal("");
   const [distanceUnit, setDistanceUnit] = createSignal("");
+  const [requestProAccount, setRequestProAccount] = createSignal(false);
   const [categoryOptions, setCategoryOptions] = createSignal<CategoryOption[]>([]);
 
   const navigate = useNavigate();
@@ -99,6 +100,7 @@ export default function Register() {
             user_name: values.username.trim(),
             avatar_url: avatar().trim() || null,
             category_code: selectedCategory.code,
+            pro_account_requested: requestProAccount(),
             preferred_distance_unit: normalizeDistanceUnit(distanceUnit()),
           },
         },
@@ -128,6 +130,24 @@ export default function Register() {
 
         if (profileError) {
           console.error("Profile setup during register failed:", profileError);
+        }
+
+        if (requestProAccount()) {
+          const { error: proRequestError } = await supabase
+            .from("pro_account_requests")
+            .upsert(
+              {
+                user_id: userId,
+                email: values.email.trim(),
+                user_name: values.username.trim(),
+                status: "pending",
+              },
+              { onConflict: "user_id" },
+            );
+
+          if (proRequestError) {
+            console.error("Pro account request failed:", proRequestError);
+          }
         }
       }
 
@@ -301,6 +321,22 @@ export default function Register() {
                   </select>
                 </label>
               </div>
+
+              <label class='flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900'>
+                <input
+                  type='checkbox'
+                  checked={requestProAccount()}
+                  onChange={(e) => setRequestProAccount(e.currentTarget.checked)}
+                  class='mt-1 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-200'
+                />
+                <span>
+                  <span class='block font-semibold'>Request a pro account</span>
+                  <span class='mt-1 block text-emerald-800'>
+                    Your account will be created as a standard user first. Clive
+                    will review the request and approve pro access.
+                  </span>
+                </span>
+              </label>
 
               <button
                 class='inline-flex w-full justify-center self-auto rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60'

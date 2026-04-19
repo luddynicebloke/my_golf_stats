@@ -52,7 +52,7 @@ const App: Component = () => {
           <Route
             path='/'
             component={() => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
                 <Dashboard />
               </ProtectedRoute>
             )}
@@ -60,7 +60,7 @@ const App: Component = () => {
           <Route
             path='/latest-rounds'
             component={(props) => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user"]}>
                 <LatestRounds {...props} recent={[]} />
               </ProtectedRoute>
             )}
@@ -68,7 +68,7 @@ const App: Component = () => {
           <Route
             path='/profile'
             component={(props) => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user"]}>
                 <Profile />
               </ProtectedRoute>
             )}
@@ -76,7 +76,7 @@ const App: Component = () => {
           <Route
             path='/new-round'
             component={(props) => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user"]}>
                 <NewRound />
               </ProtectedRoute>
             )}
@@ -84,7 +84,7 @@ const App: Component = () => {
           <Route
             path='/rounds'
             component={(props) => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
                 <Rounds />
               </ProtectedRoute>
             )}
@@ -92,7 +92,7 @@ const App: Component = () => {
           <Route
             path='/rounds/:id'
             component={(props) => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
                 {(RoundShots as any)({ id: props.params.id })}
               </ProtectedRoute>
             )}
@@ -100,7 +100,7 @@ const App: Component = () => {
           <Route
             path='/stats'
             component={() => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
                 <Stats />
               </ProtectedRoute>
             )}
@@ -108,7 +108,7 @@ const App: Component = () => {
           <Route
             path='/stats/:id'
             component={(props) => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
                 {(Stats as any)({ id: props.params.id })}
               </ProtectedRoute>
             )}
@@ -118,7 +118,7 @@ const App: Component = () => {
           <Route
             path='/scorecard-entry/:id'
             component={(props) => (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "user"]}>
                 {(ScorecardEntry as any)({ id: props.params.id })}
               </ProtectedRoute>
             )}

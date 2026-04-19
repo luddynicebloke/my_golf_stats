@@ -14,10 +14,15 @@ const CourseEditor = () => {
   const params = useParams();
   const navigate = useNavigate();
 
-  const [courseData, { refetch }] = createResource(
-    () => params.id,
-    loadCourseEditorData,
-  );
+  const [courseData, { refetch }] = createResource(async () => {
+    const id = params.id;
+    if (!id) return null;
+    return loadCourseEditorData(id);
+  });
+
+  const refetchCourseData = async () => {
+    await refetch();
+  };
 
   const handleDeleteTee = async (teeId: string) => {
     const tees = courseData()?.tees ?? [];
@@ -80,7 +85,7 @@ const CourseEditor = () => {
           <div class='rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6 lg:col-span-5'>
             <Course_details
               course={courseData()!.course}
-              onUpdated={refetch}
+              onUpdated={refetchCourseData}
             />
           </div>
           <div class='rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6 lg:col-span-7'>

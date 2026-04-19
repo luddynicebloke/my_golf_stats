@@ -1,4 +1,4 @@
-import { createResource, For, Show } from "solid-js";
+import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import User from "./user";
 
 import { supabase } from "../../supabase/client";
@@ -31,6 +31,15 @@ type UserUpdates = {
   category_id?: number;
 };
 
+type RoleFilter = "all" | "admin" | "user" | "pro";
+
+const roleFilters: { label: string; value: RoleFilter }[] = [
+  { label: "All", value: "all" },
+  { label: "Users", value: "user" },
+  { label: "Pros", value: "pro" },
+  { label: "Admins", value: "admin" },
+];
+
 const fetchUsers = async () => {
   const [
     { data: users, error: usersError },
@@ -60,6 +69,26 @@ const fetchUsers = async () => {
 
 const Users = () => {
   const [users, { mutate }] = createResource(fetchUsers);
+  const [roleFilter, setRoleFilter] = createSignal<RoleFilter>("all");
+  const filteredUsers = createMemo(() => {
+    const rows = users()?.users ?? [];
+    const currentFilter = roleFilter();
+
+    if (currentFilter === "all") {
+      return rows;
+    }
+
+    return rows.filter((user) => (user.role ?? "user") === currentFilter);
+  });
+  const roleCount = (role: RoleFilter) => {
+    const rows = users()?.users ?? [];
+
+    if (role === "all") {
+      return rows.length;
+    }
+
+    return rows.filter((user) => (user.role ?? "user") === role).length;
+  };
 
   const handleUserUpdated = (
     id: string,
@@ -96,10 +125,33 @@ const Users = () => {
 
   return (
     <>
-      <div class='mb-2 font-rubik text-lg font-semibold text-slate-800'>
-        List of users ({users()?.users?.length})
+      <div class='mb-3'>
+        <div class='font-rubik text-lg font-semibold text-slate-800'>
+          User Accounts ({users()?.users?.length ?? 0})
+        </div>
+        <p class='mt-1 text-sm text-slate-500'>
+          Assign the pro role here. Pros are read-only and can view only players
+          who grant access from their profile.
+        </p>
       </div>
       <Show when={users()} fallback={<div>Loading...</div>}>
+        <div class='mb-4 flex flex-wrap gap-2'>
+          <For each={roleFilters}>
+            {(filter) => (
+              <button
+                type='button'
+                class={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
+                  roleFilter() === filter.value
+                    ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+                onClick={() => setRoleFilter(filter.value)}
+              >
+                {filter.label} ({roleCount(filter.value)})
+              </button>
+            )}
+          </For>
+        </div>
         <div class='relative overflow-x-auto rounded-xl border border-slate-200'>
           <table class='w-full min-w-245 text-left text-sm text-slate-700'>
             <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
@@ -132,7 +184,7 @@ const Users = () => {
               </tr>
             </thead>
             <tbody>
-              <For each={users()?.users}>
+              <For each={filteredUsers()}>
                 {(user) => (
                   <User
                     user={user}

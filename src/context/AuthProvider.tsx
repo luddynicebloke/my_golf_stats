@@ -2,6 +2,7 @@ import type { ParentComponent } from "solid-js";
 
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
+import { fetchAccessiblePlayersForPro, type AccessiblePlayer } from "../supabase/proAccess";
 
 import { createSignal, createContext, useContext, onMount } from "solid-js";
 
@@ -31,7 +32,7 @@ type ProfileData = {
   preferred_distance_unit: string | null;
 };
 
-type Role = "admin" | "user" | "Pro";
+export type Role = "admin" | "user" | "pro";
 
 type AuthContextType = {
   user: () => User | null; // supabase user object
@@ -39,7 +40,14 @@ type AuthContextType = {
   metaData: () => UserMetadata | null;
   profile: () => ProfileData | null;
   refreshProfile: () => Promise<void>;
+  refreshAccessiblePlayers: () => Promise<void>;
   role: () => Role | null;
+  accessiblePlayers: () => AccessiblePlayer[];
+  selectedPlayer: () => AccessiblePlayer | null;
+  selectedPlayerId: () => string | null;
+  setSelectedPlayerId: (playerId: string | null) => void;
+  targetUserId: () => string | null;
+  isReadOnly: () => boolean;
   loading: () => boolean; // true while initial session is loading or signing in/out
   initialized: () => boolean; // true when first session check finished
   // signUp: (email: string, password: string) => Promise<void>;
@@ -48,6 +56,7 @@ type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType>();
+const SELECTED_PLAYER_STORAGE_KEY = "sg:selected-pro-player-id";
 
 export const AuthProvider: ParentComponent = (props) => {
   const [user, setUser] = createSignal<User | null>(null);
@@ -55,6 +64,14 @@ export const AuthProvider: ParentComponent = (props) => {
   const [session, setSession] = createSignal<Session | null>(null);
   const [profile, setProfile] = createSignal<ProfileData | null>(null);
   const [role, setRole] = createSignal<Role | null>(null);
+  const [accessiblePlayers, setAccessiblePlayers] = createSignal<
+    AccessiblePlayer[]
+  >([]);
+  const [selectedPlayerId, setSelectedPlayerIdState] = createSignal<
+    string | null
+  >(typeof window === "undefined"
+    ? null
+    : window.localStorage.getItem(SELECTED_PLAYER_STORAGE_KEY));
   const [loading, setLoading] = createSignal<boolean>(true);
   const [initialized, setInitialized] = createSignal<boolean>(false);
 
@@ -121,8 +138,51 @@ export const AuthProvider: ParentComponent = (props) => {
       .select("role")
       .eq("id", userId)
       .single();
-    if (!error && data) setRole(data.role as Role);
-    else setRole(null);
+    if (!error && data) {
+      const nextRole =
+        data.role === "admin" || data.role === "pro" ? data.role : "user";
+      setRole(nextRole);
+      return;
+    }
+
+    setRole(null);
+  };
+
+  const setSelectedPlayerId = (playerId: string | null) => {
+    setSelectedPlayerIdState(playerId);
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (playerId) {
+      window.localStorage.setItem(SELECTED_PLAYER_STORAGE_KEY, playerId);
+      return;
+    }
+
+    window.localStorage.removeItem(SELECTED_PLAYER_STORAGE_KEY);
+  };
+
+  const refreshAccessiblePlayers = async () => {
+    if (role() !== "pro") {
+      setAccessiblePlayers([]);
+      setSelectedPlayerId(null);
+      return;
+    }
+
+    const players = await fetchAccessiblePlayersForPro();
+    setAccessiblePlayers(players);
+
+    const currentSelectedPlayerId = selectedPlayerId();
+    const hasSelectedPlayer = players.some(
+      (player) => player.id === currentSelectedPlayerId,
+    );
+
+    if (hasSelectedPlayer) {
+      return;
+    }
+
+    setSelectedPlayerId(players[0]?.id ?? null);
   };
 
   const refreshProfile = async () => {
@@ -165,8 +225,11 @@ export const AuthProvider: ParentComponent = (props) => {
     if (session?.user) {
       await fetchUserRole(session.user.id);
       await refreshProfile();
+      await refreshAccessiblePlayers();
     } else {
       setProfile(null);
+      setAccessiblePlayers([]);
+      setSelectedPlayerId(null);
     }
     setLoading(false);
     setInitialized(true);
@@ -180,9 +243,12 @@ export const AuthProvider: ParentComponent = (props) => {
         if (newSession?.user) {
           await fetchUserRole(newSession.user.id);
           await refreshProfile();
+          await refreshAccessiblePlayers();
         } else {
           setRole(null);
           setProfile(null);
+          setAccessiblePlayers([]);
+          setSelectedPlayerId(null);
         }
       },
     );
@@ -204,8 +270,17 @@ export const AuthProvider: ParentComponent = (props) => {
     setMetaData(null);
     setRole(null);
     setProfile(null);
+    setAccessiblePlayers([]);
+    setSelectedPlayerId(null);
     await supabase.auth.signOut({ scope: "local" });
   }
+
+  const selectedPlayer = () =>
+    accessiblePlayers().find((player) => player.id === selectedPlayerId()) ??
+    null;
+  const targetUserId = () =>
+    role() === "pro" ? selectedPlayerId() : user()?.id ?? null;
+  const isReadOnly = () => role() === "pro";
 
   return (
     <AuthContext.Provider
@@ -215,7 +290,14 @@ export const AuthProvider: ParentComponent = (props) => {
         session,
         profile,
         refreshProfile,
+        refreshAccessiblePlayers,
         role,
+        accessiblePlayers,
+        selectedPlayer,
+        selectedPlayerId,
+        setSelectedPlayerId,
+        targetUserId,
+        isReadOnly,
         loading,
         initialized,
         update,

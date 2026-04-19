@@ -8,50 +8,22 @@ import {
 } from "../lib/distance";
 import { supabase } from "../supabase/client";
 
-type RoundHoleRow = {
-  id: number;
-  score: number | null;
-  holes:
-    | {
-        hole_number: number;
-      }
-    | {
-        hole_number: number;
-      }[]
-    | null;
-};
-
-type ShotRow = {
-  id: number;
-  round_hole_id: number;
-  shot_number: number;
-  distance_to_pin: number;
-  lie_type: string;
+type RoundShotViewRow = {
+  course_name: string | null;
+  round_date: string;
+  part_finalised: boolean | null;
+  tee_color: string | null;
+  shot_id: number | null;
+  hole_number: number | null;
+  round_hole_id: number | null;
+  shot_number: number | null;
+  distance_to_pin: number | null;
+  lie_type: string | null;
   penalty_strokes: number | null;
   recovery: boolean | null;
   holed_out: boolean | null;
+  score: number | null;
   sg_value: number | null;
-};
-
-type RoundHeaderRow = {
-  round_date: string;
-  part_finalised: boolean | null;
-  courses:
-    | {
-        name: string;
-      }
-    | {
-        name: string;
-      }[]
-    | null;
-  tees:
-    | {
-        color: string;
-      }
-    | {
-        color: string;
-      }[]
-    | null;
 };
 
 type RoundShotItem = {
@@ -91,11 +63,6 @@ type ShotFormState = {
   lieType: EditableLieType;
   penaltyStrokes: string;
   recovery: boolean;
-};
-
-const getSingleRelation = <T,>(value: T | T[] | null | undefined): T | null => {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
 };
 
 const FEET_TO_METRES = 0.3048;
@@ -165,71 +132,51 @@ const formatGreenDistanceForDisplay = (
 };
 
 const fetchRoundShots = async (roundId: number): Promise<RoundShotsData> => {
-  const { data: roundHeader, error: roundHeaderError } = await supabase
-    .from("rounds")
-    .select("round_date, part_finalised, courses(name), tees(color)")
-    .eq("id", roundId)
-    .single();
+  const { data, error } = await supabase.rpc("get_round_shots_for_view", {
+    p_round_id: roundId,
+  });
 
-  if (roundHeaderError || !roundHeader) {
-    throw new Error(
-      roundHeaderError?.message ?? "Failed to load round details.",
-    );
+  if (error) {
+    throw new Error(error.message);
   }
 
-  const { data: roundHoleRows, error: roundHolesError } = await supabase
-    .from("round_holes")
-    .select("id, score, holes(hole_number)")
-    .eq("round_id", roundId)
-    .order("id", { ascending: true });
+  const rows = ((data ?? []) as RoundShotViewRow[]).sort((a, b) => {
+    const holeA = Number(a.hole_number ?? 0);
+    const holeB = Number(b.hole_number ?? 0);
+    const shotA = Number(a.shot_number ?? 0);
+    const shotB = Number(b.shot_number ?? 0);
 
-  if (roundHolesError) {
-    throw new Error(roundHolesError.message);
-  }
+    return holeA === holeB ? shotA - shotB : holeA - holeB;
+  });
+  const header = rows[0];
 
-  const holeInfoByRoundHoleId = new Map<number, { holeNumber: number; score: number | null }>();
-  for (const row of (roundHoleRows ?? []) as RoundHoleRow[]) {
-    const hole = getSingleRelation(row.holes);
-    if (!hole) continue;
-
-    holeInfoByRoundHoleId.set(Number(row.id), {
-      holeNumber: Number(hole.hole_number),
-      score: row.score == null ? null : Number(row.score),
-    });
-  }
-
-  const roundHoleIds = Array.from(holeInfoByRoundHoleId.keys());
-  if (roundHoleIds.length === 0) {
+  if (!header) {
     return {
-      courseName: getSingleRelation((roundHeader as RoundHeaderRow).courses)?.name ?? "Unknown course",
-      partFinalised: Boolean((roundHeader as RoundHeaderRow).part_finalised),
-      roundDate: (roundHeader as RoundHeaderRow).round_date ?? "",
-      teeColor: getSingleRelation((roundHeader as RoundHeaderRow).tees)?.color ?? "Unknown tee",
+      courseName: "Unknown course",
+      partFinalised: false,
+      roundDate: "",
+      teeColor: "Unknown tee",
       shots: [],
     };
   }
 
-  const { data: shotRows, error: shotsError } = await supabase
-    .from("shots")
-    .select(
-      "id, round_hole_id, shot_number, distance_to_pin, lie_type, penalty_strokes, recovery, holed_out, sg_value",
-    )
-    .in("round_hole_id", roundHoleIds)
-    .order("round_hole_id", { ascending: true })
-    .order("shot_number", { ascending: true });
-
-  if (shotsError) {
-    throw new Error(shotsError.message);
-  }
-
-  const shots = ((shotRows ?? []) as ShotRow[])
+  const shots = rows
+    .filter((row) => row.shot_id != null)
     .map((shot) => {
-      const holeInfo = holeInfoByRoundHoleId.get(Number(shot.round_hole_id));
-      if (!holeInfo) return null;
+      if (
+        shot.shot_id == null ||
+        shot.round_hole_id == null ||
+        shot.hole_number == null ||
+        shot.shot_number == null ||
+        shot.distance_to_pin == null ||
+        shot.lie_type == null
+      ) {
+        return null;
+      }
 
       return {
-        id: Number(shot.id),
-        holeNumber: holeInfo.holeNumber,
+        id: Number(shot.shot_id),
+        holeNumber: Number(shot.hole_number),
         roundHoleId: Number(shot.round_hole_id),
         shotNumber: Number(shot.shot_number),
         distanceToPin: Number(shot.distance_to_pin),
@@ -238,29 +185,24 @@ const fetchRoundShots = async (roundId: number): Promise<RoundShotsData> => {
         penaltyStrokes:
           shot.penalty_strokes == null ? 0 : Number(shot.penalty_strokes),
         recovery: Boolean(shot.recovery),
-        score: holeInfo.score,
+        score: shot.score == null ? null : Number(shot.score),
         sgValue: shot.sg_value == null ? null : Number(shot.sg_value),
       } satisfies RoundShotItem;
     })
-    .filter((shot): shot is RoundShotItem => shot !== null)
-    .sort((a, b) =>
-      a.holeNumber === b.holeNumber
-        ? a.shotNumber - b.shotNumber
-        : a.holeNumber - b.holeNumber,
-    );
+    .filter((shot): shot is RoundShotItem => shot !== null);
 
   return {
-    courseName: getSingleRelation((roundHeader as RoundHeaderRow).courses)?.name ?? "Unknown course",
-    partFinalised: Boolean((roundHeader as RoundHeaderRow).part_finalised),
-    roundDate: (roundHeader as RoundHeaderRow).round_date ?? "",
-    teeColor: getSingleRelation((roundHeader as RoundHeaderRow).tees)?.color ?? "Unknown tee",
+    courseName: header.course_name ?? "Unknown course",
+    partFinalised: Boolean(header.part_finalised),
+    roundDate: header.round_date ?? "",
+    teeColor: header.tee_color ?? "Unknown tee",
     shots,
   };
 };
 
 export default function RoundShots(props: { id: string }) {
   const roundId = Number(props.id);
-  const { profile } = useAuth();
+  const auth = useAuth();
   const [roundShots, { refetch }] = createResource(
     () => (Number.isNaN(roundId) ? null : roundId),
     async (id) => fetchRoundShots(id),
@@ -270,9 +212,14 @@ export default function RoundShots(props: { id: string }) {
   const [isSavingEdit, setIsSavingEdit] = createSignal(false);
   const [shotForm, setShotForm] = createSignal<ShotFormState | null>(null);
   const distanceUnit = () =>
-    normalizeDistanceUnit(profile()?.preferred_distance_unit);
+    normalizeDistanceUnit(auth.profile()?.preferred_distance_unit);
+  const isReadOnly = () => auth.isReadOnly();
 
   const startEditingShot = (shot: RoundShotItem) => {
+    if (isReadOnly()) {
+      return;
+    }
+
     setEditError(null);
     setEditingShotId(shot.id);
     setShotForm({
@@ -418,7 +365,7 @@ export default function RoundShots(props: { id: string }) {
 
   return (
     <div class='mx-auto w-full max-w-6xl space-y-4'>
-      <Show when={editingShotId() != null && shotForm()}>
+      <Show when={!isReadOnly() && editingShotId() != null && shotForm()}>
         <div
           class='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'
           onClick={closeEditModal}
@@ -583,6 +530,11 @@ export default function RoundShots(props: { id: string }) {
                 </p>
               )}
             </Show>
+            <Show when={isReadOnly()}>
+              <p class='mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700'>
+                Read-only pro view
+              </p>
+            </Show>
           </div>
           <A
             href='/dashboard/rounds'
@@ -625,7 +577,9 @@ export default function RoundShots(props: { id: string }) {
                       <th class='px-4 py-3 font-semibold'>Penalty</th>
                       <th class='px-4 py-3 font-semibold'>Score</th>
                       <th class='px-4 py-3 font-semibold'>SG</th>
-                      <th class='px-4 py-3 font-semibold'>Action</th>
+                      <Show when={!isReadOnly()}>
+                        <th class='px-4 py-3 font-semibold'>Action</th>
+                      </Show>
                     </tr>
                   </thead>
                   <tbody>
@@ -643,15 +597,17 @@ export default function RoundShots(props: { id: string }) {
                           <td class='px-4 py-3'>
                             {shot.sgValue == null ? "-" : shot.sgValue.toFixed(3)}
                           </td>
-                          <td class='px-4 py-3'>
-                            <button
-                              type='button'
-                              class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
-                              onClick={() => startEditingShot(shot)}
-                            >
-                              Edit
-                            </button>
-                          </td>
+                          <Show when={!isReadOnly()}>
+                            <td class='px-4 py-3'>
+                              <button
+                                type='button'
+                                class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+                                onClick={() => startEditingShot(shot)}
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </Show>
                         </tr>
                       )}
                     </For>

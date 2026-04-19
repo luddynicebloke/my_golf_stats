@@ -48,7 +48,7 @@ export type User = {
   category: string;
   avatar_url: string;
   distance: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "pro";
 };
 
 export type PlayerCategories =

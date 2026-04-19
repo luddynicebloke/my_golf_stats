@@ -2,6 +2,7 @@ import { createEffect, createResource, createSignal, For, Show } from "solid-js"
 import { A, useNavigate } from "@solidjs/router";
 
 import ConfirmationModal from "../components/ConfirmationModal";
+import PlayerSelector from "../components/pro/PlayerSelector";
 import RoundSummaryDropdown from "../components/rounds/RoundSummaryDropdown";
 import { useAuth } from "../context/AuthProvider";
 import { normalizeDistanceUnit } from "../lib/distance";
@@ -87,11 +88,12 @@ const fetchRounds = async ({
 export default function Rounds() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const isReadOnly = () => auth.isReadOnly();
   const [page, setPage] = createSignal(1);
   const [rounds, { refetch }] = createResource(
     () => ({
       page: page(),
-      userId: auth.user()?.id ?? "",
+      userId: auth.targetUserId() ?? "",
     }),
     fetchRounds,
   );
@@ -270,8 +272,21 @@ export default function Rounds() {
         <div class='rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
           <h1 class='font-rubik text-2xl font-semibold text-slate-800'>Rounds</h1>
           <p class='mt-1 text-sm text-slate-500'>
-            View your latest 30 rounds in one place.
+            {isReadOnly() && auth.selectedPlayer()
+              ? `Viewing ${auth.selectedPlayer()?.user_name || auth.selectedPlayer()?.email || "selected player"}`
+              : "View your latest 30 rounds in one place."}
           </p>
+
+          <Show when={isReadOnly()}>
+            <div class='mt-4'>
+              <PlayerSelector
+                label='Viewing player'
+                players={auth.accessiblePlayers()}
+                selectedPlayerId={auth.selectedPlayerId()}
+                onChange={auth.setSelectedPlayerId}
+              />
+            </div>
+          </Show>
 
           <Show when={deleteError()}>
             {(message) => (
@@ -298,7 +313,9 @@ export default function Rounds() {
               when={(rounds()?.rounds.length ?? 0) > 0}
               fallback={
                 <p class='mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500'>
-                  No rounds found.
+                  {isReadOnly() && !auth.targetUserId()
+                    ? "Choose a player to view rounds."
+                    : "No rounds found."}
                 </p>
               }
             >
@@ -352,7 +369,7 @@ export default function Rounds() {
                       </dl>
 
                       <div class='mt-4 grid gap-2'>
-                        <Show when={!round.finished}>
+                        <Show when={!round.finished && !isReadOnly()}>
                           <button
                             type='button'
                             class='inline-flex items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
@@ -362,56 +379,66 @@ export default function Rounds() {
                           </button>
                         </Show>
 
-                        <div class='grid grid-cols-2 gap-2'>
+                        <Show when={!isReadOnly()}>
+                          <div class='grid grid-cols-2 gap-2'>
+                            <A
+                              href={`/dashboard/rounds/${round.id}`}
+                              class='inline-flex items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+                            >
+                              View
+                            </A>
+                            <Show when={round.finished}>
+                              <A
+                                href={`/scorecard-entry/${round.id}`}
+                                class='inline-flex items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100'
+                              >
+                                Edit
+                              </A>
+                            </Show>
+                            <Show when={!round.finished}>
+                              <A
+                                href={`/scorecard-entry/${round.id}`}
+                                class='inline-flex items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100'
+                              >
+                                Enter
+                              </A>
+                            </Show>
+                            <button
+                              type='button'
+                              class='col-span-2 inline-flex items-center justify-center rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
+                              disabled={deletingRoundId() === round.id}
+                              onClick={() => openDeleteModal(round.id)}
+                            >
+                              {deletingRoundId() === round.id
+                                ? "Deleting..."
+                                : "Delete"}
+                            </button>
+                          </div>
+
+                          <button
+                            type='button'
+                            class='inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50'
+                            onClick={() => toggleRoundSummary(round.id)}
+                          >
+                            {expandedRoundId() === round.id
+                              ? "Hide Summary"
+                              : "Show Summary"}
+                          </button>
+
+                          <Show when={expandedRoundId() === round.id}>
+                            <RoundSummaryDropdown
+                              distanceUnit={distanceUnit()}
+                              roundId={round.id}
+                            />
+                          </Show>
+                        </Show>
+                        <Show when={isReadOnly()}>
                           <A
                             href={`/dashboard/rounds/${round.id}`}
                             class='inline-flex items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
                           >
-                            View
+                            View Shots
                           </A>
-                          <Show when={round.finished}>
-                            <A
-                              href={`/scorecard-entry/${round.id}`}
-                              class='inline-flex items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100'
-                            >
-                              Edit
-                            </A>
-                          </Show>
-                          <Show when={!round.finished}>
-                            <A
-                              href={`/scorecard-entry/${round.id}`}
-                              class='inline-flex items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100'
-                            >
-                              Enter
-                            </A>
-                          </Show>
-                          <button
-                            type='button'
-                            class='col-span-2 inline-flex items-center justify-center rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
-                            disabled={deletingRoundId() === round.id}
-                            onClick={() => openDeleteModal(round.id)}
-                          >
-                            {deletingRoundId() === round.id
-                              ? "Deleting..."
-                              : "Delete"}
-                          </button>
-                        </div>
-
-                        <button
-                          type='button'
-                          class='inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50'
-                          onClick={() => toggleRoundSummary(round.id)}
-                        >
-                          {expandedRoundId() === round.id
-                            ? "Hide Summary"
-                            : "Show Summary"}
-                        </button>
-
-                        <Show when={expandedRoundId() === round.id}>
-                          <RoundSummaryDropdown
-                            distanceUnit={distanceUnit()}
-                            roundId={round.id}
-                          />
                         </Show>
                       </div>
                     </article>
@@ -460,7 +487,7 @@ export default function Rounds() {
                             <td class='px-4 py-3'>
                               <div class='flex items-center gap-2'>
                                 <span>{round.finished ? "Yes" : "No"}</span>
-                                <Show when={!round.finished}>
+                                <Show when={!round.finished && !isReadOnly()}>
                                   <button
                                     type='button'
                                     class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100'
@@ -469,7 +496,7 @@ export default function Rounds() {
                                     Complete
                                   </button>
                                 </Show>
-                                <Show when={round.finished}>
+                                <Show when={round.finished && !isReadOnly()}>
                                   <A
                                     href={`/scorecard-entry/${round.id}`}
                                     class='inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100'
@@ -486,42 +513,52 @@ export default function Rounds() {
                                 : round.sgTotal.toFixed(3)}
                             </td>
                             <td class='px-4 py-3 text-right'>
-                              <div class='flex justify-end gap-2'>
-                                <button
-                                  type='button'
-                                  class='inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50'
-                                  onClick={() => toggleRoundSummary(round.id)}
-                                >
-                                  {expandedRoundId() === round.id
-                                    ? "Hide Summary"
-                                    : "Show Summary"}
-                                </button>
+                              <Show when={isReadOnly()}>
                                 <A
                                   href={`/dashboard/rounds/${round.id}`}
                                   class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
                                 >
-                                  View
+                                  View Shots
                                 </A>
-                                <A
-                                  href={`/scorecard-entry/${round.id}`}
-                                  class='inline-flex rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800 hover:bg-amber-100'
-                                >
-                                  {round.finished ? "Edit" : "Enter"}
-                                </A>
-                                <button
-                                  type='button'
-                                  class='inline-flex rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
-                                  disabled={deletingRoundId() === round.id}
-                                  onClick={() => openDeleteModal(round.id)}
-                                >
-                                  {deletingRoundId() === round.id
-                                    ? "Deleting..."
-                                    : "Delete"}
-                                </button>
-                              </div>
+                              </Show>
+                              <Show when={!isReadOnly()}>
+                                <div class='flex justify-end gap-2'>
+                                  <button
+                                    type='button'
+                                    class='inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50'
+                                    onClick={() => toggleRoundSummary(round.id)}
+                                  >
+                                    {expandedRoundId() === round.id
+                                      ? "Hide Summary"
+                                      : "Show Summary"}
+                                  </button>
+                                  <A
+                                    href={`/dashboard/rounds/${round.id}`}
+                                    class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+                                  >
+                                    View
+                                  </A>
+                                  <A
+                                    href={`/scorecard-entry/${round.id}`}
+                                    class='inline-flex rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800 hover:bg-amber-100'
+                                  >
+                                    {round.finished ? "Edit" : "Enter"}
+                                  </A>
+                                  <button
+                                    type='button'
+                                    class='inline-flex rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
+                                    disabled={deletingRoundId() === round.id}
+                                    onClick={() => openDeleteModal(round.id)}
+                                  >
+                                    {deletingRoundId() === round.id
+                                      ? "Deleting..."
+                                      : "Delete"}
+                                  </button>
+                                </div>
+                              </Show>
                             </td>
                           </tr>
-                          <Show when={expandedRoundId() === round.id}>
+                          <Show when={!isReadOnly() && expandedRoundId() === round.id}>
                             <tr class='border-b border-slate-100 bg-slate-50'>
                               <td colSpan={7} class='px-4 py-4'>
                                 <RoundSummaryDropdown

@@ -36,8 +36,20 @@ type UserProps = {
   categoryOptions: CategoryOption[];
 };
 
-const roleOptions = ["admin", "user"] as const;
+const roleOptions = ["admin", "user", "pro"] as const;
 const distanceOptions = ["yards", "metres"] as const;
+
+const getRoleBadgeClass = (role: string | null) => {
+  if (role === "admin") {
+    return "border-rose-200 bg-rose-50 text-rose-700";
+  }
+
+  if (role === "pro") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  return "border-slate-200 bg-slate-50 text-slate-700";
+};
 
 const User = (props: UserProps) => {
   const [editing, setEditing] = createSignal(false);
@@ -122,7 +134,15 @@ const User = (props: UserProps) => {
             : ""}
         </td>
         <td class='px-6 py-4'>{props.user.category?.name ?? ""}</td>
-        <td class='px-6 py-4'>{props.user.role}</td>
+        <td class='px-6 py-4'>
+          <span
+            class={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getRoleBadgeClass(
+              props.user.role,
+            )}`}
+          >
+            {props.user.role ?? "user"}
+          </span>
+        </td>
         <td class='px-6 py-4'>{props.user.preferred_distance_unit}</td>
         <td class='px-6 py-4'>{props.user.avatar_url}</td>
         <td class='px-6 py-4'>{props.user.user_name}</td>

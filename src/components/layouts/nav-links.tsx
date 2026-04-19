@@ -30,8 +30,14 @@ export const links: NavLinkItem[] = [
 ];
 
 export default function NavLinks() {
-  const { signOut } = useAuth();
+  const { role, signOut } = useAuth();
   const navigate = useNavigate();
+  const items = () =>
+    role() === "pro"
+      ? links.filter((link) =>
+          ["Home", "Rounds", "Statistics", "Sign Out"].includes(link.name),
+        )
+      : links;
 
   const handleSignOut: JSX.EventHandlerUnion<
     HTMLAnchorElement,
@@ -44,7 +50,7 @@ export default function NavLinks() {
 
   return (
     <div class='flex flex-row gap-2 overflow-x-auto pb-1 md:flex-col md:overflow-visible'>
-      <For each={links}>
+      <For each={items()}>
         {(link) => {
           const LinkIcon = link.icon;
           const baseClass = link.isSignOut

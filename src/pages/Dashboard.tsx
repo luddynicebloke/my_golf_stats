@@ -1,8 +1,10 @@
 import { createMemo, createResource } from "solid-js";
+import { A } from "@solidjs/router";
 
 import Card from "../components/dashboard/card";
 import DashboardChart from "../components/dashboard/dashboardChart";
 import LatestRounds from "../components/dashboard/latestRounds";
+import PlayerSelector from "../components/pro/PlayerSelector";
 import { useAuth } from "../context/AuthProvider";
 import { normalizeDistanceUnit, type DistanceUnit } from "../lib/distance";
 import { supabase } from "../supabase/client";
@@ -181,17 +183,62 @@ const fetchDashboardCardStats = async ({
 };
 
 export default function Dashboard() {
-  const { profile, role, user } = useAuth();
+  const auth = useAuth();
   const distanceUnit = createMemo(() =>
-    normalizeDistanceUnit(profile()?.preferred_distance_unit),
+    normalizeDistanceUnit(auth.profile()?.preferred_distance_unit),
   );
+  const isPro = createMemo(() => auth.role() === "pro");
   const [cardStats] = createResource(
     () => ({
-      userId: user()?.id ?? "",
+      userId: auth.targetUserId() ?? "",
       distanceUnit: distanceUnit(),
     }),
     fetchDashboardCardStats,
   );
+
+  if (isPro()) {
+    return (
+      <div class='mx-auto w-full max-w-4xl space-y-6'>
+        <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
+          <h1 class='font-rubik text-2xl font-semibold tracking-tight text-slate-800 md:text-3xl'>
+            Pro Dashboard
+          </h1>
+          <p class='mt-2 text-sm text-slate-500'>
+            Choose a player who has granted you access, then open their rounds
+            or statistics in read-only mode.
+          </p>
+        </div>
+
+        <PlayerSelector
+          label='Viewing player'
+          players={auth.accessiblePlayers()}
+          selectedPlayerId={auth.selectedPlayerId()}
+          onChange={auth.setSelectedPlayerId}
+        />
+
+        <div class='grid gap-4 sm:grid-cols-2'>
+          <A
+            href='/dashboard/rounds'
+            class='rounded-2xl border border-cyan-200 bg-cyan-50 p-6 text-slate-800 shadow-sm transition hover:bg-cyan-100'
+          >
+            <h2 class='font-rubik text-xl font-semibold'>Rounds</h2>
+            <p class='mt-2 text-sm text-slate-600'>
+              Review saved rounds for your selected player.
+            </p>
+          </A>
+          <A
+            href='/dashboard/stats'
+            class='rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-slate-800 shadow-sm transition hover:bg-emerald-100'
+          >
+            <h2 class='font-rubik text-xl font-semibold'>Statistics</h2>
+            <p class='mt-2 text-sm text-slate-600'>
+              View strokes gained summaries and recent trends.
+            </p>
+          </A>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div class='w-full'>
@@ -199,7 +246,7 @@ export default function Dashboard() {
         <h1 class='font-rubik text-2xl font-semibold tracking-tight text-gray-600 md:text-3xl'>
           Dashboard
         </h1>
-        {role() === "admin" && (
+        {auth.role() === "admin" && (
           <a
             href='/admin'
             class='inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100'

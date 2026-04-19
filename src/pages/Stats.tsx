@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import { Bar } from "solid-chartjs";
 
+import PlayerSelector from "../components/pro/PlayerSelector";
 import { useAuth } from "../context/AuthProvider";
 import { SGColors } from "../lib/graphColors";
 import { supabase } from "../supabase/client";
@@ -118,9 +119,11 @@ const formatPercentageValue = (value: number | null) =>
   value == null ? "-" : `${value.toFixed(1)}%`;
 
 const fetchRecentShotSgStats = async (
+  targetUserId: string,
   shotGroup: ShotGroup,
 ): Promise<DistanceStatsData> => {
-  const { data, error } = await supabase.rpc("get_recent_sg_stats", {
+  const { data, error } = await supabase.rpc("get_recent_sg_stats_for_user", {
+    p_target_user_id: targetUserId,
     p_round_limit: RECENT_ROUNDS_LIMIT,
     p_shot_group: shotGroup,
   });
@@ -313,19 +316,20 @@ function StatsSection(props: {
 export default function Stats() {
   const [t] = useTransContext();
   const auth = useAuth();
+  const isReadOnly = createMemo(() => auth.isReadOnly());
 
   const [stats] = createResource(
-    () => auth.user()?.id ?? "",
-    async (userId) => {
-      if (!userId) {
+    () => auth.targetUserId() ?? "",
+    async (targetUserId) => {
+      if (!targetUserId) {
         return emptyStatsPageData();
       }
 
       const [putting, driving, approach, chipping] = await Promise.all([
-        fetchRecentShotSgStats("putting"),
-        fetchRecentShotSgStats("driving"),
-        fetchRecentShotSgStats("approach"),
-        fetchRecentShotSgStats("chipping"),
+        fetchRecentShotSgStats(targetUserId, "putting"),
+        fetchRecentShotSgStats(targetUserId, "driving"),
+        fetchRecentShotSgStats(targetUserId, "approach"),
+        fetchRecentShotSgStats(targetUserId, "chipping"),
       ]);
 
       return {
@@ -346,15 +350,32 @@ export default function Stats() {
               {t("stats.title")}
             </h1>
             <p class='mt-1 text-sm text-slate-500'>
-              {t("stats.subtitle", { count: RECENT_ROUNDS_LIMIT })}
+              {isReadOnly() && auth.selectedPlayer()
+                ? `Viewing ${auth.selectedPlayer()?.user_name || auth.selectedPlayer()?.email || "selected player"}`
+                : t("stats.subtitle", { count: RECENT_ROUNDS_LIMIT })}
             </p>
           </div>
         </div>
 
+        <Show when={isReadOnly()}>
+          <div class='mt-4'>
+            <PlayerSelector
+              label='Viewing player'
+              players={auth.accessiblePlayers()}
+              selectedPlayerId={auth.selectedPlayerId()}
+              onChange={auth.setSelectedPlayerId}
+            />
+          </div>
+        </Show>
+
         <Show
-          when={!stats.loading}
+          when={!stats.loading && (!isReadOnly() || auth.targetUserId())}
           fallback={
-            <div class='mt-4 text-sm text-slate-500'>{t("stats.loading")}</div>
+            <p class='mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500'>
+              {isReadOnly() && !auth.targetUserId()
+                ? "Choose a player to view statistics."
+                : t("stats.loading")}
+            </p>
           }
         >
           <Show
