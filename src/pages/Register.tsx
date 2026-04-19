@@ -53,13 +53,6 @@ export default function Register() {
       });
   });
 
-  const clearStoredSession = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    setSubmitError("");
-    window.location.reload();
-  };
-
   const handleRegister = async (values: RegisterFormProps) => {
     setSubmitError("");
 
@@ -349,16 +342,6 @@ export default function Register() {
           </div>
 
           <div class='mt-5 font-grotesk text-sm'>
-            <button
-              type='button'
-              onClick={clearStoredSession}
-              class='mb-3 inline-flex rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100'
-            >
-              Start fresh on this device
-            </button>
-          </div>
-
-          <div class='font-grotesk text-sm'>
             <A
               class='text-slate-600 hover:text-slate-800 hover:underline'
               href='/signin'
