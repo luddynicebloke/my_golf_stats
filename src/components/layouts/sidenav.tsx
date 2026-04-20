@@ -2,6 +2,7 @@ import { A } from "@solidjs/router";
 
 import NavLinks from "./nav-links";
 import LogoSG from "../../assets/logo.png";
+import LanguageMenu from "../../i18n/Menu";
 
 import { useAuth } from "../../context/AuthProvider";
 
@@ -39,6 +40,10 @@ export default function Sidenav() {
             {profile()?.category?.name ? `(${profile()?.category?.name})` : ""}
           </p>
         </div>
+      </div>
+
+      <div class='mb-3'>
+        <LanguageMenu />
       </div>
 
       <div class='flex flex-row justify-between gap-2 md:flex-col'>

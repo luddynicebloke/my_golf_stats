@@ -4,7 +4,18 @@
   "sg": "Strokes Gained",
   "desc": "Enter your round details and see where you need to improve.",
   "start": "Get Started",
+  "language": {
+    "english": "English",
+    "french": "French",
+    "switchTo": "Switch language to {{language}}"
+  },
   "dashboard": {
+    "cards": {
+      "roundCount": "No. of Rounds",
+      "averageScoreToParLast10": "Avg to par last 10",
+      "averageScoreLast10": "Avg score last 10",
+      "averageSgLast10": "Avg SG last 10"
+    },
     "chart": {
       "title": "Strokes Gained Last 10 Rounds",
       "empty": "No data available"

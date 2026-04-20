@@ -4,7 +4,7 @@ import en from "./locales/en/common.json";
 import fr from "./locales/fr/common.json";
 
 i18n.use(LanguageDetector).init({
-  fallbackLng: "fr",
+  fallbackLng: "en",
   supportedLngs: ["en", "fr"],
   debug: false,
   resources: {

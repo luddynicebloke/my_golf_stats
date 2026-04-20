@@ -7,11 +7,14 @@ import { useTransContext } from "@mbarzda/solid-i18next";
 import LanguageMenu from "../i18n/Menu";
 
 export default function Welcome() {
-  const [t, i18next] = useTransContext();
+  const [t] = useTransContext();
   return (
     <div class='relative flex min-h-screen flex-col items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 px-4 py-12 text-center dark:from-gray-950 dark:to-black md:px-8 lg:px-12'>
       {/* Subtle radial gradient overlay */}
       <div class='absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-transparent via-white/30 to-transparent dark:via-black/30' />
+      <div class='absolute right-4 top-4 z-20'>
+        <LanguageMenu />
+      </div>
 
       <div class='relative z-10 flex w-full max-w-6xl flex-col items-center justify-center gap-8 md:flex-row md:gap-12 lg:gap-16'>
         {/* Text Content Section */}

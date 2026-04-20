@@ -1,48 +1,42 @@
-import type { Component } from "solid-js";
 import { createSignal } from "solid-js";
-
 import UKflag from "../assets/uk_flag.png";
 import FRflag from "../assets/fr_flag.png";
-
 import { useTransContext } from "@mbarzda/solid-i18next";
+import i18nInstance from "./index";
 
-import LanguageDetector from "i18next-browser-languagedetector";
+const normalizeLanguage = (language: string | undefined) =>
+  language?.startsWith("fr") ? "fr" : "en";
 
-const lng = new LanguageDetector();
-// console.log(lng.detect());
-
-const LanguageMenu: Component = () => {
-  const [isOpen, setIsOpen] = createSignal(false);
+export default function LanguageMenu() {
   const [t, i18n] = useTransContext();
+  const [currentLanguage, setCurrentLanguage] = createSignal(
+    normalizeLanguage(i18nInstance.language),
+  );
 
-  const [currentLanguage, setCurrentLanguage] = createSignal(lng.detect());
-  const [flag, setFlag] = createSignal(UKflag);
-
-  const handelChangeLanguage = () => {
-    if (currentLanguage() === "fr") {
-      setCurrentLanguage("en");
-      i18n.changeLanguage("en");
-    } else if (currentLanguage() === "en") {
-      setCurrentLanguage("fr");
-      i18n.changeLanguage("fr");
-    }
-    console.log("clicked");
+  const changeLanguage = () => {
+    const nextLanguage = currentLanguage() === "fr" ? "en" : "fr";
+    setCurrentLanguage(nextLanguage);
+    void i18n.changeLanguage(nextLanguage);
   };
 
   return (
-    <>
-      <button
-        onclick={handelChangeLanguage}
-        class='text-xl mr-2 bg-neutral-700 border-0'
-      >
-        {currentLanguage() === "fr" ? (
-          <img src={FRflag} alt='' width={24} />
-        ) : (
-          <img src={UKflag} alt='' width={24} />
-        )}
-      </button>
-    </>
+    <button
+      type='button'
+      onClick={changeLanguage}
+      class='inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50'
+      aria-label={t("language.switchTo", {
+        language:
+          currentLanguage() === "fr"
+            ? t("language.english")
+            : t("language.french"),
+      })}
+    >
+      <img
+        src={currentLanguage() === "fr" ? FRflag : UKflag}
+        alt=''
+        class='h-5 w-auto'
+      />
+      <span>{currentLanguage().toUpperCase()}</span>
+    </button>
   );
-};
-
-export default LanguageMenu;
+}

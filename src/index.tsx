@@ -3,7 +3,7 @@ import "./index.css";
 import { render } from "solid-js/web";
 
 // translating pages
-import { TransProvider, Trans } from "@mbarzda/solid-i18next";
+import { TransProvider } from "@mbarzda/solid-i18next";
 import i18n from "./i18n/index";
 
 import App from "./App";

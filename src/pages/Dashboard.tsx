@@ -1,5 +1,6 @@
 import { createMemo, createResource } from "solid-js";
 import { A } from "@solidjs/router";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import Card from "../components/dashboard/card";
 import DashboardChart from "../components/dashboard/dashboardChart";
@@ -191,6 +192,7 @@ const fetchDashboardCardStats = async ({
 
 export default function Dashboard() {
   const auth = useAuth();
+  const [t] = useTransContext();
   const distanceUnit = createMemo(() =>
     normalizeDistanceUnit(auth.profile()?.preferred_distance_unit),
   );
@@ -265,24 +267,24 @@ export default function Dashboard() {
 
       <div class='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4'>
         <Card
-          title='No. of Rounds'
+          title={t("dashboard.cards.roundCount")}
           value={cardStats()?.roundCount ?? "-"}
           type='rounds'
         />
         <Card
-          title='Avg to par last 10'
+          title={t("dashboard.cards.averageScoreToParLast10")}
           value={formatSignedWholeNumber(
             cardStats()?.averageScoreToPar ?? null,
           )}
           type='topar'
         />
         <Card
-          title='Avg score last 10'
+          title={t("dashboard.cards.averageScoreLast10")}
           value={formatWholeNumber(cardStats()?.averageScore ?? null)}
           type='average'
         />
         <Card
-          title='Avg SG last 10'
+          title={t("dashboard.cards.averageSgLast10")}
           value={formatSignedAverage(
             cardStats()?.averageStrokesGained ?? null,
             3,

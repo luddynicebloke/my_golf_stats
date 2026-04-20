@@ -4,45 +4,56 @@
   "sg": "Strokes Gained",
   "desc": "Entrez les détails de votre partie et voyez où vous devez vous améliorer.",
   "start": "Commencez",
+  "language": {
+    "english": "anglais",
+    "french": "français",
+    "switchTo": "Changer la langue en {{language}}"
+  },
   "dashboard": {
+    "cards": {
+      "roundCount": "Nombre de parties",
+      "averageScoreToParLast10": "Moy. par 10 derniers",
+      "averageScoreLast10": "Score moy. 10 derniers",
+      "averageSgLast10": "SG moy. 10 derniers"
+    },
     "chart": {
       "title": "Strokes Gained sur les 10 derniers parcours",
-      "empty": "Aucune donn\u00e9e disponible"
+      "empty": "Aucune donnée disponible"
     }
   },
   "stats": {
     "title": "Statistiques de distance des coups",
-    "subtitle": "Construites \u00e0 partir de vos {{count}} derniers parcours finalis\u00e9s.",
+    "subtitle": "Construites à partir de vos {{count}} derniers parcours finalisés.",
     "loading": "Chargement des statistiques...",
     "error": "Impossible de charger les statistiques de strokes gained.",
     "putting": {
       "title": "Putting",
-      "description": "Strokes gained au putting group\u00e9s par distance de d\u00e9part.",
-      "empty": "Aucune statistique de putting n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
+      "description": "Strokes gained au putting groupés par distance de départ.",
+      "empty": "Aucune statistique de putting n'a été renvoyée pour vos derniers parcours."
     },
     "driving": {
       "title": "Driving",
-      "description": "Strokes gained au drive group\u00e9s par distance de d\u00e9part, avec les fairways touch\u00e9s.",
-      "empty": "Aucune statistique de driving n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours.",
-      "fairwaysHit": "Fairways touch\u00e9s",
-      "fairwaysHitRate": "Taux de fairways touch\u00e9s"
+      "description": "Strokes gained au drive groupés par distance de départ, avec les fairways touchés.",
+      "empty": "Aucune statistique de driving n'a été renvoyée pour vos derniers parcours.",
+      "fairwaysHit": "Fairways touchés",
+      "fairwaysHitRate": "Taux de fairways touchés"
     },
     "approach": {
       "title": "Approches",
-      "description": "Strokes gained d'approche group\u00e9s par distance de d\u00e9part.",
-      "empty": "Aucune statistique d'approche n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
+      "description": "Strokes gained d'approche groupés par distance de départ.",
+      "empty": "Aucune statistique d'approche n'a été renvoyée pour vos derniers parcours."
     },
     "chipping": {
       "title": "Chipping",
-      "description": "Strokes gained de chipping de 1 \u00e0 30 group\u00e9s par distance de d\u00e9part.",
-      "empty": "Aucune statistique de chipping n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
+      "description": "Strokes gained de chipping de 1 à 30 groupés par distance de départ.",
+      "empty": "Aucune statistique de chipping n'a été renvoyée pour vos derniers parcours."
     },
     "table": {
       "distanceRange": "Plage de distance",
       "shots": "Coups",
       "average": "SG moyen",
-      "fairwaysHit": "Fairways touch\u00e9s",
-      "fairwayHitRate": "% fairways touch\u00e9s"
+      "fairwaysHit": "Fairways touchés",
+      "fairwayHitRate": "% fairways touchés"
     },
     "chart": {
       "title": "SG moyen par distance",
