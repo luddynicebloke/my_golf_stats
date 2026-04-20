@@ -83,6 +83,12 @@ const formatAverage = (value: number | null, digits = 2) =>
 const formatSignedAverage = (value: number | null, digits = 2) =>
   value == null ? "-" : `${value > 0 ? "+" : ""}${value.toFixed(digits)}`;
 
+const formatWholeNumber = (value: number | null) =>
+  value == null ? "-" : Math.round(value).toString();
+
+const formatSignedWholeNumber = (value: number | null) =>
+  value == null ? "-" : `${value > 0 ? "+" : ""}${Math.round(value)}`;
+
 const formatRangeValue = (yards: number, unit: DistanceUnit) =>
   unit === "yards" ? yards : Math.round(yards * YARDS_TO_METRES);
 
@@ -126,8 +132,9 @@ const isLatestRoundArray = (
   value: unknown,
 ): value is DashboardStatsRpcLatestRound[] => Array.isArray(value);
 
-const isCategoryArray = (value: unknown): value is DashboardStatsRpcCategory[] =>
-  Array.isArray(value);
+const isCategoryArray = (
+  value: unknown,
+): value is DashboardStatsRpcCategory[] => Array.isArray(value);
 
 const fetchDashboardCardStats = async ({
   userId,
@@ -263,17 +270,19 @@ export default function Dashboard() {
           type='rounds'
         />
         <Card
-          title='Score to par'
-          value={formatSignedAverage(cardStats()?.averageScoreToPar ?? null)}
+          title='Avg to par last 10'
+          value={formatSignedWholeNumber(
+            cardStats()?.averageScoreToPar ?? null,
+          )}
           type='topar'
         />
         <Card
-          title='Average score'
-          value={formatAverage(cardStats()?.averageScore ?? null)}
+          title='Avg score last 10'
+          value={formatWholeNumber(cardStats()?.averageScore ?? null)}
           type='average'
         />
         <Card
-          title='Strokes Gained'
+          title='Avg SG last 10'
           value={formatSignedAverage(
             cardStats()?.averageStrokesGained ?? null,
             3,
@@ -284,7 +293,9 @@ export default function Dashboard() {
 
       <div class='mt-6 grid w-full grid-cols-1 gap-6 xl:grid-cols-12'>
         <div class='xl:col-span-7'>
-          <DashboardChart currentSG={cardStats()?.strokesGainedByCategory ?? []} />
+          <DashboardChart
+            currentSG={cardStats()?.strokesGainedByCategory ?? []}
+          />
         </div>
         <div class='xl:col-span-5'>
           <LatestRounds recent={cardStats()?.latestRounds ?? []} />

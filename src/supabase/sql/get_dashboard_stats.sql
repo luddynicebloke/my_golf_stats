@@ -24,8 +24,14 @@ with completed_rounds as (
 round_scores as (
   select
     cr.id as round_id,
-    coalesce(sum(rh.score), 0) as total_score,
-    coalesce(sum(h.par), 0) as total_par
+    coalesce(
+      sum(rh.score) filter (where coalesce(rh.completed, false)),
+      0
+    ) as total_score,
+    coalesce(
+      sum(h.par) filter (where coalesce(rh.completed, false)),
+      0
+    ) as total_par
   from completed_rounds cr
   left join round_holes rh on rh.round_id = cr.id
   left join holes h on h.id = rh.hole_id
@@ -38,6 +44,7 @@ round_sg as (
   from completed_rounds cr
   left join round_holes rh on rh.round_id = cr.id
   left join shots s on s.round_hole_id = rh.id
+  where coalesce(rh.completed, false)
   group by cr.id
 ),
 latest_rounds_base as (
@@ -97,6 +104,7 @@ latest_round_shots as (
   join holes h on h.id = rh.hole_id
   join shots s on s.round_hole_id = rh.id
   where s.sg_value is not null
+    and coalesce(rh.completed, false)
 ),
 sg_category_totals as (
   select
@@ -123,16 +131,17 @@ select
   (select count(*)::integer from completed_rounds) as round_count,
   (
     select round(avg((rs.total_score - rs.total_par)::numeric), 2)
-    from round_scores rs
+    from latest_rounds_base lrb
+    join round_scores rs on rs.round_id = lrb.id
   ) as average_score_to_par,
   (
-    select round(avg(rs.total_score::numeric), 2)
-    from round_scores rs
+    select round(avg(lrb.total_score::numeric), 2)
+    from latest_rounds_base lrb
   ) as average_score,
   (
-    select round(avg(rsg.total_sg::numeric), 3)
-    from round_sg rsg
-    where rsg.total_sg is not null
+    select round(avg(lrb.total_sg::numeric), 3)
+    from latest_rounds_base lrb
+    where lrb.total_sg is not null
   ) as average_strokes_gained,
   coalesce(
     (
