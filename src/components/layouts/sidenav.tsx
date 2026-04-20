@@ -3,11 +3,24 @@ import { A } from "@solidjs/router";
 import NavLinks from "./nav-links";
 import LogoSG from "../../assets/logo.png";
 import LanguageMenu from "../../i18n/Menu";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import { useAuth } from "../../context/AuthProvider";
 
 export default function Sidenav() {
   const { user, profile } = useAuth();
+  const [t] = useTransContext();
+  const categoryLabel = () => {
+    const category = profile()?.category;
+
+    if (!category?.code) {
+      return category?.name ?? "";
+    }
+
+    return t(`categories.${category.code}`, {
+      defaultValue: category.name,
+    });
+  };
 
   return (
     <div class='flex h-full flex-col px-3 py-4 md:px-4 md:py-5'>
@@ -28,22 +41,23 @@ export default function Sidenav() {
         </div>
       </A>
 
-      <div class='mb-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2'>
-        <p class='font-grotesk text-xs font-semibold uppercase tracking-[0.12em] text-slate-500'>
-          Signed in as
-        </p>
-        <div class='flex sm:inline'>
-          <p class='truncate font-grotesk text-sm text-slate-700'>
-            {profile()?.user_name || user()?.email || "Unknown user"}
+      <div class='mb-3 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2'>
+        <div class='min-w-0'>
+          <p class='font-grotesk text-xs font-semibold uppercase tracking-[0.12em] text-slate-500'>
+            {t("layout.signedIn")}
           </p>
-          <p class='truncate font-grotesk text-sm text-slate-700'>
-            {profile()?.category?.name ? `(${profile()?.category?.name})` : ""}
-          </p>
+          <div class='flex min-w-0 sm:inline'>
+            <p class='truncate font-grotesk text-sm text-slate-700'>
+              {profile()?.user_name || user()?.email || t("layout.unknownUser")}
+            </p>
+            <p class='truncate font-grotesk text-sm text-slate-700'>
+              {categoryLabel() ? `(${categoryLabel()})` : ""}
+            </p>
+          </div>
         </div>
-      </div>
-
-      <div class='mb-3'>
-        <LanguageMenu />
+        <div class='shrink-0'>
+          <LanguageMenu />
+        </div>
       </div>
 
       <div class='flex flex-row justify-between gap-2 md:flex-col'>

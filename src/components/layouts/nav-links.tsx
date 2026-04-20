@@ -6,36 +6,38 @@ import { CgProfile } from "solid-icons/cg";
 import { VsSignOut } from "solid-icons/vs";
 import { Component, For, JSX } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import { useAuth } from "../../context/AuthProvider";
 
 type NavLinkItem = {
-  name: string;
   href: string;
   icon: Component<{ class?: string }>;
+  key: string;
   isSignOut?: boolean;
 };
 
 export const links: NavLinkItem[] = [
-  { name: "Home", href: "/dashboard", icon: TbLayoutDashboard },
+  { key: "home", href: "/dashboard", icon: TbLayoutDashboard },
   {
-    name: "Start New Round",
+    key: "startNewRound",
     href: "/dashboard/new-round",
     icon: FaSolidGolfBallTee,
   },
-  { name: "Rounds", href: "/dashboard/rounds", icon: IoGolfOutline },
-  { name: "Statistics", href: "/dashboard/stats", icon: ImStatsBars2 },
-  { name: "Profile", href: "/dashboard/profile", icon: CgProfile },
-  { name: "Sign Out", href: "/", icon: VsSignOut, isSignOut: true },
+  { key: "rounds", href: "/dashboard/rounds", icon: IoGolfOutline },
+  { key: "statistics", href: "/dashboard/stats", icon: ImStatsBars2 },
+  { key: "profile", href: "/dashboard/profile", icon: CgProfile },
+  { key: "signOut", href: "/", icon: VsSignOut, isSignOut: true },
 ];
 
 export default function NavLinks() {
   const { role, signOut } = useAuth();
+  const [t] = useTransContext();
   const navigate = useNavigate();
   const items = () =>
     role() === "pro"
       ? links.filter((link) =>
-          ["Home", "Rounds", "Statistics", "Sign Out"].includes(link.name),
+          ["home", "rounds", "statistics", "signOut"].includes(link.key),
         )
       : links;
 
@@ -63,10 +65,12 @@ export default function NavLinks() {
               class={`inline-flex h-11 min-w-max items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition md:w-full ${baseClass}`}
               activeClass='!border-cyan-300 !bg-cyan-50 !text-cyan-800'
               end
-              onClick={link.name === "Sign Out" ? handleSignOut : undefined}
+              onClick={link.isSignOut ? handleSignOut : undefined}
             >
               <LinkIcon class='h-5 w-5' />
-              <span class='font-grotesk whitespace-nowrap'>{link.name}</span>
+              <span class='font-grotesk whitespace-nowrap'>
+                {t(`nav.${link.key}`)}
+              </span>
             </A>
           );
         }}

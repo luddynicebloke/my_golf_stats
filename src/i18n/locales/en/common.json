@@ -9,6 +9,52 @@
     "french": "French",
     "switchTo": "Switch language to {{language}}"
   },
+  "categories": {
+    "PRO_M": "Pro Male",
+    "LOW_HCP_M": "Low Handicap Male",
+    "MID_HCP_M": "Mid Handicap Male",
+    "SEN_M": "Senior Male",
+    "PRO_F": "Pro Female",
+    "LOW_HCP_F": "Low Handicap Female",
+    "MID_HCP_F": "Mid Handicap Female",
+    "SEN_F": "Senior Female"
+  },
+  "layout": {
+    "signedIn": "Signed in as",
+    "unknownUser": "Unknown user"
+  },
+  "nav": {
+    "home": "Home",
+    "startNewRound": "Start New Round",
+    "rounds": "Rounds",
+    "statistics": "Statistics",
+    "profile": "Profile",
+    "signOut": "Sign Out"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "complete": "Complete",
+    "completed": "Completed",
+    "inProgress": "In progress",
+    "yes": "Yes",
+    "no": "No",
+    "score": "Score",
+    "date": "Date",
+    "course": "Course",
+    "tee": "Tee",
+    "rounds": "Rounds",
+    "statistics": "Statistics",
+    "profile": "Profile",
+    "signOut": "Sign Out"
+  },
   "dashboard": {
     "cards": {
       "roundCount": "No. of Rounds",
@@ -19,6 +65,9 @@
     "chart": {
       "title": "Strokes Gained Last 10 Rounds",
       "empty": "No data available"
+    },
+    "latestRounds": {
+      "title": "Latest Rounds"
     }
   },
   "stats": {
@@ -58,6 +107,55 @@
     "chart": {
       "title": "Average SG by Distance",
       "average": "Average SG"
+    }
+  },
+  "profile": {
+    "title": "Profile Settings",
+    "description": "Manage your account details and save changes to your profile.",
+    "publicProfile": "Public Profile",
+    "publicProfileDescription": "Update avatar, category, and preferred distance unit.",
+    "username": "Username",
+    "category": "Category",
+    "distanceUnit": "Distance Unit",
+    "selectUnit": "Select distance unit",
+    "saveProfile": "Save Profile",
+    "proAccess": "Pro Access",
+    "proAccessDescription": "Allow up to 2 pros to view your rounds and statistics in read-only mode.",
+    "removeProAccess": "Remove Access",
+    "allowProAccess": "Allow Access",
+    "emailDescription": "Change your account email address.",
+    "currentEmail": "Current email",
+    "changeEmail": "Change Email",
+    "notsetEmail": "Not set",
+    "password": "Password",
+    "passwordDescription": "A reset link will be sent to your account email address.",
+    "resetPassword": "Reset Password",
+    "sendingPassword": "Sending....",
+    "emailModalNewEmailDescription": "Enter your new email address.",
+    "emailModalNew": "New email address",
+    "emailModalSaving": "Saving....",
+    "emailModalSaveEmail": "Save Email",
+    "state": {
+      "loading": "Loading profile...",
+      "profileError": "Failed to load profile. Please refresh and try again.",
+      "categoryError": "Failed to load categories",
+      "usernameRequired": "Username is required.",
+      "categoryRequired": "Category is required.",
+      "distanceRequired": "Distance unit is required.",
+      "emailRequired": "Email is required.",
+      "emailSavingError": "Auth email updated, but profile row failed",
+      "emailSavingMessage": "Email update submitted. Check your inbox to confirm the new address.",
+      "emailSavingMessageSuccess": "Email saved successfully.",
+      "emailNotFound": "No email found for this account.",
+      "saving": "Saving profile...",
+      "saveSuccess": "Profile saved successfully.",
+      "saveError": "Failed to save profile",
+      "passwordSucccess1": "Reset link sent to ",
+      "passwordSucccess2": "Check your inbox.",
+      "proAccess": {
+        "success": "Pro access updated.",
+        "error": "You can allow up to 2 pros."
+      }
     }
   }
 }

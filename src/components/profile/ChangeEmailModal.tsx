@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-
+import { useTransContext } from "@mbarzda/solid-i18next";
 type ChangeEmailModalProps = {
   open: () => boolean;
   emailDraft: string;
@@ -10,6 +10,7 @@ type ChangeEmailModalProps = {
 };
 
 const ChangeEmailModal = (props: ChangeEmailModalProps) => {
+  const [t] = useTransContext();
   return (
     <Show when={props.open()}>
       <div
@@ -21,14 +22,14 @@ const ChangeEmailModal = (props: ChangeEmailModalProps) => {
           onClick={(e) => e.stopPropagation()}
         >
           <h3 class='font-rubik text-xl font-semibold text-slate-800'>
-            Change Email
+            {t("profile.changeEmail")}
           </h3>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Enter your new email address.
+            {t("profile.emailModalNewEmailDescription")}
           </p>
           <label class='mt-4 block'>
             <span class='mb-1 block text-sm font-medium text-slate-700'>
-              New email
+              {t("profile.emailModalNew")}
             </span>
             <input
               type='email'
@@ -45,7 +46,7 @@ const ChangeEmailModal = (props: ChangeEmailModalProps) => {
               onClick={props.onCancel}
               disabled={props.saving}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type='button'
@@ -53,7 +54,9 @@ const ChangeEmailModal = (props: ChangeEmailModalProps) => {
               onClick={props.onSave}
               disabled={props.saving}
             >
-              {props.saving ? "Saving..." : "Save Email"}
+              {props.saving
+                ? t("profile.emailModalSaving")
+                : t("profile.emailModalSaveEmail")}
             </button>
           </div>
         </div>

@@ -1,13 +1,59 @@
 {
   "_WELCOME PAGE": "",
-  "welcome": "Améliorez votre jeu avec",
+  "welcome": "Am\u00e9liorez votre jeu avec",
   "sg": "Strokes Gained",
-  "desc": "Entrez les détails de votre partie et voyez où vous devez vous améliorer.",
+  "desc": "Entrez les d\u00e9tails de votre partie et voyez o\u00f9 vous devez vous am\u00e9liorer.",
   "start": "Commencez",
   "language": {
     "english": "anglais",
-    "french": "français",
+    "french": "fran\u00e7ais",
     "switchTo": "Changer la langue en {{language}}"
+  },
+  "categories": {
+    "PRO_M": "Pro Homme",
+    "LOW_HCP_M": "Bas Handicap Homme",
+    "MID_HCP_M": "Handicap Club Homme",
+    "SEN_M": "Senior Homme",
+    "PRO_F": "Pro Femme",
+    "LOW_HCP_F": "Bas Handicap Femme",
+    "MID_HCP_F": "Handicap Club Femme",
+    "SEN_F": "Senior Femme"
+  },
+  "layout": {
+    "signedIn": "Connect\u00e9:",
+    "unknownUser": "Utilisateur inconnu"
+  },
+  "nav": {
+    "home": "Accueil",
+    "startNewRound": "Nouvelle partie",
+    "rounds": "Parties",
+    "statistics": "Statistiques",
+    "profile": "Profil",
+    "signOut": "Se d\u00e9connecter"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Pr\u00e9c\u00e9dent",
+    "complete": "Terminer",
+    "completed": "Termin\u00e9",
+    "inProgress": "En cours",
+    "yes": "Oui",
+    "no": "Non",
+    "score": "Score",
+    "date": "Date",
+    "course": "Parcours",
+    "tee": "D\u00e9part",
+    "rounds": "Parties",
+    "statistics": "Statistiques",
+    "profile": "Profil",
+    "signOut": "Se d\u00e9connecter"
   },
   "dashboard": {
     "cards": {
@@ -18,46 +64,98 @@
     },
     "chart": {
       "title": "Strokes Gained sur les 10 derniers parcours",
-      "empty": "Aucune donnée disponible"
+      "empty": "Aucune donn\u00e9e disponible"
+    },
+    "latestRounds": {
+      "title": "Derni\u00e8res parties"
     }
   },
   "stats": {
     "title": "Statistiques de distance des coups",
-    "subtitle": "Construites à partir de vos {{count}} derniers parcours finalisés.",
+    "subtitle": "Construites \u00e0 partir de vos {{count}} derniers parcours finalis\u00e9s.",
     "loading": "Chargement des statistiques...",
     "error": "Impossible de charger les statistiques de strokes gained.",
     "putting": {
       "title": "Putting",
-      "description": "Strokes gained au putting groupés par distance de départ.",
-      "empty": "Aucune statistique de putting n'a été renvoyée pour vos derniers parcours."
+      "description": "Strokes gained au putting group\u00e9s par distance de d\u00e9part.",
+      "empty": "Aucune statistique de putting n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
     },
     "driving": {
       "title": "Driving",
-      "description": "Strokes gained au drive groupés par distance de départ, avec les fairways touchés.",
-      "empty": "Aucune statistique de driving n'a été renvoyée pour vos derniers parcours.",
-      "fairwaysHit": "Fairways touchés",
-      "fairwaysHitRate": "Taux de fairways touchés"
+      "description": "Strokes gained au drive group\u00e9s par distance de d\u00e9part, avec les fairways touch\u00e9s.",
+      "empty": "Aucune statistique de driving n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours.",
+      "fairwaysHit": "Fairways touch\u00e9s",
+      "fairwaysHitRate": "Taux de fairways touch\u00e9s"
     },
     "approach": {
       "title": "Approches",
-      "description": "Strokes gained d'approche groupés par distance de départ.",
-      "empty": "Aucune statistique d'approche n'a été renvoyée pour vos derniers parcours."
+      "description": "Strokes gained d'approche group\u00e9s par distance de d\u00e9part.",
+      "empty": "Aucune statistique d'approche n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
     },
     "chipping": {
       "title": "Chipping",
-      "description": "Strokes gained de chipping de 1 à 30 groupés par distance de départ.",
-      "empty": "Aucune statistique de chipping n'a été renvoyée pour vos derniers parcours."
+      "description": "Strokes gained de chipping de 1 \u00e0 30 group\u00e9s par distance de d\u00e9part.",
+      "empty": "Aucune statistique de chipping n'a \u00e9t\u00e9 renvoy\u00e9e pour vos derniers parcours."
     },
     "table": {
       "distanceRange": "Plage de distance",
       "shots": "Coups",
       "average": "SG moyen",
-      "fairwaysHit": "Fairways touchés",
-      "fairwayHitRate": "% fairways touchés"
+      "fairwaysHit": "Fairways touch\u00e9s",
+      "fairwayHitRate": "% fairways touch\u00e9s"
     },
     "chart": {
       "title": "SG moyen par distance",
       "average": "SG moyen"
+    }
+  },
+  "profile": {
+    "title": "Paramètres du profil",
+    "description": "Gérez les détails de votre compte et enregistrez les modifications de votre profil.",
+    "publicProfile": "Profil public",
+    "publicProfileDescription": "Mettez à jour votre avatar, catégorie et unité de distance préférée.",
+    "username": "Nom d'utilisateur",
+    "category": "Catégorie",
+    "distanceUnit": "Unité de distance",
+    "selectUnit": "Sélectionner l'unité de distance",
+    "saveProfile": "Enregistrer le profil",
+    "proAccess": "Accès Pro",
+    "proAccessDescription": "Permettre à jusqu'à 2 pros de visualiser vos parcours et statistiques en mode lecture seule.",
+    "removeProAccess": "Supprimer l'accès",
+    "allowProAccess": "Permettre l'accès",
+    "emailDescription": "Changez l'adresse e-mail de votre compte.",
+    "currentEmail": "Adresse e-mail actuelle",
+    "changeEmail": "Modifier l'adresse e-mail",
+    "notsetEmail": "Non défini",
+    "password": "Mot de passe",
+    "passwordDescription": "Un lien de réinitialisation sera envoyé à votre adresse e-mail.",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "sendingPassword": "Envoi en cours...",
+    "emailModalNewEmailDescription": "Entrez votre nouvelle adresse e-mail.",
+    "emailModalNew": "Nouvelle adresse e-mail",
+    "emailModalSaving": "Enregistrement en cours...",
+    "emailModalSaveEmail": "Enregistrer l'adresse e-mail",
+    "state": {
+      "loading": "Chargement du profil...",
+      "profileError": "Échec du chargement du profil. Veuillez actualiser la page et réessayer.",
+      "categoryError": "Échec du chargement des catégories",
+      "usernameRequired": "Le nom d'utilisateur est requis.",
+      "categoryRequired": "La catégorie est requise.",
+      "distanceRequired": "L'unité de distance est requise.",
+      "emailRequired": "L'adresse e-mail est requise.",
+      "emailSavingError": "Auth email updated, but profile row failed",
+      "emailSavingMessage": "Email update submitted. Check your inbox to confirm the new address.",
+      "emailSavingMessageSuccess": "Email saved successfully.",
+      "emailNotFound": "No email found for this account.",
+      "saving": "Enregistrement du profil...",
+      "saveSuccess": "Profil enregistré avec succès.",
+      "saveError": "Échec de l'enregistrement du profil",
+      "passwordSucccess1": "Lien de réinitialisation envoyé à ",
+      "passwordSucccess2": "Vérifiez votre boîte de réception.",
+      "proAccess": {
+        "success": "Accès Pro mis à jour.",
+        "error": "Vous pouvez autoriser jusqu'à 2 pros."
+      }
     }
   }
 }

@@ -1,11 +1,9 @@
 import { Show, createEffect, createSignal, onCleanup } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 import { supabase } from "../supabase/client";
 import { useAuth } from "../context/AuthProvider";
 import ChangeEmailModal from "../components/profile/ChangeEmailModal";
-import {
-  distanceUnitOptions,
-  normalizeDistanceUnit,
-} from "../lib/distance";
+import { distanceUnitOptions, normalizeDistanceUnit } from "../lib/distance";
 import {
   fetchAssignedProIds,
   fetchAvailablePros,
@@ -20,6 +18,7 @@ type SaveState = {
 } | null;
 
 type CategoryOption = {
+  code: string;
   id: number;
   name: string;
 };
@@ -36,6 +35,7 @@ type ProfileData = {
 
 const Profile = () => {
   const { user, refreshProfile } = useAuth();
+  const [t] = useTransContext();
   let hasLoadedProfileOnce = false;
 
   const [loading, setLoading] = createSignal(true);
@@ -94,7 +94,7 @@ const Profile = () => {
             )
             .eq("id", currentUser.id)
             .maybeSingle<ProfileData>(),
-          supabase.from("category").select("id, name").order("id"),
+          supabase.from("category").select("id, code, name").order("id"),
           fetchAvailablePros(),
           fetchAssignedProIds(),
         ]);
@@ -104,7 +104,7 @@ const Profile = () => {
         if (profileError) {
           setProfileState({
             type: "error",
-            message: `Failed to load profile: ${profileError.message}`,
+            message: `t("profile.state.profileError")}: ${profileError.message}`,
           });
           return;
         }
@@ -112,7 +112,7 @@ const Profile = () => {
         if (categoryError) {
           setProfileState({
             type: "error",
-            message: `Failed to load categories: ${categoryError.message}`,
+            message: `t("profile.state.categoryError")}: ${categoryError.message}`,
           });
           return;
         }
@@ -128,7 +128,9 @@ const Profile = () => {
         if (!cancelled) {
           setProfileState({
             type: "error",
-            message: "Failed to load profile. Please refresh and try again.",
+            message:
+              t("profile.state.profileError") +
+              `: ${error instanceof Error ? error.message : String(error)}`,
           });
         }
       } finally {
@@ -153,7 +155,7 @@ const Profile = () => {
     if (!username().trim()) {
       setProfileState({
         type: "error",
-        message: "Username is required.",
+        message: t("profile.state.usernameRequired"),
       });
       return;
     }
@@ -161,7 +163,7 @@ const Profile = () => {
     if (!category()) {
       setProfileState({
         type: "error",
-        message: "Category is required.",
+        message: t("profile.state.categoryRequired"),
       });
       return;
     }
@@ -169,33 +171,31 @@ const Profile = () => {
     if (!distance()) {
       setProfileState({
         type: "error",
-        message: "Distance unit is required.",
+        message: t("profile.state.distanceRequired"),
       });
       return;
     }
 
-    const { error } = await supabase
-      .from("user_profiles")
-      .upsert({
-        id: currentUser.id,
-        email: currentUser.email ?? email(),
-        user_name: username().trim(),
-        avatar_url: avatar().trim() || null,
-        category_id: category(),
-        preferred_distance_unit: normalizeDistanceUnit(distance()),
-      });
+    const { error } = await supabase.from("user_profiles").upsert({
+      id: currentUser.id,
+      email: currentUser.email ?? email(),
+      user_name: username().trim(),
+      avatar_url: avatar().trim() || null,
+      category_id: category(),
+      preferred_distance_unit: normalizeDistanceUnit(distance()),
+    });
 
     if (error) {
       setProfileState({
         type: "error",
-        message: `Profile not saved: ${error.message}`,
+        message: `t("profile.state.saveError")}: ${error.message}`,
       });
       return;
     }
 
     setProfileState({
       type: "success",
-      message: "Profile saved to database.",
+      message: t("profile.state.saveSuccess"),
     });
     await refreshProfile();
   };
@@ -208,7 +208,10 @@ const Profile = () => {
 
     const nextEmail = emailDraft().trim();
     if (!nextEmail) {
-      setEmailState({ type: "error", message: "Email is required." });
+      setEmailState({
+        type: "error",
+        message: t("profile.state.emailRequired"),
+      });
       return;
     }
 
@@ -232,7 +235,7 @@ const Profile = () => {
       setEmailSaving(false);
       setEmailState({
         type: "error",
-        message: `Auth email updated, but profile row failed: ${profileError.message}`,
+        message: `t("profile.state.emailSavingError")}: ${profileError.message}`,
       });
       return;
     }
@@ -241,8 +244,8 @@ const Profile = () => {
     setEmailState({
       type: "success",
       message: emailChangeSent
-        ? "Email update submitted. Check your inbox to confirm the new address."
-        : "Email saved successfully.",
+        ? t("profile.state.emailSavingMessage")
+        : t("profile.state.emailSavingMessageSuccess"),
     });
     await refreshProfile();
     setEmail(nextEmail);
@@ -259,7 +262,7 @@ const Profile = () => {
     if (!targetEmail) {
       setPasswordState({
         type: "error",
-        message: "No email found for this account.",
+        message: t("profile.state.emailNotFound"),
       });
       return;
     }
@@ -277,7 +280,7 @@ const Profile = () => {
 
     setPasswordState({
       type: "success",
-      message: `Reset link sent to ${targetEmail}. Check your inbox.`,
+      message: `${t("profile.state.passwordSucccess1")}${targetEmail}. ${t("profile.state.passwordSucccess2")}`,
     });
   };
 
@@ -285,10 +288,14 @@ const Profile = () => {
     setProAccessState(null);
     setProAccessLoading(true);
 
-    if (enabled && !selectedProIds().includes(proUserId) && selectedProIds().length >= 2) {
+    if (
+      enabled &&
+      !selectedProIds().includes(proUserId) &&
+      selectedProIds().length >= 2
+    ) {
       setProAccessState({
         type: "error",
-        message: "You can allow up to 2 pros.",
+        message: t("profile.state.proAccess.error"),
       });
       setProAccessLoading(false);
       return;
@@ -311,7 +318,7 @@ const Profile = () => {
     setSelectedProIds(assignedPros);
     setProAccessState({
       type: "success",
-      message: "Pro access updated.",
+      message: t("profile.state.proAccess.success"),
     });
     setProAccessLoading(false);
   };
@@ -320,26 +327,26 @@ const Profile = () => {
     <div class='mx-auto w-full max-w-4xl space-y-6'>
       <div class='rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
         <h1 class='font-rubik text-3xl font-semibold tracking-tight text-slate-800'>
-          Profile Settings
+          {t("profile.title")}
         </h1>
         <p class='mt-2 font-grotesk text-sm text-slate-500'>
-          Manage your account details and save changes to your profile.
+          {t("profile.description")}
         </p>
       </div>
 
       <Show when={!loading()} fallback={<div>Loading profile...</div>}>
         <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>
-            Public Profile
+            {t("profile.publicProfile")}
           </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Update avatar, category, and preferred distance unit.
+            {t("profile.publicProfileDescription")}
           </p>
 
           <div class='mt-4 space-y-4'>
             <label class='block'>
               <span class='mb-1 block text-sm font-medium text-slate-700'>
-                Username
+                {t("profile.username")}
               </span>
               <input
                 type='text'
@@ -367,7 +374,7 @@ const Profile = () => {
             <div class='grid gap-4 sm:grid-cols-2'>
               <label class='block'>
                 <span class='mb-1 block text-sm font-medium text-slate-700'>
-                  Category
+                  {t("profile.category")}
                 </span>
                 <select
                   value={category()}
@@ -377,14 +384,18 @@ const Profile = () => {
                 >
                   <option value=''>Select category</option>
                   {categoryOptions().map((option) => (
-                    <option value={option.id}>{option.name}</option>
+                    <option value={option.id}>
+                      {t(`categories.${option.code}`, {
+                        defaultValue: option.name,
+                      })}
+                    </option>
                   ))}
                 </select>
               </label>
 
               <label class='block'>
                 <span class='mb-1 block text-sm font-medium text-slate-700'>
-                  Distance Unit
+                  {t("profile.distanceUnit")}
                 </span>
                 <select
                   value={distance()}
@@ -392,7 +403,7 @@ const Profile = () => {
                   class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800'
                   required
                 >
-                  <option value=''>Select distance unit</option>
+                  <option value=''>{t("profile.selectUnit")}</option>
                   {distanceUnitOptions.map((option) => (
                     <option value={option}>{option}</option>
                   ))}
@@ -419,18 +430,17 @@ const Profile = () => {
               onClick={saveProfile}
               class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
             >
-              Save Profile
+              {t("profile.saveProfile")}
             </button>
           </div>
         </div>
 
         <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>
-            Pro Access
+            {t("profile.proAccess")}
           </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Allow up to 2 pros to view your rounds and statistics in read-only
-            mode.
+            {t("profile.proAccessDescription")}
           </p>
 
           <Show when={proAccessState()}>
@@ -450,8 +460,7 @@ const Profile = () => {
           <div class='mt-4 space-y-3'>
             {pros().map((pro) => {
               const enabled = selectedProIds().includes(pro.id);
-              const disableEnable =
-                !enabled && selectedProIds().length >= 2;
+              const disableEnable = !enabled && selectedProIds().length >= 2;
 
               return (
                 <div class='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4'>
@@ -459,7 +468,9 @@ const Profile = () => {
                     <p class='font-medium text-slate-800'>
                       {pro.user_name || pro.email || "Unnamed pro"}
                     </p>
-                    <p class='text-sm text-slate-500'>{pro.email ?? "No email"}</p>
+                    <p class='text-sm text-slate-500'>
+                      {pro.email ?? "No email"}
+                    </p>
                   </div>
                   <button
                     type='button'
@@ -471,7 +482,9 @@ const Profile = () => {
                         : "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
                     }`}
                   >
-                    {enabled ? "Remove Access" : "Allow Access"}
+                    {enabled
+                      ? t("profile.removeProAccess")
+                      : t("profile.allowProAccess")}
                   </button>
                 </div>
               );
@@ -482,11 +495,11 @@ const Profile = () => {
         <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>Email</h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Change your account email in a separate modal.
+            {t("profile.emailDescription")}
           </p>
           <div class='mt-4 space-y-4'>
             <p class='rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700'>
-              Current email: {email() || "Not set"}
+              {t("profile.currentEmail")}: {email() || t("profile.notsetEmail")}
             </p>
 
             <Show when={emailState()}>
@@ -512,17 +525,17 @@ const Profile = () => {
               }}
               class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
             >
-              Change Email
+              {t("profile.changeEmail")}
             </button>
           </div>
         </div>
 
         <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>
-            Password
+            {t("profile.password")}
           </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            A reset link will be sent to your account email address.
+            {t("profile.passwordDescription")}
           </p>
           <div class='mt-4 space-y-4'>
             <Show when={passwordState()}>

@@ -27,7 +27,7 @@ type ProfileData = {
   user_name: string | null;
   email: string | null;
   avatar_url: string | null;
-  category: { id: number | null; name: string } | null;
+  category: { code: string | null; id: number | null; name: string } | null;
 
   preferred_distance_unit: string | null;
 };
@@ -195,7 +195,7 @@ export const AuthProvider: ParentComponent = (props) => {
     const { data, error } = await supabase
       .from("user_profiles")
       .select(
-        "user_name, email, avatar_url, category:category_id(id, name), preferred_distance_unit",
+        "user_name, email, avatar_url, category:category_id(id, code, name), preferred_distance_unit",
       )
       .eq("id", currentUser.id)
       .maybeSingle<ProfileData>();
