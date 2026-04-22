@@ -28,6 +28,7 @@ const User = lazy(() => import("./components/admin/user"));
 const Rounds = lazy(() => import("./pages/Rounds"));
 const RoundShots = lazy(() => import("./pages/RoundShots"));
 const Stats = lazy(() => import("./pages/Stats"));
+const SelectedRoundStats = lazy(() => import("./pages/SelectedRoundStats"));
 
 const App: Component = () => {
   return (
@@ -100,6 +101,14 @@ const App: Component = () => {
           component={() => (
             <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
               <Stats />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path='/round-analysis'
+          component={() => (
+            <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
+              <SelectedRoundStats />
             </ProtectedRoute>
           )}
         />

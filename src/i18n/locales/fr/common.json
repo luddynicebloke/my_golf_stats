@@ -28,6 +28,7 @@
     "startNewRound": "Nouvelle partie",
     "rounds": "Parties",
     "statistics": "Statistiques",
+    "roundAnalysis": "Analyse des parties",
     "profile": "Profil",
     "signOut": "Se d\u00e9connecter"
   },
@@ -85,6 +86,10 @@
   "stats": {
     "title": "Statistiques de distance des coups",
     "subtitle": "Construites \u00e0 partir de vos {{count}} derniers parcours finalis\u00e9s.",
+    "viewingPlayer": "Affichage de {{player}}",
+    "viewingPlayerLabel": "Joueur affich\u00e9",
+    "selectedPlayer": "joueur s\u00e9lectionn\u00e9",
+    "choosePlayer": "Choisissez un joueur pour consulter les statistiques.",
     "loading": "Chargement des statistiques...",
     "error": "Impossible de charger les statistiques de strokes gained.",
     "putting": {
@@ -120,6 +125,20 @@
       "title": "SG moyen par distance",
       "average": "SG moyen"
     }
+  },
+  "selectedStats": {
+    "title": "Analyse des parties",
+    "description": "S\u00e9lectionnez des parties finalis\u00e9es pour comparer un ensemble personnalis\u00e9 de statistiques.",
+    "clearSelection": "Effacer la s\u00e9lection",
+    "loadingRounds": "Chargement des parties...",
+    "roundsError": "Impossible de charger les parties.",
+    "noRounds": "Aucune partie finalis\u00e9e trouv\u00e9e.",
+    "selectedCount": "Parties s\u00e9lectionn\u00e9es: {{count}}",
+    "selectionHint": "Cliquez sur une partie pour l'ajouter ou la retirer.",
+    "resultsTitle": "Statistiques des parties s\u00e9lectionn\u00e9es",
+    "resultsDescription": "Ces graphiques et tableaux utilisent uniquement les parties s\u00e9lectionn\u00e9es ci-dessus.",
+    "emptySelection": "S\u00e9lectionnez une ou plusieurs parties pour afficher les statistiques.",
+    "loadingStats": "Chargement des statistiques s\u00e9lectionn\u00e9es..."
   },
   "rounds": {
     "title": "Paramètres du profil",

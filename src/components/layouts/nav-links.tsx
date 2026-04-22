@@ -26,6 +26,11 @@ export const links: NavLinkItem[] = [
   },
   { key: "rounds", href: "/dashboard/rounds", icon: IoGolfOutline },
   { key: "statistics", href: "/dashboard/stats", icon: ImStatsBars2 },
+  {
+    key: "roundAnalysis",
+    href: "/dashboard/round-analysis",
+    icon: ImStatsBars2,
+  },
   { key: "profile", href: "/dashboard/profile", icon: CgProfile },
   { key: "signOut", href: "/", icon: VsSignOut, isSignOut: true },
 ];
@@ -37,7 +42,9 @@ export default function NavLinks() {
   const items = () =>
     role() === "pro"
       ? links.filter((link) =>
-          ["home", "rounds", "statistics", "signOut"].includes(link.key),
+          ["home", "rounds", "statistics", "roundAnalysis", "signOut"].includes(
+            link.key,
+          ),
         )
       : links;
 

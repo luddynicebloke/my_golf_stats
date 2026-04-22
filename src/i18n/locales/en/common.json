@@ -28,6 +28,7 @@
     "startNewRound": "Start New Round",
     "rounds": "Rounds",
     "statistics": "Statistics",
+    "roundAnalysis": "Round Analysis",
     "profile": "Profile",
     "signOut": "Sign Out"
   },
@@ -85,6 +86,10 @@
   "stats": {
     "title": "Shot Distance Stats",
     "subtitle": "Built from your latest {{count}} finalised rounds.",
+    "viewingPlayer": "Viewing {{player}}",
+    "viewingPlayerLabel": "Viewing player",
+    "selectedPlayer": "selected player",
+    "choosePlayer": "Choose a player to view statistics.",
     "loading": "Loading stats...",
     "error": "Failed to load strokes gained stats.",
     "putting": {
@@ -120,6 +125,20 @@
       "title": "Average SG by Distance",
       "average": "Average SG"
     }
+  },
+  "selectedStats": {
+    "title": "Round Analysis",
+    "description": "Select finalised rounds to compare a custom set of statistics.",
+    "clearSelection": "Clear selection",
+    "loadingRounds": "Loading rounds...",
+    "roundsError": "Failed to load rounds.",
+    "noRounds": "No finalised rounds found.",
+    "selectedCount": "Selected rounds: {{count}}",
+    "selectionHint": "Click a round to include or remove it.",
+    "resultsTitle": "Selected Round Statistics",
+    "resultsDescription": "These charts and tables use only the rounds selected above.",
+    "emptySelection": "Select one or more rounds to show statistics.",
+    "loadingStats": "Loading selected round stats..."
   },
   "rounds": {
     "title": "Rounds",
