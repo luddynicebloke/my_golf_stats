@@ -49,23 +49,22 @@ export default function SignIn() {
         <div class='bg-linear-to-br from-cyan-950 via-slate-900 to-emerald-950 p-8 text-white sm:p-10'>
           <img class='h-20 w-auto' src={LogoSG} alt='SG Calculater Logo' />
           <p class='mt-6 font-grotesk text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300'>
-            Welcome Back
+            {t("signin.title")}
           </p>
           <h1 class='mt-2 font-rubik text-3xl font-semibold leading-tight sm:text-4xl'>
-            Log in
+            {t("signin.login")}
           </h1>
           <p class='mt-3 max-w-sm font-grotesk text-sm text-slate-300 sm:text-base'>
-            Sign in to view rounds, track strokes gained, and manage your golf
-            profile.
+            {t("signin.description")}
           </p>
         </div>
 
         <div class='p-6 sm:p-8 lg:p-10'>
           <h2 class='font-rubik text-2xl font-semibold text-slate-800'>
-            Sign In
+            {t("signin.signIn")}
           </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Enter your email and password to continue.
+            {t("signin.signInDescription")}
           </p>
 
           <div class='mt-4 min-h-6'>
@@ -120,20 +119,20 @@ export default function SignIn() {
                 type='submit'
                 disabled={loading()}
               >
-                {loading() ? "Signing in..." : "Log in"}
+                {loading() ? t("signin.signingIn") : t("signin.logInButton")}
               </button>
             </Form>
           </div>
 
           <div class='mt-5 flex flex-wrap gap-x-4 gap-y-2 font-grotesk text-sm'>
             <A class='text-cyan-700 hover:underline' href='/reset-password'>
-              Forgot password?
+              {t("signin.forgotPassword")}
             </A>
             <A
               class='text-slate-600 hover:text-slate-800 hover:underline'
               href='/register'
             >
-              Create account
+              {t("signin.createAccount")}
             </A>
           </div>
         </div>

@@ -1,13 +1,11 @@
 import { createForm, required } from "@modular-forms/solid";
 import { A, useNavigate } from "@solidjs/router";
 import { createSignal, onMount } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import LogoSG from "../assets/logo.png";
 import TextInput from "../components/forms/TextInput";
-import {
-  distanceUnitOptions,
-  normalizeDistanceUnit,
-} from "../lib/distance";
+import { distanceUnitOptions, normalizeDistanceUnit } from "../lib/distance";
 import { supabase } from "../supabase/client";
 
 type RegisterFormProps = {
@@ -33,7 +31,10 @@ export default function Register() {
   const [category, setCategory] = createSignal("");
   const [distanceUnit, setDistanceUnit] = createSignal("");
   const [requestProAccount, setRequestProAccount] = createSignal(false);
-  const [categoryOptions, setCategoryOptions] = createSignal<CategoryOption[]>([]);
+  const [categoryOptions, setCategoryOptions] = createSignal<CategoryOption[]>(
+    [],
+  );
+  const [t] = useTransContext();
 
   const navigate = useNavigate();
   const [, { Form, Field }] = createForm<RegisterFormProps>();
@@ -159,7 +160,7 @@ export default function Register() {
         <div class='bg-linear-to-br from-cyan-950 via-slate-900 to-emerald-950 p-8 text-white sm:p-10'>
           <img class='h-20 w-auto' src={LogoSG} alt='SG Calculater Logo' />
           <p class='mt-6 font-grotesk text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300'>
-            New Account
+            {t("register.new")}
           </p>
           <h1 class='mt-2 font-rubik text-3xl font-semibold leading-tight sm:text-4xl'>
             Create Your Profile
@@ -288,9 +289,7 @@ export default function Register() {
                       Select category
                     </option>
                     {categoryOptions().map((option) => (
-                      <option value={option.code}>
-                        {option.name}
-                      </option>
+                      <option value={option.code}>{option.name}</option>
                     ))}
                   </select>
                 </label>
@@ -319,7 +318,9 @@ export default function Register() {
                 <input
                   type='checkbox'
                   checked={requestProAccount()}
-                  onChange={(e) => setRequestProAccount(e.currentTarget.checked)}
+                  onChange={(e) =>
+                    setRequestProAccount(e.currentTarget.checked)
+                  }
                   class='mt-1 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-200'
                 />
                 <span>

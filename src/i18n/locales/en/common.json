@@ -46,6 +46,8 @@
     "inProgress": "In progress",
     "yes": "Yes",
     "no": "No",
+    "confirm": "Confirm",
+    "areYouSure": "Are you sure?",
     "score": "Score",
     "date": "Date",
     "course": "Course",
@@ -64,7 +66,17 @@
     },
     "chart": {
       "title": "Strokes Gained Last 10 Rounds",
-      "empty": "No data available"
+      "empty": "No data available",
+      "SG": {
+        "tee": "Off the Tee",
+        "approach": "Approach > 120",
+        "longApproach": "Long approach",
+        "mediumApproach": "Medium approach",
+        "shortApproach": "Short approach",
+        "chipping": "Chipping",
+        "arroundTheGreen": "Around the green",
+        "putting": "Putting"
+      }
     },
     "latestRounds": {
       "title": "Latest Rounds"
@@ -107,6 +119,38 @@
     "chart": {
       "title": "Average SG by Distance",
       "average": "Average SG"
+    }
+  },
+  "rounds": {
+    "title": "Rounds",
+    "viewing": "Viewing",
+    "viewingPlayer": "Viewing Player",
+    "choosePlayer": "Choose a player to view rounds.",
+    "roundsDescription": "View your latest 30 rounds in one place.",
+    "loading": "Loading rounds...",
+    "error": "Failed to load rounds.",
+    "noRounds": "No rounds found. Start a new round to see it here.",
+    "complete": "Complete round",
+    "completeDescription": "Continue entering holes, or finalise the round with the holes you have already completed.",
+    "roundsCompleted": "Rounds completed",
+    "score": "Score",
+    "sgTotal": "SG total",
+    "completeRound": "Complete round",
+    "completeRoundDescription": "Continue entering holes, or finalise the round with the holes you have already completed.",
+    "continueRound": "Continue round",
+    "finalising": "Finalising round...",
+    "finalisePlayedHoles": "Finalise Played Holes",
+    "showSummary": "Show summary",
+    "hideSummary": "Hide summary",
+    "BackToRounds": "Back to Rounds",
+    "shots": {
+      "hole": "Hole",
+      "shot": "Shot",
+      "distance": "Distance",
+      "lieType": "Lie Type",
+      "Penalty": "Penalty",
+      "Score": "Score",
+      "SG": "SG"
     }
   },
   "profile": {
@@ -157,5 +201,29 @@
         "error": "You can allow up to 2 pros."
       }
     }
+  },
+  "signin": {
+    "title": "Welcome back",
+    "login": "Login",
+    "description": "Sign in to view rounds, track strokes gained, and manage your golf profile.",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "signInDescription": "Enter your email and password to continue.",
+    "logInButton": "Log In",
+    "forgotPassword": "Forgot your password?",
+    "createAccount": "Create Account"
+  },
+  "register": {
+    "new": "New account",
+    "title": "Create your profile",
+    "description": "Set up your account to track rounds, scorecards, and strokes gained.",
+    "register": "Register",
+    "username": "Username*",
+    "registering": "Registering...",
+    "registerDescription": "Enter your email, choose a password, and create your account.",
+    "email": "Email*",
+    "password": "Password*",
+    "confirmPassword": "Confirm Password",
+    "logInButton": "Already have an account? Log In"
   }
 }

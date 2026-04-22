@@ -17,7 +17,7 @@ type DashboardCardStats = {
   averageScore: number | null;
   averageStrokesGained: number | null;
   latestRounds: TLatestRound[];
-  strokesGainedByCategory: TStrokesGained[];
+  strokesGainedByCategory: DashboardSgCategoryStat[];
 };
 
 type StrokesGainedCategory =
@@ -56,17 +56,25 @@ type DashboardStatsRpcCategory = {
   score: number;
 };
 
+type DashboardSgCategoryStat = {
+  category: StrokesGainedCategory;
+  score: number;
+};
+
 const YARDS_TO_METRES = 0.9144;
 
-const strokesGainedCategoryBaseLabels: Record<StrokesGainedCategory, string> = {
-  offTheTee: "Off the Tee",
-  approach: "Approach",
-  longApproach: "Long Approach",
-  mediumApproach: "Medium Approach",
-  shortApproach: "Short Approach",
-  chipping: "Chipping",
-  aroundTheGreen: "Around the Green",
-  putting: "Putting",
+const strokesGainedCategoryTranslationKeys: Record<
+  StrokesGainedCategory,
+  string
+> = {
+  offTheTee: "tee",
+  approach: "approach",
+  longApproach: "longApproach",
+  mediumApproach: "mediumApproach",
+  shortApproach: "shortApproach",
+  chipping: "chipping",
+  aroundTheGreen: "arroundTheGreen",
+  putting: "putting",
 };
 
 const emptyDashboardCardStats = (): DashboardCardStats => ({
@@ -112,20 +120,25 @@ const getDistanceRangeLabel = (
 const getCategoryLabel = (
   category: StrokesGainedCategory,
   unit: DistanceUnit,
+  t: ReturnType<typeof useTransContext>[0],
 ) => {
+  const baseLabel = t(
+    `dashboard.chart.SG.${strokesGainedCategoryTranslationKeys[category]}`,
+  );
+
   switch (category) {
     case "aroundTheGreen":
-      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(null, 10, unit)})`;
+      return `${baseLabel} (${getDistanceRangeLabel(null, 10, unit)})`;
     case "chipping":
-      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(11, 30, unit)})`;
+      return `${baseLabel} (${getDistanceRangeLabel(11, 30, unit)})`;
     case "shortApproach":
-      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(31, 60, unit)})`;
+      return `${baseLabel} (${getDistanceRangeLabel(31, 60, unit)})`;
     case "mediumApproach":
-      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(61, 90, unit)})`;
+      return `${baseLabel} (${getDistanceRangeLabel(61, 90, unit)})`;
     case "longApproach":
-      return `${strokesGainedCategoryBaseLabels[category]} (${getDistanceRangeLabel(91, 120, unit)})`;
+      return `${baseLabel} (${getDistanceRangeLabel(91, 120, unit)})`;
     default:
-      return strokesGainedCategoryBaseLabels[category];
+      return baseLabel;
   }
 };
 
@@ -168,7 +181,7 @@ const fetchDashboardCardStats = async ({
     data.strokes_gained_by_category,
   )
     ? data.strokes_gained_by_category.map((item) => ({
-        title: getCategoryLabel(item.category, distanceUnit),
+        category: item.category,
         score: Number(item.score ?? 0),
       }))
     : [];
@@ -203,6 +216,12 @@ export default function Dashboard() {
       distanceUnit: distanceUnit(),
     }),
     fetchDashboardCardStats,
+  );
+  const chartStrokesGained = createMemo<TStrokesGained[]>(() =>
+    (cardStats()?.strokesGainedByCategory ?? []).map((item) => ({
+      title: getCategoryLabel(item.category, distanceUnit(), t),
+      score: item.score,
+    })),
   );
 
   if (isPro()) {
@@ -296,7 +315,7 @@ export default function Dashboard() {
       <div class='mt-6 grid w-full grid-cols-1 gap-6 xl:grid-cols-12'>
         <div class='xl:col-span-7'>
           <DashboardChart
-            currentSG={cardStats()?.strokesGainedByCategory ?? []}
+            currentSG={chartStrokesGained()}
           />
         </div>
         <div class='xl:col-span-5'>

@@ -1,4 +1,10 @@
-import { createEffect, createResource, createSignal, For, Show } from "solid-js";
+import {
+  createEffect,
+  createResource,
+  createSignal,
+  For,
+  Show,
+} from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -7,6 +13,7 @@ import RoundSummaryDropdown from "../components/rounds/RoundSummaryDropdown";
 import { useAuth } from "../context/AuthProvider";
 import { normalizeDistanceUnit } from "../lib/distance";
 import { supabase } from "../supabase/client";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 type RoundListItem = {
   id: number;
@@ -53,13 +60,12 @@ const fetchRounds = async ({
     return { hasNextPage: false, rounds: [] as RoundListItem[] };
   }
 
-  const { data, error } = await supabase
-    .rpc("get_round_summary_list", {
-      p_limit: PAGE_SIZE + 1,
-      p_offset: (page - 1) * PAGE_SIZE,
-      p_recent_limit: RECENT_ROUNDS_LIMIT,
-      p_user_id: userId,
-    });
+  const { data, error } = await supabase.rpc("get_round_summary_list", {
+    p_limit: PAGE_SIZE + 1,
+    p_offset: (page - 1) * PAGE_SIZE,
+    p_recent_limit: RECENT_ROUNDS_LIMIT,
+    p_user_id: userId,
+  });
 
   if (error) {
     console.error("Error fetching rounds:", error);
@@ -86,6 +92,7 @@ const fetchRounds = async ({
 };
 
 export default function Rounds() {
+  const [t] = useTransContext();
   const auth = useAuth();
   const navigate = useNavigate();
   const isReadOnly = () => auth.isReadOnly();
@@ -98,14 +105,22 @@ export default function Rounds() {
     fetchRounds,
   );
   const [modalOpen, setModalOpen] = createSignal(false);
-  const [selectedRoundId, setSelectedRoundId] = createSignal<number | null>(null);
-  const [deletingRoundId, setDeletingRoundId] = createSignal<number | null>(null);
-  const [finalisingRoundId, setFinalisingRoundId] = createSignal<number | null>(null);
+  const [selectedRoundId, setSelectedRoundId] = createSignal<number | null>(
+    null,
+  );
+  const [deletingRoundId, setDeletingRoundId] = createSignal<number | null>(
+    null,
+  );
+  const [finalisingRoundId, setFinalisingRoundId] = createSignal<number | null>(
+    null,
+  );
   const [deleteError, setDeleteError] = createSignal<string | null>(null);
   const [finaliseError, setFinaliseError] = createSignal<string | null>(null);
   const [roundActionOpen, setRoundActionOpen] = createSignal(false);
   const [actionRoundId, setActionRoundId] = createSignal<number | null>(null);
-  const [expandedRoundId, setExpandedRoundId] = createSignal<number | null>(null);
+  const [expandedRoundId, setExpandedRoundId] = createSignal<number | null>(
+    null,
+  );
   const distanceUnit = () =>
     normalizeDistanceUnit(auth.profile()?.preferred_distance_unit);
 
@@ -220,11 +235,10 @@ export default function Rounds() {
             onClick={(event) => event.stopPropagation()}
           >
             <h2 class='mb-3 text-xl font-semibold text-slate-900'>
-              Complete Round
+              {t("rounds.completeRound")}
             </h2>
             <p class='mb-6 text-sm text-slate-600'>
-              Continue entering holes, or finalise the round with the holes you
-              have already completed.
+              {t("rounds.completeRoundDescription")}
             </p>
             <div class='grid gap-3'>
               <button
@@ -238,7 +252,7 @@ export default function Rounds() {
                   }
                 }}
               >
-                Continue Round
+                {t("rounds.continueRound")}
               </button>
               <button
                 type='button'
@@ -253,15 +267,15 @@ export default function Rounds() {
                 }}
               >
                 {finalisingRoundId() === actionRoundId()
-                  ? "Finalising..."
-                  : "Finalise Played Holes"}
+                  ? t("rounds.finalising")
+                  : t("rounds.finalisePlayedHoles")}
               </button>
               <button
                 type='button'
                 class='rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50'
                 onClick={() => setRoundActionOpen(false)}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>
@@ -270,17 +284,19 @@ export default function Rounds() {
 
       <div class='mx-auto w-full max-w-5xl space-y-4'>
         <div class='rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
-          <h1 class='font-rubik text-2xl font-semibold text-slate-800'>Rounds</h1>
+          <h1 class='font-rubik text-2xl font-semibold text-slate-800'>
+            {t("rounds.title")}
+          </h1>
           <p class='mt-1 text-sm text-slate-500'>
             {isReadOnly() && auth.selectedPlayer()
-              ? `Viewing ${auth.selectedPlayer()?.user_name || auth.selectedPlayer()?.email || "selected player"}`
-              : "View your latest 30 rounds in one place."}
+              ? `${t("rounds.viewing")} ${auth.selectedPlayer()?.user_name || auth.selectedPlayer()?.email || "selected player"}`
+              : `${t("rounds.roundsDescription")}`}
           </p>
 
           <Show when={isReadOnly()}>
             <div class='mt-4'>
               <PlayerSelector
-                label='Viewing player'
+                label={t("rounds.viewingPlayer")}
                 players={auth.accessiblePlayers()}
                 selectedPlayerId={auth.selectedPlayerId()}
                 onChange={auth.setSelectedPlayerId}
@@ -306,7 +322,9 @@ export default function Rounds() {
           <Show
             when={!rounds.loading}
             fallback={
-              <div class='mt-4 text-sm text-slate-500'>Loading rounds...</div>
+              <div class='mt-4 text-sm text-slate-500'>
+                {t("rounds.loading")}
+              </div>
             }
           >
             <Show
@@ -314,8 +332,8 @@ export default function Rounds() {
               fallback={
                 <p class='mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500'>
                   {isReadOnly() && !auth.targetUserId()
-                    ? "Choose a player to view rounds."
-                    : "No rounds found."}
+                    ? t("rounds.choosePlayer")
+                    : t("rounds.noRounds")}
                 </p>
               }
             >
@@ -339,7 +357,9 @@ export default function Rounds() {
                             "bg-amber-100 text-amber-700": !round.finished,
                           }}
                         >
-                          {round.finished ? "Completed" : "In progress"}
+                          {round.finished
+                            ? t("common.completed")
+                            : t("common.inProgress")}
                         </span>
                       </div>
 
@@ -454,19 +474,19 @@ export default function Rounds() {
                         Date
                       </th>
                       <th scope='col' class='px-4 py-3 font-semibold'>
-                        Course
+                        {t("common.course")}
                       </th>
                       <th scope='col' class='px-4 py-3 font-semibold'>
-                        Tee
+                        {t("common.tee")}
                       </th>
                       <th scope='col' class='px-4 py-3 font-semibold'>
-                        Completed
+                        {t("common.completed")}
                       </th>
                       <th scope='col' class='px-4 py-3 font-semibold'>
-                        Score
+                        {t("rounds.score")}
                       </th>
                       <th scope='col' class='px-4 py-3 font-semibold'>
-                        SG Total
+                        {t("rounds.sgTotal")}
                       </th>
                       <th
                         scope='col'
@@ -491,7 +511,9 @@ export default function Rounds() {
                                   <button
                                     type='button'
                                     class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-800 hover:bg-cyan-100'
-                                    onClick={() => openRoundActionModal(round.id)}
+                                    onClick={() =>
+                                      openRoundActionModal(round.id)
+                                    }
                                   >
                                     Complete
                                   </button>
@@ -529,8 +551,8 @@ export default function Rounds() {
                                     onClick={() => toggleRoundSummary(round.id)}
                                   >
                                     {expandedRoundId() === round.id
-                                      ? "Hide Summary"
-                                      : "Show Summary"}
+                                      ? t("round.hideSummary")
+                                      : t("rounds.showSummary")}
                                   </button>
                                   <A
                                     href={`/dashboard/rounds/${round.id}`}
@@ -558,7 +580,11 @@ export default function Rounds() {
                               </Show>
                             </td>
                           </tr>
-                          <Show when={!isReadOnly() && expandedRoundId() === round.id}>
+                          <Show
+                            when={
+                              !isReadOnly() && expandedRoundId() === round.id
+                            }
+                          >
                             <tr class='border-b border-slate-100 bg-slate-50'>
                               <td colSpan={7} class='px-4 py-4'>
                                 <RoundSummaryDropdown
@@ -584,7 +610,9 @@ export default function Rounds() {
                     type='button'
                     class='inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60'
                     disabled={page() === 1 || rounds.loading}
-                    onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+                    onClick={() =>
+                      setPage((currentPage) => Math.max(1, currentPage - 1))
+                    }
                   >
                     Previous
                   </button>

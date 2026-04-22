@@ -46,6 +46,8 @@
     "inProgress": "En cours",
     "yes": "Oui",
     "no": "Non",
+    "confirm": "Confirmer",
+    "areYouSure": "Êtes-vous sûr?",
     "score": "Score",
     "date": "Date",
     "course": "Parcours",
@@ -64,7 +66,17 @@
     },
     "chart": {
       "title": "Strokes Gained sur les 10 derniers parcours",
-      "empty": "Aucune donn\u00e9e disponible"
+      "empty": "Aucune donn\u00e9e disponible",
+      "SG": {
+        "tee": "Mettre en jeu",
+        "approach": "Long coup",
+        "longApproach": "Long approache",
+        "mediumApproach": "Approache moyenne",
+        "shortApproach": "Approache courte",
+        "chipping": "Chipping",
+        "arroundTheGreen": "A cot\u00e9 du green",
+        "putting": "Putting"
+      }
     },
     "latestRounds": {
       "title": "Derni\u00e8res parties"
@@ -108,6 +120,28 @@
       "title": "SG moyen par distance",
       "average": "SG moyen"
     }
+  },
+  "rounds": {
+    "title": "Paramètres du profil",
+    "viewing": "Apreçu",
+    "viewingPlayer": "Affichage joueur",
+    "choosePlayer": "Choisissez un joueur pour consulter ses parties.",
+    "roundsDescription": "Consultez vos 30 dernières parties en un seul endroit.",
+    "loading": "Chargement des parties...",
+    "error": "Impossible de charger les parties.",
+    "noRounds": "Aucune partie trouvée. Commencez une nouvelle partie pour la voir ici.",
+    "complete": "Completer la partie",
+    "completeDescription": "Continuez à saisir les trous, ou finalisez la partie avec les trous que vous avez déjà complétés.",
+    "roundsCompleted": "Tours effectués",
+    "score": "Score",
+    "sgTotal": "SG total",
+    "completeRound": "Terminer la partie",
+    "completeRoundDescription": "Continuez à saisir les trous, ou finalisez la partie avec les trous que vous avez déjà complétés.",
+    "continueRound": "Continuer la partie",
+    "finalising": "Finalisation de la partie...",
+    "finalisePlayedHoles": "Finaliser les trous joués",
+    "showSummary": "Afficher le résumé",
+    "hideSummary": "Cacher le résumé"
   },
   "profile": {
     "title": "Paramètres du profil",
@@ -157,5 +191,28 @@
         "error": "Vous pouvez autoriser jusqu'à 2 pros."
       }
     }
+  },
+  "signin": {
+    "title": "Bienvenue",
+    "login": "Se connecter",
+    "description": "Connectez-vous pour voir les parties, suivre les coups gagnés et gérer votre profil de golf.",
+    "signIn": "Se connecter",
+    "signingIn": "Connexion en cours...",
+    "signInDescription": "Entrez votre adresse e-mail et votre mot de passe pour continuer.",
+    "logInButton": "Se connecter",
+    "forgotPassword": "Mot de passe oublié?",
+    "createAccount": "Créer un compte"
+  },
+  "register": {
+    "new": "Nouveau compte",
+    "title": "Créer votre profil",
+    "description": "Inscrivez-vous pour commencer à suivre vos parties, vos coups gagnés et à gérer votre profil de golf.",
+    "register": "S'inscrire",
+    "registering": "Inscription en cours...",
+    "registerDescription": "Entrez votre adresse e-mail, choisissez un mot de passe et créez votre compte.",
+    "email": "Adresse e-mail",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "logInButton": "Déjà un compte? Se connecter"
   }
 }
