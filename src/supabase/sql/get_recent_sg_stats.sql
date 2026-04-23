@@ -24,6 +24,10 @@ as $$
   recent_shots as (
     select
       s.distance_to_pin,
+      case
+        when lower(trim(s.lie_type)) = 'green' then s.distance_to_pin
+        else s.distance_to_pin * 1.09361
+      end as bucket_distance,
       s.sg_value,
       s.lie_type,
       lead(s.lie_type) over (
@@ -57,18 +61,18 @@ as $$
         'Driving'
       when lower(trim(p_shot_group)) = 'chipping' then
         case
-          when s.distance_to_pin >= 0 and s.distance_to_pin <= 10 then '1 to 10'
-          when s.distance_to_pin >= 11 and s.distance_to_pin <= 20 then '11 to 20'
-          when s.distance_to_pin >= 21 and s.distance_to_pin <= 30 then '21 to 30'
+          when s.bucket_distance >= 0 and s.bucket_distance <= 10 then '1 to 10'
+          when s.bucket_distance > 10 and s.bucket_distance <= 20 then '11 to 20'
+          when s.bucket_distance > 20 and s.bucket_distance <= 30 then '21 to 30'
           else '31+'
         end
       else
         case
-          when s.distance_to_pin >= 31 and s.distance_to_pin <= 60 then '31 to 60'
-          when s.distance_to_pin >= 61 and s.distance_to_pin <= 90 then '61 to 90'
-          when s.distance_to_pin >= 91 and s.distance_to_pin <= 120 then '91 to 120'
-          when s.distance_to_pin >= 121 and s.distance_to_pin <= 150 then '121 to 150'
-          when s.distance_to_pin >= 151 and s.distance_to_pin <= 200 then '151 to 200'
+          when s.bucket_distance > 30 and s.bucket_distance <= 60 then '31 to 60'
+          when s.bucket_distance > 60 and s.bucket_distance <= 90 then '61 to 90'
+          when s.bucket_distance > 90 and s.bucket_distance <= 120 then '91 to 120'
+          when s.bucket_distance > 120 and s.bucket_distance <= 150 then '121 to 150'
+          when s.bucket_distance > 150 and s.bucket_distance <= 200 then '151 to 200'
           else '201+'
         end
     end as distance_range,
@@ -103,18 +107,18 @@ as $$
       (
         lower(trim(p_shot_group)) = 'chipping'
         and lower(trim(s.lie_type)) not in ('green', 'tee')
-        and s.distance_to_pin >= 0
-        and s.distance_to_pin <= 30
+        and s.bucket_distance >= 0
+        and s.bucket_distance <= 30
       )
       or
       (
         lower(trim(p_shot_group)) = 'approach'
         and lower(trim(s.lie_type)) not in ('green', 'tee')
-        and s.distance_to_pin > 30
+        and s.bucket_distance > 30
       )
     )
   group by 1
-  order by min(s.distance_to_pin);
+  order by min(s.bucket_distance);
 $$;
 
 grant execute on function public.get_recent_sg_stats(text, integer) to authenticated;

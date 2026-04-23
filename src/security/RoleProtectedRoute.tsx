@@ -1,4 +1,4 @@
-import type { Component } from "solid-js";
+import type { Component, JSX } from "solid-js";
 
 import { createEffect, Show } from "solid-js";
 
@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthProvider";
 
 type Props = {
   requiredRole: "admin" | "user";
-  children: any;
+  children: JSX.Element;
   redirectTo?: string;
 };
 

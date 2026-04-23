@@ -56,6 +56,7 @@ type BucketDefinition = {
 
 const RECENT_ROUNDS_LIMIT = 10;
 const SELECTABLE_ROUNDS_LIMIT = 100;
+const METRES_TO_YARDS = 1.09361;
 
 const puttingBuckets: BucketDefinition[] = [
   { label: "0 to 3", matches: (distance) => distance >= 0 && distance < 4 },
@@ -144,6 +145,11 @@ const roundToPrecision = (value: number, precision: number) => {
   return Math.round(value * multiplier) / multiplier;
 };
 
+const getBucketDistance = (shot: AggregatedShot) =>
+  normalizeLieType(shot.lieType) === "green"
+    ? shot.distanceToPin
+    : shot.distanceToPin * METRES_TO_YARDS;
+
 const getBucketLabel = (shotGroup: ShotGroup, distance: number) => {
   if (shotGroup === "driving") {
     return "Driving";
@@ -177,10 +183,11 @@ const shotMatchesGroup = (shot: AggregatedShot, shotGroup: ShotGroup) => {
   }
 
   if (shotGroup === "chipping") {
-    return shot.distanceToPin >= 0 && shot.distanceToPin <= 30;
+    const bucketDistance = getBucketDistance(shot);
+    return bucketDistance >= 0 && bucketDistance <= 30;
   }
 
-  return shot.distanceToPin > 30;
+  return getBucketDistance(shot) > 30;
 };
 
 const aggregateShotStats = (
@@ -203,19 +210,20 @@ const aggregateShotStats = (
       continue;
     }
 
-    const bucketLabel = getBucketLabel(shotGroup, shot.distanceToPin);
+    const bucketDistance = getBucketDistance(shot);
+    const bucketLabel = getBucketLabel(shotGroup, bucketDistance);
     const existing = groupedRows.get(bucketLabel) ?? {
       fairwaysHit: 0,
-      maxDistance: shot.distanceToPin,
-      minDistance: shot.distanceToPin,
+      maxDistance: bucketDistance,
+      minDistance: bucketDistance,
       shots: 0,
       sgTotal: 0,
     };
 
     existing.shots += 1;
     existing.sgTotal += shot.sgValue;
-    existing.minDistance = Math.min(existing.minDistance, shot.distanceToPin);
-    existing.maxDistance = Math.max(existing.maxDistance, shot.distanceToPin);
+    existing.minDistance = Math.min(existing.minDistance, bucketDistance);
+    existing.maxDistance = Math.max(existing.maxDistance, bucketDistance);
 
     if (
       shotGroup === "driving" &&

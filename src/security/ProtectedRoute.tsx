@@ -1,9 +1,9 @@
-import { Component, Show, createEffect } from "solid-js";
+import { Component, Show, createEffect, type JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { type Role, useAuth } from "../context/AuthProvider";
 
 type Props = {
-  children: any; // JSX.Element or component
+  children: JSX.Element;
   redirectTo?: string;
   allowedRoles?: Role[];
   forbiddenRedirectTo?: string;

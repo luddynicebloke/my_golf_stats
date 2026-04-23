@@ -24,7 +24,6 @@ const RestPassword = lazy(() => import("./pages/ResetPassword"));
 const ScorecardEntry = lazy(
   () => import("./components/scoreEntry/ScorecardEntry"),
 );
-const User = lazy(() => import("./components/admin/user"));
 const Rounds = lazy(() => import("./pages/Rounds"));
 const RoundShots = lazy(() => import("./pages/RoundShots"));
 const Stats = lazy(() => import("./pages/Stats"));
@@ -66,7 +65,7 @@ const App: Component = () => {
         />
         <Route
           path='/profile'
-          component={(props) => (
+          component={() => (
             <ProtectedRoute allowedRoles={["admin", "user"]}>
               <Profile />
             </ProtectedRoute>
@@ -74,7 +73,7 @@ const App: Component = () => {
         />
         <Route
           path='/new-round'
-          component={(props) => (
+          component={() => (
             <ProtectedRoute allowedRoles={["admin", "user"]}>
               <NewRound />
             </ProtectedRoute>
@@ -82,7 +81,7 @@ const App: Component = () => {
         />
         <Route
           path='/rounds'
-          component={(props) => (
+          component={() => (
             <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
               <Rounds />
             </ProtectedRoute>
@@ -92,7 +91,7 @@ const App: Component = () => {
           path='/rounds/:id'
           component={(props) => (
             <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
-              {(RoundShots as any)({ id: props.params.id })}
+              <RoundShots id={props.params.id} />
             </ProtectedRoute>
           )}
         />
@@ -114,9 +113,9 @@ const App: Component = () => {
         />
         <Route
           path='/stats/:id'
-          component={(props) => (
+          component={() => (
             <ProtectedRoute allowedRoles={["admin", "user", "pro"]}>
-              {(Stats as any)({ id: props.params.id })}
+              <Stats />
             </ProtectedRoute>
           )}
         />
@@ -126,7 +125,7 @@ const App: Component = () => {
           path='/scorecard-entry/:id'
           component={(props) => (
             <ProtectedRoute allowedRoles={["admin", "user"]}>
-              {(ScorecardEntry as any)({ id: props.params.id })}
+              <ScorecardEntry id={props.params.id} />
             </ProtectedRoute>
           )}
         />
@@ -143,25 +142,17 @@ const App: Component = () => {
       />
       <Route
         path='/admin/course_editor/:id'
-        component={(props) => (
+        component={() => (
           <RoleProtectedRoute requiredRole='admin'>
-            {(CourseEditor as any)({ id: props.params.id })}
+            <CourseEditor />
           </RoleProtectedRoute>
         )}
       />
       <Route
         path='/admin/import_scorecard/:id'
-        component={(props) => (
+        component={() => (
           <RoleProtectedRoute requiredRole='admin'>
-            {(Import_scorecard as any)({ id: props.params.id })}
-          </RoleProtectedRoute>
-        )}
-      />
-      <Route
-        path='/admin/user/:id'
-        component={(props) => (
-          <RoleProtectedRoute requiredRole='admin'>
-            {(User as any)({ user: {} })}
+            <Import_scorecard />
           </RoleProtectedRoute>
         )}
       />
