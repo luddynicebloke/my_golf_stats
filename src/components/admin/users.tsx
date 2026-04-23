@@ -1,4 +1,5 @@
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 import User from "./user";
 
 import { supabase } from "../../supabase/client";
@@ -33,11 +34,11 @@ type UserUpdates = {
 
 type RoleFilter = "all" | "admin" | "user" | "pro";
 
-const roleFilters: { label: string; value: RoleFilter }[] = [
-  { label: "All", value: "all" },
-  { label: "Users", value: "user" },
-  { label: "Pros", value: "pro" },
-  { label: "Admins", value: "admin" },
+const roleFilters: { labelKey: string; value: RoleFilter }[] = [
+  { labelKey: "admin.users.filters.all", value: "all" },
+  { labelKey: "admin.users.filters.users", value: "user" },
+  { labelKey: "admin.users.filters.pros", value: "pro" },
+  { labelKey: "admin.users.filters.admins", value: "admin" },
 ];
 
 const fetchUsers = async () => {
@@ -68,6 +69,7 @@ const fetchUsers = async () => {
 };
 
 const Users = () => {
+  const [t] = useTransContext();
   const [users, { mutate }] = createResource(fetchUsers);
   const [roleFilter, setRoleFilter] = createSignal<RoleFilter>("all");
   const filteredUsers = createMemo(() => {
@@ -127,14 +129,13 @@ const Users = () => {
     <>
       <div class='mb-3'>
         <div class='font-rubik text-lg font-semibold text-slate-800'>
-          User Accounts ({users()?.users?.length ?? 0})
+          {t("admin.users.title", { count: users()?.users?.length ?? 0 })}
         </div>
         <p class='mt-1 text-sm text-slate-500'>
-          Assign the pro role here. Pros are read-only and can view only players
-          who grant access from their profile.
+          {t("admin.users.description")}
         </p>
       </div>
-      <Show when={users()} fallback={<div>Loading...</div>}>
+      <Show when={users()} fallback={<div>{t("common.loading")}</div>}>
         <div class='mb-4 flex flex-wrap gap-2'>
           <For each={roleFilters}>
             {(filter) => (
@@ -147,7 +148,7 @@ const Users = () => {
                 }`}
                 onClick={() => setRoleFilter(filter.value)}
               >
-                {filter.label} ({roleCount(filter.value)})
+                {t(filter.labelKey)} ({roleCount(filter.value)})
               </button>
             )}
           </For>
@@ -157,29 +158,29 @@ const Users = () => {
             <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
               <tr>
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  Email
+                  {t("forms.email")}
                 </th>
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  Created on
+                  {t("admin.createdOn")}
                 </th>
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  Category
+                  {t("profile.category")}
                 </th>
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  Role
+                  {t("admin.users.role")}
                 </th>
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  Distances
+                  {t("admin.users.distances")}
                 </th>
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  Avatar
+                  {t("admin.users.avatar")}
                 </th>
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  User name
+                  {t("profile.username")}
                 </th>
 
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  Action
+                  {t("common.action")}
                 </th>
               </tr>
             </thead>

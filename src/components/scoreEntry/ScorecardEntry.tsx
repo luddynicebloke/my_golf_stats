@@ -1,5 +1,6 @@
 import { createMemo, createSignal, onMount, Show } from "solid-js";
 import { A } from "@solidjs/router";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import { useAuth } from "../../context/AuthProvider";
 import {
@@ -79,6 +80,7 @@ const isAbortLikeError = (error: unknown): boolean => {
 export default function ScorecardEntry(props: { id: string }) {
   const roundId = Number(props.id);
   const { profile } = useAuth();
+  const [t] = useTransContext();
   let latestLoadRequestId = 0;
 
   const [activeNine, setActiveNine] = createSignal<"front" | "back">("front");
@@ -117,13 +119,13 @@ export default function ScorecardEntry(props: { id: string }) {
   const saveStageLabel = createMemo(() => {
     switch (saveStage()) {
       case "savingHole":
-        return "Saving hole...";
+        return t("scoreEntry.savingHole");
       case "calculatingSg":
-        return "Calculating strokes gained...";
+        return t("scoreEntry.calculatingSg");
       case "finalisingRound":
-        return "Finalising round...";
+        return t("scoreEntry.finalisingRound");
       default:
-        return "Saving...";
+        return t("common.saving");
     }
   });
 
@@ -135,7 +137,7 @@ export default function ScorecardEntry(props: { id: string }) {
     const requestId = ++latestLoadRequestId;
 
     if (Number.isNaN(roundId)) {
-      setLoadError("Invalid round id.");
+      setLoadError(t("scoreEntry.errors.invalidRound"));
       setLoading(false);
       return;
     }
@@ -158,7 +160,7 @@ export default function ScorecardEntry(props: { id: string }) {
       }
 
       if (roundError || !round) {
-        setLoadError(roundError?.message ?? "Failed to load round details.");
+        setLoadError(roundError?.message ?? t("scoreEntry.errors.loadRound"));
         setLoading(false);
         return;
       }
@@ -302,7 +304,7 @@ export default function ScorecardEntry(props: { id: string }) {
       }
 
       setLoadError(
-        error instanceof Error ? error.message : "Failed to load scorecard.",
+        error instanceof Error ? error.message : t("scoreEntry.errors.loadScorecard"),
       );
       setLoading(false);
     }
@@ -355,7 +357,7 @@ export default function ScorecardEntry(props: { id: string }) {
     }
 
     if (!finaliseResult?.round_finalised) {
-      throw new Error("Round was not finalised.");
+      throw new Error(t("scoreEntry.errors.notFinalised"));
     }
 
     updateRoundFinalisedState(true, Boolean(finaliseResult.part_finalised));
@@ -384,7 +386,7 @@ export default function ScorecardEntry(props: { id: string }) {
       setEntryError(
         error instanceof Error
           ? error.message
-          : "Failed to mark round incomplete.",
+          : t("scoreEntry.errors.markIncomplete"),
       );
     } finally {
       setUpdatingRoundStatus(false);
@@ -398,8 +400,8 @@ export default function ScorecardEntry(props: { id: string }) {
     try {
       await finaliseRound(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error.";
-      setEntryError(`Failed to complete round: ${message}`);
+      const message = error instanceof Error ? error.message : t("errors.unknown");
+      setEntryError(t("scoreEntry.errors.completeRound", { message }));
     } finally {
       setSavingHole(false);
       setSaveStage(null);
@@ -459,7 +461,7 @@ export default function ScorecardEntry(props: { id: string }) {
       }
 
       if (!updatedHoles || updatedHoles.length === 0) {
-        throw new Error("No round_holes row was updated.");
+        throw new Error(t("scoreEntry.errors.noRoundHoleUpdated"));
       }
 
       updateScorecardHole(hole.hole_number, {
@@ -485,8 +487,8 @@ export default function ScorecardEntry(props: { id: string }) {
       }
       return true;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error.";
-      setEntryError(`Failed to complete hole: ${message}`);
+      const message = error instanceof Error ? error.message : t("errors.unknown");
+      setEntryError(t("scoreEntry.errors.completeHole", { message }));
       return false;
     } finally {
       setSavingHole(false);
@@ -504,19 +506,21 @@ export default function ScorecardEntry(props: { id: string }) {
         <div class='flex flex-wrap items-center justify-between gap-3'>
           <div>
             <h1 class='font-rubik text-2xl font-semibold text-slate-800'>
-              Score Entry
+              {t("scoreEntry.title")}
             </h1>
             <p class='mt-1 text-sm text-slate-500'>
               {roundHeader().courseName
                 ? `${roundHeader().courseName} - ${roundHeader().teeColor}`
-                : `Round ${Number.isNaN(roundId) ? props.id : roundId}`}
+                : t("scoreEntry.roundLabel", {
+                    id: Number.isNaN(roundId) ? props.id : roundId,
+                  })}
             </p>
           </div>
           <A
             href='/dashboard'
             class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
           >
-            Back to Dashboard
+            {t("scoreEntry.backToDashboard")}
           </A>
         </div>
         <div class='mt-3'>
@@ -525,14 +529,16 @@ export default function ScorecardEntry(props: { id: string }) {
             onClick={() => void loadScorecard()}
             class='inline-flex rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100'
           >
-            Refresh Scorecard
+            {t("scoreEntry.refreshScorecard")}
           </button>
         </div>
 
         <Show
           when={!loading()}
           fallback={
-            <div class='mt-4 text-sm text-slate-500'>Loading scorecard...</div>
+            <div class='mt-4 text-sm text-slate-500'>
+              {t("scoreEntry.loadingScorecard")}
+            </div>
           }
         >
           <Show
@@ -553,7 +559,7 @@ export default function ScorecardEntry(props: { id: string }) {
                 }`}
                 onClick={() => setNine("front")}
               >
-                Front 9
+                {t("scoreEntry.frontNine")}
               </button>
               <button
                 type='button'
@@ -564,7 +570,7 @@ export default function ScorecardEntry(props: { id: string }) {
                 }`}
                 onClick={() => setNine("back")}
               >
-                Back 9
+                {t("scoreEntry.backNine")}
               </button>
             </div>
 
@@ -586,7 +592,7 @@ export default function ScorecardEntry(props: { id: string }) {
               )}
             </div>
             <p class='mt-3 text-sm text-slate-500'>
-              Click a hole number to review or edit the shots already entered for that hole.
+              {t("scoreEntry.holeSelectionHint")}
             </p>
           </Show>
         </Show>
@@ -598,10 +604,10 @@ export default function ScorecardEntry(props: { id: string }) {
             <div class='mb-4 flex flex-wrap items-center justify-between gap-3'>
               <div class='flex w-full items-center justify-between gap-3'>
                 <h2 class='font-rubik text-lg font-semibold text-slate-800'>
-                  Hole {hole().hole_number}
+                  {t("scoreEntry.holeNumber", { number: hole().hole_number })}
                 </h2>
                 <p class='text-sm text-slate-500'>
-                  Par {hole().par} |{" "}
+                  {t("scoreEntry.parValue", { par: hole().par })} |{" "}
                   {formatMetresForDisplay(
                     hole().distanceMetres,
                     distanceUnit(),
@@ -615,10 +621,10 @@ export default function ScorecardEntry(props: { id: string }) {
                 <div class='flex flex-wrap items-center justify-between gap-3'>
                   <div>
                     <h3 class='font-rubik text-base font-semibold text-emerald-900'>
-                      Round completed
+                      {t("scoreEntry.roundCompleted")}
                     </h3>
                     <p class='mt-1 text-sm text-emerald-800'>
-                      Mark the round incomplete to edit one or more holes, then complete it again to recalculate strokes gained.
+                      {t("scoreEntry.roundCompletedDescription")}
                     </p>
                   </div>
                   <button
@@ -627,7 +633,9 @@ export default function ScorecardEntry(props: { id: string }) {
                     disabled={updatingRoundStatus()}
                     onClick={() => void markRoundIncomplete()}
                   >
-                    {updatingRoundStatus() ? "Updating..." : "Mark Incomplete"}
+                    {updatingRoundStatus()
+                      ? t("common.updating")
+                      : t("scoreEntry.markIncomplete")}
                   </button>
                 </div>
               </div>
@@ -637,10 +645,10 @@ export default function ScorecardEntry(props: { id: string }) {
                 <div class='flex flex-wrap items-center justify-between gap-3'>
                   <div>
                     <h3 class='font-rubik text-base font-semibold text-cyan-900'>
-                      Ready to complete
+                      {t("scoreEntry.readyToComplete")}
                     </h3>
                     <p class='mt-1 text-sm text-cyan-800'>
-                      All holes have shots saved. Complete the round to rerun strokes gained with any edits.
+                      {t("scoreEntry.readyToCompleteDescription")}
                     </p>
                   </div>
                   <button
@@ -649,7 +657,7 @@ export default function ScorecardEntry(props: { id: string }) {
                     disabled={savingHole()}
                     onClick={() => void completeRoundAfterEdits()}
                   >
-                    {savingHole() ? saveStageLabel() : "Complete Round"}
+                    {savingHole() ? saveStageLabel() : t("rounds.completeRound")}
                   </button>
                 </div>
               </div>
@@ -657,14 +665,14 @@ export default function ScorecardEntry(props: { id: string }) {
             <Show when={savingHole() && selectedHole()?.completed}>
               <div class='mb-4 rounded-xl border border-cyan-200 bg-cyan-50 p-4'>
                 <h3 class='font-rubik text-base font-semibold text-cyan-900'>
-                  Finishing round
+                  {t("scoreEntry.finishingRound")}
                 </h3>
                 <p class='mt-1 text-sm text-cyan-800'>
                   {saveStage() === "calculatingSg"
-                    ? "Your last hole is saved. We are calculating strokes gained now."
+                    ? t("scoreEntry.finishingCalculating")
                     : saveStage() === "finalisingRound"
-                      ? "Strokes gained is ready. We are finalising the round."
-                      : "We are saving your final hole."}
+                      ? t("scoreEntry.finishingFinalising")
+                      : t("scoreEntry.finishingSaving")}
                 </p>
               </div>
             </Show>
@@ -672,7 +680,7 @@ export default function ScorecardEntry(props: { id: string }) {
               when={canEditSelectedHole()}
               fallback={
                 <p class='rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600'>
-                  Mark the round incomplete to edit saved holes from the scorecard.
+                  {t("scoreEntry.markIncompleteToEdit")}
                 </p>
               }
             >

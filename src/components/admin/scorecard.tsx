@@ -1,4 +1,5 @@
 import { createMemo, createSignal, For } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 import { THole, TScorecard, TTee } from "../../lib/definitions";
 import { supabase } from "../../supabase/client";
 
@@ -19,6 +20,7 @@ const Scorecard = (props: {
   holes: THole[];
   holeTees: TScorecard[];
 }) => {
+  const [t] = useTransContext();
   const rows = createMemo<HoleRow[] | undefined>(() => {
     if (!props.holes) return [];
 
@@ -97,17 +99,19 @@ const Scorecard = (props: {
   return (
     <>
       {props.holes.length === 0 ? (
-        <div class='text-center text-slate-600'>No course details found</div>
+        <div class='text-center text-slate-600'>
+          {t("admin.scorecard.noCourseDetails")}
+        </div>
       ) : (
         <div class='overflow-x-auto rounded-xl border border-slate-200'>
           <table class='w-full min-w-190 border-separate border-spacing-0 text-slate-700'>
             <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
               <tr>
                 <th scope='col' class='w-20 px-3 py-3 text-center font-bold'>
-                  Hole
+                  {t("rounds.shots.hole")}
                 </th>
                 <th scope='col' class='w-20 px-3 py-3 text-center font-bold'>
-                  Par
+                  {t("scoreEntry.par")}
                 </th>
                 <For each={props.tees}>
                   {(t) => (

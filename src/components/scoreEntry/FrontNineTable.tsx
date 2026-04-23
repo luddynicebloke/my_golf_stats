@@ -1,4 +1,5 @@
 import { For, Show } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import {
   convertMetresToUnit,
@@ -49,13 +50,15 @@ const getScoreClass = (score: number | null | undefined, par: number) => {
 };
 
 export default function FrontNineTable(props: FrontNineTableProps) {
+  const [t] = useTransContext();
+
   return (
     <div class='w-full overflow-hidden'>
       <table class='w-full table-fixed text-center text-xs text-slate-700 sm:text-base'>
         <tbody>
           <tr class='border-b border-slate-200 '>
             <td class='w-10 px-1 py-2 font-bold whitespace-nowrap text-slate-800 sm:w-auto sm:px-3 sm:py-4'>
-              Hole
+              {t("rounds.shots.hole")}
             </td>
             <For each={props.holes}>
               {(hole) => (
@@ -79,7 +82,7 @@ export default function FrontNineTable(props: FrontNineTableProps) {
               )}
             </For>
             <td class='w-10 px-1 py-2 font-bold whitespace-nowrap text-slate-800 sm:w-auto sm:px-3 sm:py-4'>
-              OUT
+              {t("scoreEntry.out")}
             </td>
           </tr>
 
@@ -101,7 +104,7 @@ export default function FrontNineTable(props: FrontNineTableProps) {
 
           <tr class='border-b border-slate-100'>
             <td class='w-10 px-1 py-2 font-bold whitespace-nowrap text-slate-600 sm:w-auto sm:px-3 sm:py-4'>
-              Par
+              {t("scoreEntry.par")}
             </td>
             <For each={props.holes}>
               {(hole) => <td class='px-1 py-2 sm:px-3 sm:py-4'>{hole.par}</td>}
@@ -113,7 +116,7 @@ export default function FrontNineTable(props: FrontNineTableProps) {
 
           <tr>
             <td class='w-10 px-1 py-2 font-bold whitespace-nowrap text-slate-600 sm:w-auto sm:px-3 sm:py-4'>
-              Score
+              {t("common.score")}
             </td>
             <For each={props.holes}>
               {(hole) => (

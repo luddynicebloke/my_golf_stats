@@ -1,4 +1,5 @@
 import { createResource, createSignal, createMemo, For, Show } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 import { TCourse } from "../../lib/definitions";
 
 import { supabase } from "../../supabase/client";
@@ -24,6 +25,7 @@ const fetchCourses = async () => {
 };
 
 const Courses = () => {
+  const [t] = useTransContext();
   const [courses] = createResource(fetchCourses);
   const [search, setSearch] = createSignal("");
   const [currentPage, setCurrentPage] = createSignal(1);
@@ -90,13 +92,14 @@ const Courses = () => {
     <>
       <CourseNew />
       <span class='text-slate-700'>
-        Number of registered courses :{" "}
-        {courses()?.courses?.length ?? "Loading..."}
+        {t("admin.courses.registeredCount", {
+          count: courses()?.courses?.length ?? t("common.loading"),
+        })}
       </span>
       <div class='relative mt-3 overflow-x-auto rounded-xl border border-slate-200'>
         <input
           type='text'
-          placeholder='Search courses...'
+          placeholder={t("newRound.searchCourses")}
           class='w-full rounded-t-xl border-b border-slate-200 bg-white p-2 text-slate-800 placeholder:text-slate-400'
           onInput={(e) => handleSearch(e.currentTarget.value)}
         />
@@ -112,31 +115,31 @@ const Courses = () => {
                   class='px-6 py-3 font-bold cursor-pointer'
                   onclick={() => changeSort("name")}
                 >
-                  Course name
+                  {t("admin.courses.courseName")}
                 </th>
                 <th
                   scope='col'
                   class='px-6 py-3 font-bold cursor-pointer'
                   onclick={() => changeSort("created_at")}
                 >
-                  Created on
+                  {t("admin.createdOn")}
                 </th>
                 <th
                   scope='col'
                   class='px-6 py-3 font-bold cursor-pointer'
                   onclick={() => changeSort("city")}
                 >
-                  City
+                  {t("admin.city")}
                 </th>
                 <th
                   scope='col'
                   class='px-6 py-3 font-bold cursor-pointer'
                   onclick={() => changeSort("country")}
                 >
-                  Country
+                  {t("admin.country")}
                 </th>
                 <th scope='col' class='px-6 py-3 font-bold'>
-                  Action
+                  {t("common.action")}
                 </th>
               </tr>
             </thead>
@@ -155,11 +158,14 @@ const Courses = () => {
           disabled={currentPage() === 1}
           onClick={() => setCurrentPage((p) => p - 1)}
         >
-          Prev
+          {t("common.previous")}
         </button>
 
         <span>
-          Page {currentPage()} of {totalPages()}
+          {t("common.pageOf", {
+            page: currentPage(),
+            total: totalPages(),
+          })}
         </span>
 
         <button
@@ -167,7 +173,7 @@ const Courses = () => {
           disabled={currentPage() === totalPages()}
           onClick={() => setCurrentPage((p) => p + 1)}
         >
-          Next
+          {t("common.next")}
         </button>
       </div>
     </>

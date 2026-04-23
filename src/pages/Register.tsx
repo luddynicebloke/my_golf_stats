@@ -58,20 +58,20 @@ export default function Register() {
     setSubmitError("");
 
     if (!values.username?.trim()) {
-      setSubmitError("Username is required.");
+      setSubmitError(t("forms.usernameRequired"));
       return;
     }
 
     if (values.password !== values.confirmPassword) {
-      setSubmitError("Passwords do not match.");
+      setSubmitError(t("register.passwordMismatch"));
       return;
     }
     if (!category()) {
-      setSubmitError("Please select a category.");
+      setSubmitError(t("register.categoryRequired"));
       return;
     }
     if (!distanceUnit()) {
-      setSubmitError("Please select a distance unit.");
+      setSubmitError(t("register.distanceUnitRequired"));
       return;
     }
 
@@ -82,7 +82,7 @@ export default function Register() {
       );
 
       if (!selectedCategory) {
-        setSubmitError("Selected category is invalid.");
+        setSubmitError(t("register.invalidCategory"));
         return;
       }
 
@@ -147,7 +147,7 @@ export default function Register() {
 
       navigate("/signin");
     } catch (error) {
-      setSubmitError("An unexpected error occurred. Please try again.");
+      setSubmitError(t("errors.unexpected"));
       console.error("Unexpected register error:", error);
     } finally {
       setLoading(false);
@@ -158,24 +158,24 @@ export default function Register() {
     <div class='min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8'>
       <div class='mx-auto grid w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl lg:grid-cols-2'>
         <div class='bg-linear-to-br from-cyan-950 via-slate-900 to-emerald-950 p-8 text-white sm:p-10'>
-          <img class='h-20 w-auto' src={LogoSG} alt='SG Calculater Logo' />
+          <img class='h-20 w-auto' src={LogoSG} alt={t("common.logoAlt")} />
           <p class='mt-6 font-grotesk text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300'>
             {t("register.new")}
           </p>
           <h1 class='mt-2 font-rubik text-3xl font-semibold leading-tight sm:text-4xl'>
-            Create Your Profile
+            {t("register.title")}
           </h1>
           <p class='mt-3 max-w-sm font-grotesk text-sm text-slate-300 sm:text-base'>
-            Set up your account to track rounds, scorecards, and strokes gained.
+            {t("register.description")}
           </p>
         </div>
 
         <div class='p-6 sm:p-8 lg:p-10'>
           <h2 class='font-rubik text-2xl font-semibold text-slate-800'>
-            Register
+            {t("register.register")}
           </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Fill in your details to create a user account.
+            {t("register.registerDescription")}
           </p>
 
           <div class='mt-4 min-h-6'>
@@ -190,7 +190,7 @@ export default function Register() {
             <Form onSubmit={handleRegister} class='space-y-4'>
               <Field
                 name='username'
-                validate={[required("Username is required")]}
+                validate={[required(t("forms.usernameRequired"))]}
               >
                 {(field, props) => (
                   <TextInput
@@ -200,14 +200,14 @@ export default function Register() {
                     value={field.value}
                     error={field.error}
                     required
-                    label='Username'
-                    placeholder='Your username'
+                    label={t("forms.username")}
+                    placeholder={t("forms.usernamePlaceholder")}
                     class='min-h-[7.5rem]'
                   />
                 )}
               </Field>
 
-              <Field name='email' validate={[required("Email is required")]}>
+              <Field name='email' validate={[required(t("forms.emailRequired"))]}>
                 {(field, props) => (
                   <TextInput
                     {...props}
@@ -216,8 +216,8 @@ export default function Register() {
                     value={field.value}
                     error={field.error}
                     required
-                    label='Email'
-                    placeholder='you@example.com'
+                    label={t("forms.email")}
+                    placeholder={t("forms.emailPlaceholder")}
                     class='min-h-[7.5rem]'
                   />
                 )}
@@ -225,7 +225,7 @@ export default function Register() {
 
               <Field
                 name='password'
-                validate={[required("Password is required")]}
+                validate={[required(t("forms.passwordRequired"))]}
               >
                 {(field, props) => (
                   <TextInput
@@ -235,8 +235,8 @@ export default function Register() {
                     value={field.value}
                     error={field.error}
                     required
-                    label='Password'
-                    placeholder='Create password'
+                    label={t("forms.password")}
+                    placeholder={t("register.passwordPlaceholder")}
                     class='min-h-[7.5rem]'
                   />
                 )}
@@ -244,7 +244,7 @@ export default function Register() {
 
               <Field
                 name='confirmPassword'
-                validate={[required("Please confirm your password")]}
+                validate={[required(t("register.confirmPasswordRequired"))]}
               >
                 {(field, props) => (
                   <TextInput
@@ -254,8 +254,8 @@ export default function Register() {
                     value={field.value}
                     error={field.error}
                     required
-                    label='Confirm Password'
-                    placeholder='Repeat password'
+                    label={t("register.confirmPassword")}
+                    placeholder={t("register.confirmPasswordPlaceholder")}
                     class='min-h-[7.5rem]'
                   />
                 )}
@@ -263,7 +263,7 @@ export default function Register() {
 
               <label class='block'>
                 <span class='mb-1 block text-sm font-medium text-slate-700'>
-                  Avatar URL (optional)
+                  {t("register.avatarUrl")}
                 </span>
                 <input
                   type='url'
@@ -277,7 +277,7 @@ export default function Register() {
               <div class='grid gap-4 sm:grid-cols-2'>
                 <label class='block'>
                   <span class='mb-1 block text-sm font-medium text-slate-700'>
-                    Category
+                    {t("profile.category")}
                   </span>
                   <select
                     value={category()}
@@ -286,17 +286,21 @@ export default function Register() {
                     required
                   >
                     <option value='' disabled>
-                      Select category
+                      {t("register.selectCategory")}
                     </option>
                     {categoryOptions().map((option) => (
-                      <option value={option.code}>{option.name}</option>
+                      <option value={option.code}>
+                        {t(`categories.${option.code}`, {
+                          defaultValue: option.name,
+                        })}
+                      </option>
                     ))}
                   </select>
                 </label>
 
                 <label class='block'>
                   <span class='mb-1 block text-sm font-medium text-slate-700'>
-                    Distance Unit
+                    {t("profile.distanceUnit")}
                   </span>
                   <select
                     value={distanceUnit()}
@@ -305,7 +309,7 @@ export default function Register() {
                     required
                   >
                     <option value='' disabled>
-                      Select distance unit
+                      {t("profile.selectUnit")}
                     </option>
                     {distanceUnitOptions.map((option) => (
                       <option value={option}>{option}</option>
@@ -324,10 +328,11 @@ export default function Register() {
                   class='mt-1 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-200'
                 />
                 <span>
-                  <span class='block font-semibold'>Request a pro account</span>
+                  <span class='block font-semibold'>
+                    {t("register.requestProAccount")}
+                  </span>
                   <span class='mt-1 block text-emerald-800'>
-                    Your account will be created as a standard user first. Clive
-                    will review the request and approve pro access.
+                    {t("register.requestProAccountDescription")}
                   </span>
                 </span>
               </label>
@@ -337,7 +342,7 @@ export default function Register() {
                 type='submit'
                 disabled={loading()}
               >
-                {loading() ? "Creating account..." : "Create account"}
+                {loading() ? t("register.creating") : t("register.createAccount")}
               </button>
             </Form>
           </div>
@@ -347,7 +352,7 @@ export default function Register() {
               class='text-slate-600 hover:text-slate-800 hover:underline'
               href='/signin'
             >
-              Already have an account? Sign in
+              {t("register.logInButton")}
             </A>
           </div>
         </div>

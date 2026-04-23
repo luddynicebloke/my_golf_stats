@@ -3,6 +3,7 @@ import { TCourse } from "../../lib/definitions";
 
 import LoadingCss from "../LoadingCss";
 import { A } from "@solidjs/router";
+import { useTransContext } from "@mbarzda/solid-i18next";
 import { supabase } from "../../supabase/client";
 import { useBlurSave } from "../../hooks/useBlurSave";
 
@@ -10,6 +11,8 @@ const Course_details = (props: {
   course: TCourse | undefined;
   onUpdated: () => Promise<unknown>;
 }) => {
+  const [t] = useTransContext();
+
   const updateCourse = async (
     courseId: string,
     updates: {
@@ -56,13 +59,13 @@ const Course_details = (props: {
         return (
           <div class='text-slate-800'>
             <p class='font-grotesk text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700'>
-              Course Profile
+              {t("admin.courses.profile")}
             </p>
 
             <div class='mt-3 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4'>
               <label class='block'>
                 <span class='mb-1 block font-grotesk text-sm font-medium text-slate-500'>
-                  Course Name
+                  {t("admin.courses.courseName")}
                 </span>
                 <input
                   class={`w-full rounded-md border border-slate-300 p-2 font-rubik text-lg font-semibold text-slate-800 transition-colors duration-300 ${nameBlur.stateClasses()} ${
@@ -78,7 +81,7 @@ const Course_details = (props: {
 
               <label class='block'>
                 <span class='mb-1 block font-grotesk text-sm font-medium text-slate-500'>
-                  City
+                  {t("admin.city")}
                 </span>
                 <input
                   class={`w-full rounded-md border border-slate-300 p-2 font-rubik text-sm font-semibold text-slate-800 transition-colors duration-300 ${cityBlur.stateClasses()} ${
@@ -94,7 +97,7 @@ const Course_details = (props: {
 
               <label class='block'>
                 <span class='mb-1 block font-grotesk text-sm font-medium text-slate-500'>
-                  Country
+                  {t("admin.country")}
                 </span>
                 <input
                   class={`w-full rounded-md border border-slate-300 p-2 font-rubik text-sm font-semibold text-slate-800 transition-colors duration-300 ${countryBlur.stateClasses()} ${
@@ -110,7 +113,7 @@ const Course_details = (props: {
 
               <div class='flex items-center justify-between gap-4'>
                 <span class='font-grotesk text-sm font-medium text-slate-500'>
-                  Created
+                  {t("admin.created")}
                 </span>
                 <span class='font-rubik text-sm font-semibold text-slate-800'>
                   {new Date(course().created_at).toLocaleDateString()}
@@ -122,7 +125,7 @@ const Course_details = (props: {
               class='mt-5 inline-flex w-full items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100'
               href={`/admin/import_scorecard/${course().id}`}
             >
-              Import Scorecard
+              {t("admin.scorecard.import")}
             </A>
           </div>
         );

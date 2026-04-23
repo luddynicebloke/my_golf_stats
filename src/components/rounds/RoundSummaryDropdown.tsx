@@ -1,4 +1,5 @@
 import { createResource, Show } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import {
   type RoundSgSummary,
@@ -43,19 +44,20 @@ function SummaryContent(props: {
   distanceUnit: DistanceUnit;
   summary: RoundSgSummary;
 }) {
+  const [t] = useTransContext();
   const approachLabel =
     props.distanceUnit === "yards"
-      ? "Approach average (>30 yds)"
-      : "Approach average (>30m)";
+      ? t("roundSummary.approachAverageYards")
+      : t("roundSummary.approachAverageMetres");
   const shortGameLabel =
     props.distanceUnit === "yards"
-      ? "Short game average (<=30 yds)"
-      : "Short game average (<=30m)";
+      ? t("roundSummary.shortGameAverageYards")
+      : t("roundSummary.shortGameAverageMetres");
 
   return (
     <dl class='mt-4'>
       <SummaryRow
-        label='Off the tee average'
+        label={t("roundSummary.offTeeAverage")}
         value={formatAverageValue(props.summary.offTeeAverage)}
       />
       <SummaryRow
@@ -67,27 +69,27 @@ function SummaryContent(props: {
         value={formatAverageValue(props.summary.shortGameAverage)}
       />
       <SummaryRow
-        label='Putting average'
+        label={t("roundSummary.puttingAverage")}
         value={formatAverageValue(props.summary.puttingAverage)}
       />
       <SummaryRow
-        label='Total SG'
+        label={t("roundSummary.totalSg")}
         value={formatAverageValue(props.summary.totalSg)}
       />
       <SummaryRow
-        label='Tee shots finishing on fairway'
+        label={t("roundSummary.fairwaysHitFromTee")}
         value={formatCountValue(props.summary.fairwaysHitFromTee)}
       />
       <SummaryRow
-        label='Greens in regulation'
+        label={t("roundSummary.greensInRegulation")}
         value={formatCountValue(props.summary.greensInRegulation)}
       />
       <SummaryRow
-        label='Number of putts'
+        label={t("roundSummary.putts")}
         value={formatCountValue(props.summary.putts)}
       />
       <SummaryRow
-        label='Green holed-out distance'
+        label={t("roundSummary.greenHoledOutDistance")}
         value={formatGreenDistanceValue(
           props.summary.greenHoledOutDistanceFeet,
           props.distanceUnit,
@@ -101,6 +103,7 @@ export default function RoundSummaryDropdown(props: {
   distanceUnit: DistanceUnit;
   roundId: number;
 }) {
+  const [t] = useTransContext();
   const [summary] = createResource(
     () => ({
       distanceUnit: props.distanceUnit,
@@ -114,9 +117,11 @@ export default function RoundSummaryDropdown(props: {
     <div class='mt-3 rounded-xl border border-slate-200 bg-white p-4'>
       <div class='flex flex-wrap items-start justify-between gap-3'>
         <div>
-          <h3 class='text-base font-semibold text-slate-800'>Round Summary</h3>
+          <h3 class='text-base font-semibold text-slate-800'>
+            {t("roundSummary.title")}
+          </h3>
           <p class='mt-1 text-sm text-slate-500'>
-            Strokes gained averages plus fairway and GIR counts for this round.
+            {t("roundSummary.description")}
           </p>
         </div>
       </div>
@@ -124,7 +129,9 @@ export default function RoundSummaryDropdown(props: {
       <Show
         when={!summary.loading}
         fallback={
-          <p class='mt-4 text-sm text-slate-500'>Loading round summary...</p>
+          <p class='mt-4 text-sm text-slate-500'>
+            {t("roundSummary.loading")}
+          </p>
         }
       >
         <Show
@@ -133,7 +140,7 @@ export default function RoundSummaryDropdown(props: {
             <p class='mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700'>
               {summary.error instanceof Error
                 ? summary.error.message
-                : "Failed to load round summary."}
+                : t("roundSummary.error")}
             </p>
           }
         >

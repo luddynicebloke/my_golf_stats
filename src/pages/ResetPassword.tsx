@@ -1,11 +1,13 @@
 import { A, useNavigate } from "@solidjs/router";
 import { Show, createSignal, onMount } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import LogoSG from "../assets/logo.png";
 import { supabase } from "../supabase/client";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const [t] = useTransContext();
 
   const [email, setEmail] = createSignal("");
   const [newPassword, setNewPassword] = createSignal("");
@@ -53,7 +55,7 @@ export default function ResetPassword() {
     setSuccessMessage("");
 
     if (!email().trim()) {
-      setErrorMessage("Email is required.");
+      setErrorMessage(t("forms.emailRequired"));
       return;
     }
 
@@ -69,7 +71,7 @@ export default function ResetPassword() {
     }
 
     setSuccessMessage(
-      "Password reset link sent. Check your email to continue.",
+      t("resetPassword.resetLinkSent"),
     );
   };
 
@@ -78,11 +80,11 @@ export default function ResetPassword() {
     setSuccessMessage("");
 
     if (!newPassword()) {
-      setErrorMessage("New password is required.");
+      setErrorMessage(t("resetPassword.newPasswordRequired"));
       return;
     }
     if (newPassword().length < 6) {
-      setErrorMessage("Password must be at least 6 characters.");
+      setErrorMessage(t("resetPassword.passwordLength"));
       return;
     }
 
@@ -98,11 +100,11 @@ export default function ResetPassword() {
       }
 
       await supabase.auth.signOut({ scope: "local" });
-      setSuccessMessage("Password updated successfully. You can now sign in.");
+      setSuccessMessage(t("resetPassword.updateSuccess"));
       setNewPassword("");
       navigate("/signin", { replace: true });
     } catch (_error) {
-      setErrorMessage("Failed to update password. Please try again.");
+      setErrorMessage(t("resetPassword.updateError"));
     } finally {
       setLoading(false);
     }
@@ -112,26 +114,28 @@ export default function ResetPassword() {
     <div class='min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8'>
       <div class='mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl lg:grid-cols-2'>
         <div class='bg-linear-to-br from-cyan-950 via-slate-900 to-emerald-950 p-8 text-white sm:p-10'>
-          <img class='h-20 w-auto' src={LogoSG} alt='SG Calculater Logo' />
+          <img class='h-20 w-auto' src={LogoSG} alt={t("common.logoAlt")} />
           <p class='mt-6 font-grotesk text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300'>
-            Account Access
+            {t("resetPassword.eyebrow")}
           </p>
           <h1 class='mt-2 font-rubik text-3xl font-semibold leading-tight sm:text-4xl'>
-            Reset Password
+            {t("resetPassword.title")}
           </h1>
           <p class='mt-3 max-w-sm font-grotesk text-sm text-slate-300 sm:text-base'>
-            Send a reset link, then set your new password securely.
+            {t("resetPassword.description")}
           </p>
         </div>
 
         <div class='p-6 sm:p-8 lg:p-10'>
           <h2 class='font-rubik text-2xl font-semibold text-slate-800'>
-            {isRecoveryMode() ? "Set new password" : "Forgot your password?"}
+            {isRecoveryMode()
+              ? t("resetPassword.setNewPassword")
+              : t("resetPassword.forgotPassword")}
           </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
             {isRecoveryMode()
-              ? "Enter your new password below."
-              : "Enter your account email to receive a reset link."}
+              ? t("resetPassword.newPasswordDescription")
+              : t("resetPassword.emailDescription")}
           </p>
 
           <div class='mt-4 min-h-6 space-y-2'>
@@ -154,14 +158,14 @@ export default function ResetPassword() {
                 <>
                   <label class='block'>
                     <span class='mb-1 block text-sm font-medium text-slate-700'>
-                      Email
+                      {t("forms.email")}
                     </span>
                     <input
                       type='email'
                       value={email()}
                       onInput={(e) => setEmail(e.currentTarget.value)}
                       class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-                      placeholder='you@example.com'
+                      placeholder={t("forms.emailPlaceholder")}
                     />
                   </label>
 
@@ -171,21 +175,23 @@ export default function ResetPassword() {
                     disabled={loading()}
                     class='inline-flex w-full justify-center rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60'
                   >
-                    {loading() ? "Sending..." : "Send reset link"}
+                    {loading()
+                      ? t("resetPassword.sending")
+                      : t("resetPassword.sendResetLink")}
                   </button>
                 </>
               }
             >
               <label class='block'>
                 <span class='mb-1 block text-sm font-medium text-slate-700'>
-                  New password
+                  {t("resetPassword.newPassword")}
                 </span>
                 <input
                   type='password'
                   value={newPassword()}
                   onInput={(e) => setNewPassword(e.currentTarget.value)}
                   class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-                  placeholder='Enter new password'
+                  placeholder={t("resetPassword.newPasswordPlaceholder")}
                 />
               </label>
 
@@ -195,7 +201,9 @@ export default function ResetPassword() {
                 disabled={loading()}
                 class='inline-flex w-full justify-center rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60'
               >
-                {loading() ? "Updating..." : "Update password"}
+                {loading()
+                  ? t("resetPassword.updating")
+                  : t("resetPassword.updatePassword")}
               </button>
             </Show>
           </div>
@@ -205,7 +213,7 @@ export default function ResetPassword() {
               class='text-slate-600 hover:text-slate-800 hover:underline'
               href='/signin'
             >
-              Back to sign in
+              {t("resetPassword.backToSignIn")}
             </A>
           </div>
         </div>

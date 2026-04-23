@@ -1,6 +1,7 @@
 import { createResource, createSignal, For, Show } from "solid-js";
 import { supabase } from "../../supabase/client";
 import { A, useParams } from "@solidjs/router";
+import { useTransContext } from "@mbarzda/solid-i18next";
 import { TTee } from "../../lib/definitions";
 
 type NewTee = {
@@ -13,6 +14,7 @@ type NewTee = {
 
 const Import_scorecard = () => {
   const params = useParams();
+  const [t] = useTransContext();
   const [showError, setShowError] = createSignal(false);
   const [errorMessage, setErrorMessage] = createSignal("");
 
@@ -89,7 +91,7 @@ const Import_scorecard = () => {
       return;
     }
 
-    alert("Scorecard imported successfully");
+    alert(t("admin.scorecard.importSuccess"));
   }
 
   const handleFile = async (e: Event) => {
@@ -108,31 +110,37 @@ const Import_scorecard = () => {
     <div class='mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8'>
       <div class='rounded-3xl border border-slate-200 bg-linear-to-r from-cyan-950 via-slate-900 to-emerald-950 px-6 py-8 text-slate-100 shadow-xl'>
         <p class='font-grotesk text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300'>
-          Golf Stats Admin
+          {t("admin.eyebrow")}
         </p>
         <div class='mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between'>
           <div>
             <h1 class='font-rubik text-3xl font-semibold tracking-tight md:text-4xl'>
-              Import Scorecard
+              {t("admin.scorecard.import")}
             </h1>
             <p class='mt-2 max-w-2xl font-grotesk text-sm text-slate-300 md:text-base'>
-              Upload a CSV scorecard and map distances to existing tee colors.
+              {t("admin.scorecard.importDescription")}
             </p>
           </div>
           <A
             href={`/admin/course_editor/${params.id}`}
             class='inline-flex w-max items-center rounded-full border border-white/20 bg-white/10 px-4 py-2 font-grotesk text-sm font-semibold text-white transition hover:bg-white/20'
           >
-            Return to Course Editor
+            {t("admin.scorecard.returnToEditor")}
           </A>
         </div>
       </div>
 
       <div class='mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm sm:p-6'>
-        <h2 class='font-rubik text-xl font-semibold'>Current Tees</h2>
+        <h2 class='font-rubik text-xl font-semibold'>
+          {t("admin.scorecard.currentTees")}
+        </h2>
         <Show
           when={tees()}
-          fallback={<p class='mt-3 font-grotesk text-slate-500'>Loading...</p>}
+          fallback={
+            <p class='mt-3 font-grotesk text-slate-500'>
+              {t("common.loading")}
+            </p>
+          }
         >
           <div class='mt-4 flex flex-wrap gap-2'>
             <For each={tees()}>
@@ -147,24 +155,25 @@ const Import_scorecard = () => {
 
         <div class='mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4'>
           <p class='font-grotesk text-sm text-amber-900'>
-            Important: every tee color in the CSV must already exist in the list
-            above. Add missing tees before importing.
+            {t("admin.scorecard.teeWarning")}
           </p>
           <p class='font-grotesk text-sm text-amber-900'>
-            Very Important: Load scorecard distances in metres!
+            {t("admin.scorecard.metresWarning")}
           </p>
         </div>
 
         <div class='mt-5'>
           <div class='flex flex-wrap items-center gap-3'>
             <p class='font-grotesk text-sm text-slate-700'>
-              Add a new tee before import?
+              {t("admin.scorecard.addTeePrompt")}
             </p>
             <button
               onClick={() => setAddTee(!addTee())}
               class='inline-flex self-auto rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
             >
-              {!addTee() ? "Yes, add tee" : "Hide form"}
+              {!addTee()
+                ? t("admin.scorecard.yesAddTee")
+                : t("admin.scorecard.hideForm")}
             </button>
           </div>
 
@@ -175,12 +184,12 @@ const Import_scorecard = () => {
             >
               <label class='block'>
                 <span class='mb-1 block font-grotesk text-sm font-medium text-slate-600'>
-                  Tee color
+                  {t("admin.scorecard.teeColor")}
                 </span>
                 <input
                   ref={(el) => (addTeeColourInputRef = el)}
                   required
-                  placeholder='Required'
+                  placeholder={t("forms.required")}
                   value={form().color}
                   onInput={handleChange("color")}
                   class='w-full rounded-md border border-slate-300 bg-white p-2'
@@ -189,10 +198,10 @@ const Import_scorecard = () => {
               </label>
               <label class='block'>
                 <span class='mb-1 block font-grotesk text-sm font-medium text-slate-600'>
-                  Course rating
+                  {t("admin.scorecard.courseRating")}
                 </span>
                 <input
-                  placeholder='Optional'
+                  placeholder={t("forms.optional")}
                   value={form().course_rating!}
                   onInput={handleChange("course_rating")}
                   class='w-full rounded-md border border-slate-300 bg-white p-2'
@@ -201,10 +210,10 @@ const Import_scorecard = () => {
               </label>
               <label class='block'>
                 <span class='mb-1 block font-grotesk text-sm font-medium text-slate-600'>
-                  Slope rating
+                  {t("admin.scorecard.slopeRating")}
                 </span>
                 <input
-                  placeholder='Optional'
+                  placeholder={t("forms.optional")}
                   value={form().slope_rating!}
                   onInput={handleChange("slope_rating")}
                   class='w-full rounded-md border border-slate-300 bg-white p-2'
@@ -213,10 +222,10 @@ const Import_scorecard = () => {
               </label>
               <label class='block'>
                 <span class='mb-1 block font-grotesk text-sm font-medium text-slate-600'>
-                  Total yardage
+                  {t("admin.scorecard.totalYardage")}
                 </span>
                 <input
-                  placeholder='Optional'
+                  placeholder={t("forms.optional")}
                   value={form().total_yardage!}
                   onInput={handleChange("total_yardage")}
                   class='w-full rounded-md border border-slate-300 bg-white p-2'
@@ -228,7 +237,7 @@ const Import_scorecard = () => {
                   type='submit'
                   class='inline-flex self-auto rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100'
                 >
-                  Add Tee
+                  {t("admin.scorecard.addTee")}
                 </button>
               </div>
             </form>
@@ -237,12 +246,11 @@ const Import_scorecard = () => {
 
         <div class='mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4'>
           <h3 class='font-rubik text-base font-semibold text-slate-800'>
-            CSV Format Rules
+            {t("admin.scorecard.csvRules")}
           </h3>
           <p class='mt-2 font-grotesk text-sm text-slate-600'>
-            First row is the header: start with <code>hole_number,par</code>,
-            then tee colors. Use commas only, no trailing spaces, and no
-            trailing comma.
+            {t("admin.scorecard.csvRulesDescription")}{" "}
+            <code>hole_number,par</code>.
           </p>
           <pre class='mt-3 overflow-x-auto rounded-md border border-slate-200 bg-white p-3 font-mono text-xs text-slate-700'>
             {`hole_number,par,white,yellow,blue

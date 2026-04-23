@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 type ChangePasswordModalProps = {
   open: () => boolean;
@@ -13,6 +14,8 @@ type ChangePasswordModalProps = {
 };
 
 const ChangePasswordModal = (props: ChangePasswordModalProps) => {
+  const [t] = useTransContext();
+
   return (
     <Show when={props.open()}>
       <div
@@ -24,26 +27,26 @@ const ChangePasswordModal = (props: ChangePasswordModalProps) => {
           onClick={(e) => e.stopPropagation()}
         >
           <h3 class='font-rubik text-xl font-semibold text-slate-800'>
-            Change Password
+            {t("profile.changePassword")}
           </h3>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Enter and confirm your new password.
+            {t("profile.changePasswordDescription")}
           </p>
           <label class='mt-4 block'>
             <span class='mb-1 block text-sm font-medium text-slate-700'>
-              New password
+              {t("resetPassword.newPassword")}
             </span>
             <input
               type='password'
               value={props.password}
               onInput={(e) => props.onPasswordInput(e.currentTarget.value)}
               class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-              placeholder='New password'
+              placeholder={t("resetPassword.newPasswordPlaceholder")}
             />
           </label>
           <label class='mt-3 block'>
             <span class='mb-1 block text-sm font-medium text-slate-700'>
-              Confirm new password
+              {t("profile.confirmNewPassword")}
             </span>
             <input
               type='password'
@@ -52,7 +55,7 @@ const ChangePasswordModal = (props: ChangePasswordModalProps) => {
                 props.onConfirmPasswordInput(e.currentTarget.value)
               }
               class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-              placeholder='Repeat new password'
+              placeholder={t("profile.repeatNewPassword")}
             />
           </label>
           <Show when={props.errorMessage}>
@@ -67,7 +70,7 @@ const ChangePasswordModal = (props: ChangePasswordModalProps) => {
               onClick={props.onCancel}
               disabled={props.saving}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type='button'
@@ -75,7 +78,7 @@ const ChangePasswordModal = (props: ChangePasswordModalProps) => {
               onClick={props.onSave}
               disabled={props.saving}
             >
-              {props.saving ? "Saving..." : "Save Password"}
+              {props.saving ? t("common.saving") : t("profile.savePassword")}
             </button>
           </div>
         </div>

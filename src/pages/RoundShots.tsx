@@ -1,5 +1,6 @@
 import { createResource, createSignal, For, Show } from "solid-js";
 import { A } from "@solidjs/router";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import { useAuth } from "../context/AuthProvider";
 import {
@@ -203,6 +204,7 @@ const fetchRoundShots = async (roundId: number): Promise<RoundShotsData> => {
 export default function RoundShots(props: { id: string }) {
   const roundId = Number(props.id);
   const auth = useAuth();
+  const [t] = useTransContext();
   const [roundShots, { refetch }] = createResource(
     () => (Number.isNaN(roundId) ? null : roundId),
     async (id) => fetchRoundShots(id),
@@ -254,7 +256,7 @@ export default function RoundShots(props: { id: string }) {
 
     const currentShot = shots.find((shot) => shot.id === shotId);
     if (!currentShot) {
-      setEditError("Unable to find the selected shot.");
+      setEditError(t("roundShots.errors.selectedShotMissing"));
       return;
     }
 
@@ -262,12 +264,12 @@ export default function RoundShots(props: { id: string }) {
     const parsedPenaltyStrokes = Number(form.penaltyStrokes);
 
     if (!Number.isFinite(parsedDistance) || parsedDistance <= 0) {
-      setEditError("Enter a valid distance greater than 0.");
+      setEditError(t("roundShots.errors.invalidDistance"));
       return;
     }
 
     if (!Number.isInteger(parsedPenaltyStrokes) || parsedPenaltyStrokes < 0) {
-      setEditError("Penalty strokes must be a whole number of 0 or more.");
+      setEditError(t("roundShots.errors.invalidPenalty"));
       return;
     }
 
@@ -334,14 +336,14 @@ export default function RoundShots(props: { id: string }) {
       }
 
       if (!finaliseResult?.round_finalised) {
-        throw new Error("Failed to recalculate strokes gained for this round.");
+        throw new Error(t("roundShots.errors.recalculate"));
       }
 
       await refetch();
       closeEditModal();
     } catch (error) {
       setEditError(
-        error instanceof Error ? error.message : "Failed to update shot.",
+        error instanceof Error ? error.message : t("roundShots.errors.updateShot"),
       );
     } finally {
       setIsSavingEdit(false);
@@ -375,10 +377,10 @@ export default function RoundShots(props: { id: string }) {
             onClick={(event) => event.stopPropagation()}
           >
             <h2 class='font-rubik text-xl font-semibold text-slate-900'>
-              Edit Shot
+              {t("roundShots.editShot")}
             </h2>
             <p class='mt-1 text-sm text-slate-500'>
-              Update the shot details and recalculate strokes gained for the round.
+              {t("roundShots.editShotDescription")}
             </p>
 
             <Show when={shotForm()}>
@@ -389,7 +391,7 @@ export default function RoundShots(props: { id: string }) {
                       for='edit-shot-lie-type'
                       class='mb-1 block text-sm font-medium text-slate-700'
                     >
-                      Lie type
+                      {t("roundShots.lieType")}
                     </label>
                     <select
                       id='edit-shot-lie-type'
@@ -402,7 +404,11 @@ export default function RoundShots(props: { id: string }) {
                       }
                     >
                       <For each={editableLieTypes}>
-                        {(lieType) => <option value={lieType}>{lieType}</option>}
+                        {(lieType) => (
+                          <option value={lieType}>
+                            {t(`lieTypes.${lieType}`)}
+                          </option>
+                        )}
                       </For>
                     </select>
                   </div>
@@ -431,11 +437,11 @@ export default function RoundShots(props: { id: string }) {
                       <p class='mt-1 text-xs text-slate-500'>
                         {form().lieType === "Green"
                           ? distanceUnit() === "yards"
-                            ? "Stored as feet for green shots."
-                            : "Enter green distance in metres."
+                          ? t("roundShots.greenFeetHint")
+                            : t("roundShots.greenMetresHint")
                           : distanceUnit() === "yards"
-                            ? "Enter distance in yards."
-                            : "Enter distance in metres."}
+                            ? t("roundShots.yardsHint")
+                            : t("roundShots.metresHint")}
                       </p>
                     </div>
 
@@ -444,7 +450,7 @@ export default function RoundShots(props: { id: string }) {
                         for='edit-shot-penalty'
                         class='mb-1 block text-sm font-medium text-slate-700'
                       >
-                        Penalty strokes
+                        {t("roundShots.penaltyStrokes")}
                       </label>
                       <input
                         id='edit-shot-penalty'
@@ -471,7 +477,7 @@ export default function RoundShots(props: { id: string }) {
                           updateShotForm({ recovery: event.currentTarget.checked })
                         }
                       />
-                      Recovery
+                      {t("roundShots.recovery")}
                     </label>
                     <label class='flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700'>
                       <input
@@ -481,7 +487,7 @@ export default function RoundShots(props: { id: string }) {
                           updateShotForm({ holedOut: event.currentTarget.checked })
                         }
                       />
-                      Holed out
+                      {t("roundShots.holedOut")}
                     </label>
                   </div>
 
@@ -499,7 +505,7 @@ export default function RoundShots(props: { id: string }) {
                       class='rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50'
                       onClick={closeEditModal}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                     <button
                       type='button'
@@ -507,7 +513,9 @@ export default function RoundShots(props: { id: string }) {
                       disabled={isSavingEdit()}
                       onClick={() => void saveShotEdit()}
                     >
-                      {isSavingEdit() ? "Saving..." : "Save and Recalculate"}
+                      {isSavingEdit()
+                        ? t("common.saving")
+                        : t("roundShots.saveAndRecalculate")}
                     </button>
                   </div>
                 </div>
@@ -521,7 +529,7 @@ export default function RoundShots(props: { id: string }) {
         <div class='flex flex-wrap items-center justify-between gap-3'>
           <div>
             <h1 class='font-rubik text-2xl font-semibold text-slate-800'>
-              Round Shots
+              {t("roundShots.title")}
             </h1>
             <Show when={roundShots()}>
               {(data) => (
@@ -532,7 +540,7 @@ export default function RoundShots(props: { id: string }) {
             </Show>
             <Show when={isReadOnly()}>
               <p class='mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700'>
-                Read-only pro view
+                {t("roundShots.readOnlyProView")}
               </p>
             </Show>
           </div>
@@ -540,13 +548,17 @@ export default function RoundShots(props: { id: string }) {
             href='/dashboard/rounds'
             class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
           >
-            Back to Rounds
+            {t("rounds.BackToRounds")}
           </A>
         </div>
 
         <Show
           when={!roundShots.loading}
-          fallback={<div class='mt-4 text-sm text-slate-500'>Loading shots...</div>}
+          fallback={
+            <div class='mt-4 text-sm text-slate-500'>
+              {t("roundShots.loading")}
+            </div>
+          }
         >
           <Show
             when={!roundShots.error}
@@ -554,7 +566,7 @@ export default function RoundShots(props: { id: string }) {
               <p class='mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700'>
                 {roundShots.error instanceof Error
                   ? roundShots.error.message
-                  : "Failed to load round shots."}
+                  : t("roundShots.errors.loadShots")}
               </p>
             }
           >
@@ -562,7 +574,7 @@ export default function RoundShots(props: { id: string }) {
               when={(roundShots()?.shots.length ?? 0) > 0}
               fallback={
                 <p class='mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500'>
-                  No shots found for this round.
+                  {t("roundShots.noShots")}
                 </p>
               }
             >
@@ -570,15 +582,29 @@ export default function RoundShots(props: { id: string }) {
                 <table class='w-full min-w-160 text-left text-sm text-slate-700'>
                   <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
                     <tr>
-                      <th class='px-4 py-3 font-semibold'>Hole</th>
-                      <th class='px-4 py-3 font-semibold'>Shot</th>
-                      <th class='px-4 py-3 font-semibold'>Distance</th>
-                      <th class='px-4 py-3 font-semibold'>Lie Type</th>
-                      <th class='px-4 py-3 font-semibold'>Penalty</th>
-                      <th class='px-4 py-3 font-semibold'>Score</th>
+                      <th class='px-4 py-3 font-semibold'>
+                        {t("rounds.shots.hole")}
+                      </th>
+                      <th class='px-4 py-3 font-semibold'>
+                        {t("rounds.shots.shot")}
+                      </th>
+                      <th class='px-4 py-3 font-semibold'>
+                        {t("rounds.shots.distance")}
+                      </th>
+                      <th class='px-4 py-3 font-semibold'>
+                        {t("rounds.shots.lieType")}
+                      </th>
+                      <th class='px-4 py-3 font-semibold'>
+                        {t("rounds.shots.penalty")}
+                      </th>
+                      <th class='px-4 py-3 font-semibold'>
+                        {t("rounds.shots.score")}
+                      </th>
                       <th class='px-4 py-3 font-semibold'>SG</th>
                       <Show when={!isReadOnly()}>
-                        <th class='px-4 py-3 font-semibold'>Action</th>
+                        <th class='px-4 py-3 font-semibold'>
+                          {t("common.action")}
+                        </th>
                       </Show>
                     </tr>
                   </thead>
@@ -604,7 +630,7 @@ export default function RoundShots(props: { id: string }) {
                                 class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
                                 onClick={() => startEditingShot(shot)}
                               >
-                                Edit
+                                {t("common.edit")}
                               </button>
                             </td>
                           </Show>

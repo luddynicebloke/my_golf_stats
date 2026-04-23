@@ -174,12 +174,14 @@ export default function Rounds() {
     setFinalisingRoundId(null);
 
     if (error) {
-      setFinaliseError(`Failed to finalise round: ${error.message}`);
+      setFinaliseError(
+        t("rounds.errors.finalise", { message: error.message }),
+      );
       return;
     }
 
     if (!data?.round_finalised) {
-      setFinaliseError("Failed to finalise round.");
+      setFinaliseError(t("rounds.errors.finaliseGeneric"));
       return;
     }
 
@@ -199,12 +201,12 @@ export default function Rounds() {
     setDeletingRoundId(null);
 
     if (error) {
-      setDeleteError(`Failed to delete round: ${error.message}`);
+      setDeleteError(t("rounds.errors.delete", { message: error.message }));
       return;
     }
 
     if (!data || data.length === 0) {
-      setDeleteError("Failed to delete round: no matching round was deleted.");
+      setDeleteError(t("rounds.errors.deleteMissing"));
       return;
     }
 
@@ -289,7 +291,7 @@ export default function Rounds() {
           </h1>
           <p class='mt-1 text-sm text-slate-500'>
             {isReadOnly() && auth.selectedPlayer()
-              ? `${t("rounds.viewing")} ${auth.selectedPlayer()?.user_name || auth.selectedPlayer()?.email || "selected player"}`
+              ? `${t("rounds.viewing")} ${auth.selectedPlayer()?.user_name || auth.selectedPlayer()?.email || t("stats.selectedPlayer")}`
               : `${t("rounds.roundsDescription")}`}
           </p>
 
@@ -551,7 +553,7 @@ export default function Rounds() {
                                     onClick={() => toggleRoundSummary(round.id)}
                                   >
                                     {expandedRoundId() === round.id
-                                      ? t("round.hideSummary")
+                                      ? t("rounds.hideSummary")
                                       : t("rounds.showSummary")}
                                   </button>
                                   <A
@@ -603,7 +605,7 @@ export default function Rounds() {
 
               <div class='mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-4'>
                 <p class='text-sm text-slate-500'>
-                  Page {page()} of recent rounds
+                  {t("rounds.pageOfRecent", { page: page() })}
                 </p>
                 <div class='flex items-center gap-2'>
                   <button
@@ -614,7 +616,7 @@ export default function Rounds() {
                       setPage((currentPage) => Math.max(1, currentPage - 1))
                     }
                   >
-                    Previous
+                    {t("common.previous")}
                   </button>
                   <button
                     type='button'
@@ -622,7 +624,7 @@ export default function Rounds() {
                     disabled={!rounds()?.hasNextPage || rounds.loading}
                     onClick={() => setPage((currentPage) => currentPage + 1)}
                   >
-                    Next
+                    {t("common.next")}
                   </button>
                 </div>
               </div>

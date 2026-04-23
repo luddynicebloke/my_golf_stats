@@ -1,4 +1,5 @@
-import { Component, JSX, Show, onMount, onCleanup } from "solid-js";
+import { JSX, Show } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 type ModalProps = {
   open: boolean;
@@ -10,7 +11,8 @@ type ModalProps = {
 };
 
 export default function MessageModal(props: ModalProps) {
-  // escape closes modal
+  const [t] = useTransContext();
+
   return (
     <>
       <Show when={props.open}>
@@ -23,11 +25,11 @@ export default function MessageModal(props: ModalProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 class='text-xl font-semibold mb-4'>
-              {props.title ?? "Confirm"}
+              {props.title ?? t("common.confirm")}
             </h2>
 
             <div class='text-gray-600 mb-6'>
-              {props.message ?? "Are you sure?"}
+              {props.message ?? t("common.areYouSure")}
             </div>
 
             <div class='flex justify-end gap-3'>
@@ -36,7 +38,7 @@ export default function MessageModal(props: ModalProps) {
                 class='px-4 py-2 rounded-xl border hover:bg-gray-100'
                 onClick={() => props.onClose(false)}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
 
               <button
@@ -44,7 +46,7 @@ export default function MessageModal(props: ModalProps) {
                 class='px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700'
                 onClick={() => props.onClose(true)}
               >
-                Confirm
+                {t("common.confirm")}
               </button>
             </div>
           </div>

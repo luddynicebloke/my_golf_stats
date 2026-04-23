@@ -1,4 +1,5 @@
 import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import Slider from "./Slider";
 import {
@@ -96,6 +97,7 @@ const getTotalShotCount = (shots: LocalShot[]): number =>
 
 export default function LocalShotPanel(props: LocalShotPanelProps) {
   let latestShotElement: HTMLDivElement | undefined;
+  const [t] = useTransContext();
   const [ballLie, setBallLie] = createSignal<BallLie>(
     getDefaultLie(props.hole),
   );
@@ -129,7 +131,9 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   });
   const isGreenLie = createMemo(() => ballLie() === "Green");
   const sliderLabel = createMemo(() =>
-    isGreenLie() ? "Distance to hole" : "Distance to pin",
+    isGreenLie()
+      ? t("scoreEntry.distanceToHole")
+      : t("scoreEntry.distanceToPin"),
   );
   const sliderUnitLabel = createMemo(() =>
     isGreenLie()
@@ -345,7 +349,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       <div class='rounded-xl border border-slate-200 bg-slate-50 p-4'>
         <div class='mb-4 flex items-center justify-between gap-3'>
           <h3 class='font-rubik text-base font-semibold text-slate-800'>
-            Shot {currentShotNumber()}
+            {t("rounds.shots.shot")} {currentShotNumber()}
           </h3>
         </div>
 
@@ -400,7 +404,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                   }}
                   onClick={() => setBallLie(lie)}
                 >
-                  {lie}
+                  {t(`lieTypes.${lie}`)}
                 </button>
               )}
             </For>
@@ -414,7 +418,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
               }`}
               onClick={togglePenalty}
             >
-              Penalty
+              {t("rounds.shots.penalty")}
             </button>
 
             <Show when={penaltyEnabled()}>
@@ -435,7 +439,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                         onChange={() => selectPenaltyType("oob-lost-ball")}
                         class='h-4 w-4 border-slate-300 text-cyan-600 focus:ring-cyan-200'
                       />
-                      <span>OOB / Lost Ball</span>
+                      <span>{t("scoreEntry.penalties.oobLostBall")}</span>
                     </label>
                     <div class='flex items-center gap-2 text-sm font-semibold text-slate-700'>
                       <button
@@ -475,7 +479,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                         onChange={() => selectPenaltyType("hazard-unplayable")}
                         class='h-4 w-4 border-slate-300 text-cyan-600 focus:ring-cyan-200'
                       />
-                      <span>Hazard / Unplayable</span>
+                      <span>{t("scoreEntry.penalties.hazardUnplayable")}</span>
                     </label>
                     <div class='flex items-center gap-2 text-sm font-semibold text-slate-700'>
                       <button
@@ -516,10 +520,10 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
               onClick={() => void addLocalShot()}
             >
               {props.savingHole
-                ? (props.submitLabel ?? "Saving...")
+                ? (props.submitLabel ?? t("common.saving"))
                 : holedOut()
-                  ? "Next hole"
-                  : "Next shot"}
+                  ? t("scoreEntry.nextHole")
+                  : t("scoreEntry.nextShot")}
             </button>
             <div class='flex flex-wrap items-center gap-3'>
               <label
@@ -533,7 +537,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                   onChange={(event) => setRecovery(event.currentTarget.checked)}
                   class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
                 />
-                Recovery
+                {t("roundShots.recovery")}
               </label>
               <label
                 for='holed-out'
@@ -546,7 +550,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                   onChange={(event) => setHoledOut(event.currentTarget.checked)}
                   class='h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-200'
                 />
-                Holed out
+                {t("roundShots.holedOut")}
               </label>
             </div>
           </div>
@@ -562,16 +566,18 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       <div class='mt-4 rounded-xl border border-slate-200 bg-white p-4'>
         <div class='flex items-center justify-between gap-3'>
           <h3 class='font-rubik text-base font-semibold text-slate-800'>
-            Current Hole Shots
+            {t("scoreEntry.currentHoleShots")}
           </h3>
-          <div class='text-sm text-slate-500'>Shot {currentShotNumber()}</div>
+          <div class='text-sm text-slate-500'>
+            {t("rounds.shots.shot")} {currentShotNumber()}
+          </div>
           <Show when={currentHoleShots().length > 0}>
             <button
               type='button'
               class='rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100'
               onClick={deleteLastLocalShot}
             >
-              Delete last shot
+              {t("scoreEntry.deleteLastShot")}
             </button>
           </Show>
         </div>
@@ -580,7 +586,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
           when={currentHoleShots().length > 0}
           fallback={
             <p class='mt-3 text-sm text-slate-500'>
-              No local shots saved for this hole yet.
+              {t("scoreEntry.noLocalShots")}
             </p>
           }
         >
@@ -599,9 +605,9 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                 >
                   <div class='flex flex-wrap items-center gap-3'>
                     <span class='font-semibold text-slate-800'>
-                      Shot {shot.shotNumber}
+                      {t("rounds.shots.shot")} {shot.shotNumber}
                     </span>
-                    <span>{shot.lieType}</span>
+                    <span>{t(`lieTypes.${shot.lieType}`)}</span>
                     <span>
                       {shot.lieType === "Green"
                         ? formatGreenUiValue(
@@ -621,14 +627,20 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                           ).toLowerCase()}
                     </span>
                     <Show when={shot.penaltyShots > 0}>
-                      <span>Penalty {shot.penaltyShots}</span>
+                      <span>
+                        {t("scoreEntry.penaltyValue", {
+                          count: shot.penaltyShots,
+                        })}
+                      </span>
                     </Show>
                     <Show when={shot.recovery}>
-                      <span class='font-semibold text-amber-700'>Recovery</span>
+                      <span class='font-semibold text-amber-700'>
+                        {t("roundShots.recovery")}
+                      </span>
                     </Show>
                     <Show when={shot.holedOut}>
                       <span class='font-semibold text-emerald-700'>
-                        Holed out
+                        {t("roundShots.holedOut")}
                       </span>
                     </Show>
                   </div>

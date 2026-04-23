@@ -1,4 +1,5 @@
 import { createSignal, Show } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 import { supabase } from "../../supabase/client";
 
 type UserType = {
@@ -52,6 +53,7 @@ const getRoleBadgeClass = (role: string | null) => {
 };
 
 const User = (props: UserProps) => {
+  const [t] = useTransContext();
   const [editing, setEditing] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [errorMessage, setErrorMessage] = createSignal("");
@@ -87,7 +89,7 @@ const User = (props: UserProps) => {
     setSaving(true);
 
     if (!category()) {
-      setErrorMessage("Category is required.");
+      setErrorMessage(t("profile.state.categoryRequired"));
       setSaving(false);
       return;
     }
@@ -158,7 +160,7 @@ const User = (props: UserProps) => {
             }}
             class='inline-flex self-auto rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-xs font-semibold text-cyan-700 hover:bg-cyan-100'
           >
-            {editing() ? "Close" : "Edit"}
+            {editing() ? t("common.close") : t("common.edit")}
           </button>
         </td>
       </tr>
@@ -169,7 +171,7 @@ const User = (props: UserProps) => {
             <div class='grid gap-3 md:grid-cols-2 lg:grid-cols-3'>
               <label class='block'>
                 <span class='mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500'>
-                  Email
+                  {t("forms.email")}
                 </span>
                 <input
                   disabled
@@ -182,7 +184,7 @@ const User = (props: UserProps) => {
 
               <label class='block'>
                 <span class='mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500'>
-                  Avatar
+                  {t("admin.users.avatar")}
                 </span>
                 <input
                   type='text'
@@ -193,7 +195,7 @@ const User = (props: UserProps) => {
               </label>
               <label class='block'>
                 <span class='mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500'>
-                  User name
+                  {t("profile.username")}
                 </span>
                 <input
                   type='text'
@@ -205,7 +207,7 @@ const User = (props: UserProps) => {
 
               <label class='block'>
                 <span class='mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500'>
-                  Role
+                  {t("admin.users.role")}
                 </span>
                 <select
                   value={role()}
@@ -220,7 +222,7 @@ const User = (props: UserProps) => {
 
               <label class='block'>
                 <span class='mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500'>
-                  Distance
+                  {t("profile.distanceUnit")}
                 </span>
                 <select
                   value={distance()}
@@ -235,14 +237,14 @@ const User = (props: UserProps) => {
 
               <label class='block'>
                 <span class='mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500'>
-                  Category
+                  {t("profile.category")}
                 </span>
                 <select
                   value={category()}
                   onChange={(e) => setCategory(e.currentTarget.value)}
                   class='w-full rounded-md border border-slate-300 bg-white p-2 text-sm text-slate-800'
                 >
-                  <option value=''>Select category</option>
+                  <option value=''>{t("register.selectCategory")}</option>
                   {props.categoryOptions.map((option) => (
                     <option value={String(option.id)}>{option.name}</option>
                   ))}
@@ -262,7 +264,7 @@ const User = (props: UserProps) => {
                 disabled={saving()}
                 class='inline-flex self-auto rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60'
               >
-                {saving() ? "Saving..." : "Save"}
+                {saving() ? t("common.saving") : t("common.save")}
               </button>
               <button
                 onClick={() => {
@@ -272,7 +274,7 @@ const User = (props: UserProps) => {
                 disabled={saving()}
                 class='inline-flex self-auto rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60'
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </td>

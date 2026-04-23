@@ -3,6 +3,7 @@ import { createSignal } from "solid-js";
 import { supabase } from "../../supabase/client";
 
 import { createForm, required } from "@modular-forms/solid";
+import { useTransContext } from "@mbarzda/solid-i18next";
 import TextInput from "../forms/TextInput";
 import { TCourse } from "../../lib/definitions";
 
@@ -14,6 +15,7 @@ type NewCourseForm = {
 
 const CourseNew = () => {
   const navigate = useNavigate();
+  const [t] = useTransContext();
   const [submitError, setSubmitError] = createSignal("");
 
   // create the form using modularforms
@@ -29,7 +31,7 @@ const CourseNew = () => {
       .single();
 
     if (error || !data?.id) {
-      setSubmitError(error?.message || "Unable to create the course.");
+      setSubmitError(error?.message || t("admin.courses.createError"));
       return;
     }
 
@@ -47,44 +49,47 @@ const CourseNew = () => {
       <div class='[&_label]:text-slate-700 dark:[&_label]:text-slate-700 [&_input]:bg-white [&_input]:text-slate-800 [&_input]:placeholder:text-slate-400 dark:[&_input]:bg-white dark:[&_input]:text-slate-800 dark:[&_input]:placeholder:text-slate-400'>
         <Form onSubmit={(values) => handleSave(values)}>
           <div class='grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end'>
-            <Field name='name' validate={required("Enter a name")}>
+            <Field name='name' validate={required(t("admin.courses.nameRequired"))}>
               {(field, props) => (
                 <TextInput
                   {...props}
                   value={field.value}
                   error={field.error}
                   type='text'
-                  label='Name'
+                  label={t("admin.courses.name")}
                   required
-                  placeholder='Course name'
+                  placeholder={t("admin.courses.courseName")}
                   class='min-h-30'
                 />
               )}
             </Field>
-            <Field name='city' validate={required("Enter a city")}>
+            <Field name='city' validate={required(t("admin.courses.cityRequired"))}>
               {(field, props) => (
                 <TextInput
                   {...props}
                   value={field.value}
                   error={field.error}
                   type='text'
-                  label='City'
+                  label={t("admin.city")}
                   required
-                  placeholder='City name'
+                  placeholder={t("admin.courses.cityName")}
                   class='min-h-[7.5rem]'
                 />
               )}
             </Field>
-            <Field name='country' validate={required("Enter a country")}>
+            <Field
+              name='country'
+              validate={required(t("admin.courses.countryRequired"))}
+            >
               {(field, props) => (
                 <TextInput
                   {...props}
                   value={field.value}
                   error={field.error}
                   type='text'
-                  label='Country'
+                  label={t("admin.country")}
                   required
-                  placeholder='Country'
+                  placeholder={t("admin.country")}
                   class='min-h-[7.5rem]'
                 />
               )}
@@ -94,7 +99,7 @@ const CourseNew = () => {
               class='inline-flex self-auto rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 lg:mb-1'
               type='submit'
             >
-              Create
+              {t("admin.courses.create")}
             </button>
           </div>
         </Form>

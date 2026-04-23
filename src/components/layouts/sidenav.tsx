@@ -29,7 +29,7 @@ export default function Sidenav() {
         class='mb-3 flex items-end gap-3 rounded-2xl border border-slate-200 bg-linear-to-r from-cyan-950 via-slate-900 to-emerald-950 p-4 text-white shadow-sm'
       >
         <div class='w-20 sm:w-24 text-white md:w-24'>
-          <img src={LogoSG} alt='SG Calculater Logo' />
+          <img src={LogoSG} alt={t("common.logoAlt")} />
         </div>
         <div>
           <p class='font-grotesk text-[11px] uppercase tracking-[0.2em] text-cyan-300'>

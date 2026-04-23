@@ -8,6 +8,7 @@ import {
   Show,
 } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import { TCourse, TTee } from "../lib/definitions";
 import { supabase } from "../supabase/client";
@@ -92,6 +93,7 @@ const fetchUnfinishedRounds = async (userId: string) => {
 export default function NewRound() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const [t] = useTransContext();
   const [courses] = createResource(fetchCourses);
   const [unfinishedRounds, { refetch: refetchUnfinishedRounds }] =
     createResource(
@@ -184,7 +186,7 @@ export default function NewRound() {
 
     const numericCourseId = Number(id);
     if (Number.isNaN(numericCourseId)) {
-      setStartError("Invalid course selected.");
+      setStartError(t("newRound.errors.invalidCourse"));
       return;
     }
 
@@ -204,12 +206,12 @@ export default function NewRound() {
 
     const currentUser = auth.user();
     if (!currentUser?.id) {
-      setStartError("You must be signed in to start a round.");
+      setStartError(t("newRound.errors.signInRequired"));
       return;
     }
 
     if (!selectedCourse().id || !selectedTee().id || !roundDate()) {
-      setStartError("Select date, course, and tee before starting.");
+      setStartError(t("newRound.errors.missingSelection"));
       return;
     }
 
@@ -229,7 +231,9 @@ export default function NewRound() {
     if (roundError || !round?.id) {
       setStartingRound(false);
       setStartError(
-        `Failed to create round: ${roundError?.message ?? "Unknown error."}`,
+        t("newRound.errors.createRound", {
+          message: roundError?.message ?? t("errors.unknown"),
+        }),
       );
       return;
     }
@@ -245,8 +249,8 @@ export default function NewRound() {
       setStartingRound(false);
       setStartError(
         holesError
-          ? `Failed to load holes: ${holesError.message}`
-          : "No holes found for the selected course.",
+          ? t("newRound.errors.loadHoles", { message: holesError.message })
+          : t("newRound.errors.noHoles"),
       );
       return;
     }
@@ -265,7 +269,11 @@ export default function NewRound() {
     if (roundHolesError) {
       await supabase.from("rounds").delete().eq("id", round.id);
       setStartingRound(false);
-      setStartError(`Failed to initialize holes: ${roundHolesError.message}`);
+      setStartError(
+        t("newRound.errors.initializeHoles", {
+          message: roundHolesError.message,
+        }),
+      );
       return;
     }
 
@@ -275,8 +283,8 @@ export default function NewRound() {
 
   const getCourseName = (round: any) => {
     if (Array.isArray(round.courses))
-      return round.courses[0]?.name ?? "Unknown course";
-    return round.courses?.name ?? "Unknown course";
+      return round.courses[0]?.name ?? t("newRound.unknownCourse");
+    return round.courses?.name ?? t("newRound.unknownCourse");
   };
 
   const handleContinueRound = (roundId: string) => {
@@ -298,7 +306,9 @@ export default function NewRound() {
     if (deleteHoleRoundError) {
       setDeletingRoundId("");
       setStartError(
-        `Failed to delete round holes: ${deleteHoleRoundError.message}`,
+        t("newRound.errors.deleteRoundHoles", {
+          message: deleteHoleRoundError.message,
+        }),
       );
       return;
     }
@@ -310,7 +320,11 @@ export default function NewRound() {
 
     if (deleteRoundError) {
       setDeletingRoundId("");
-      setStartError(`Failed to delete round: ${deleteRoundError.message}`);
+      setStartError(
+        t("newRound.errors.deleteRound", {
+          message: deleteRoundError.message,
+        }),
+      );
       return;
     }
 
@@ -323,10 +337,10 @@ export default function NewRound() {
       <Show when={(unfinishedRounds()?.length ?? 0) > 0}>
         <div class='rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
           <h1 class='font-rubik text-3xl font-semibold tracking-tight text-slate-800'>
-            Incomplete Rounds
+            {t("newRound.incompleteRounds")}
           </h1>
           <p class='mt-2 font-grotesk text-sm text-slate-500'>
-            Continue where you left off or delete an unfinished round.
+            {t("newRound.incompleteRoundsDescription")}
           </p>
           <For each={unfinishedRounds()}>
             {(round) => (
@@ -336,7 +350,7 @@ export default function NewRound() {
                     {getCourseName(round)}
                   </p>
                   <p class='font-grotesk text-sm text-slate-500'>
-                    Date: {round.round_date}
+                    {t("common.date")}: {round.round_date}
                   </p>
                 </div>
                 <div class='flex items-center gap-2'>
@@ -345,7 +359,7 @@ export default function NewRound() {
                     class='rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
                     onClick={() => handleContinueRound(String(round.id))}
                   >
-                    Continue
+                    {t("newRound.continue")}
                   </button>
                   <button
                     type='button'
@@ -354,8 +368,8 @@ export default function NewRound() {
                     onClick={() => handleDeleteRound(String(round.id))}
                   >
                     {deletingRoundId() === String(round.id)
-                      ? "Deleting..."
-                      : "Delete"}
+                      ? t("newRound.deleting")
+                      : t("common.delete")}
                   </button>
                 </div>
               </div>
@@ -365,17 +379,17 @@ export default function NewRound() {
       </Show>
       <div class='rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
         <h1 class='font-rubik text-3xl font-semibold tracking-tight text-slate-800'>
-          Start New Round
+          {t("newRound.title")}
         </h1>
         <p class='mt-2 font-grotesk text-sm text-slate-500'>
-          Choose date, course, and tee to create your scorecard.
+          {t("newRound.description")}
         </p>
       </div>
 
       <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
         <label class='block max-w-xs'>
           <span class='mb-1 block text-sm font-medium text-slate-700'>
-            Round Date
+            {t("newRound.roundDate")}
           </span>
           <input
             type='date'
@@ -389,16 +403,16 @@ export default function NewRound() {
 
         <div class='mt-6'>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>
-            Course
+            {t("common.course")}
           </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Search and select a course to load available tees.
+            {t("newRound.courseDescription")}
           </p>
 
           <div class='mt-4'>
             <input
               type='text'
-              placeholder='Search courses...'
+              placeholder={t("newRound.searchCourses")}
               class='w-full max-w-md rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
               onInput={(e) => handleSearch(e.currentTarget.value)}
             />
@@ -411,19 +425,19 @@ export default function NewRound() {
                 <div class='flex min-h-40 flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center'>
                   <div class='lds-dual-ring'></div>
                   <p class='font-grotesk text-sm text-slate-600'>
-                    Loading courses...
+                    {t("newRound.loadingCourses")}
                   </p>
                   <Show when={coursesTakingTooLong()}>
                     <div class='space-y-3'>
                       <p class='max-w-md text-sm text-slate-500'>
-                        Course data is taking longer than expected to load.
+                        {t("newRound.courseLoadSlow")}
                       </p>
                       <button
                         type='button'
                         class='mx-auto rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100'
                         onClick={() => window.location.reload()}
                       >
-                        Reload page
+                        {t("newRound.reloadPage")}
                       </button>
                     </div>
                   </Show>
@@ -434,7 +448,9 @@ export default function NewRound() {
                 when={!coursesError()}
                 fallback={
                   <div class='bg-rose-50 p-4 text-sm text-rose-700'>
-                    Failed to load courses: {coursesError()}
+                    {t("newRound.errors.loadCourses", {
+                      message: coursesError(),
+                    })}
                   </div>
                 }
               >
@@ -442,7 +458,7 @@ export default function NewRound() {
                   when={paginatedCourses().length > 0}
                   fallback={
                     <div class='bg-slate-50 p-4 text-sm text-slate-500'>
-                      No courses found.
+                      {t("newRound.noCourses")}
                     </div>
                   }
                 >
@@ -482,11 +498,11 @@ export default function NewRound() {
               disabled={page() === 1}
               onClick={() => setPage(page() - 1)}
             >
-              Prev
+              {t("common.previous")}
             </button>
 
             <span class='font-grotesk text-sm text-slate-600'>
-              Page {page()} of {totalPages()}
+              {t("common.pageOf", { page: page(), total: totalPages() })}
             </span>
 
             <button
@@ -494,15 +510,17 @@ export default function NewRound() {
               disabled={page() >= totalPages()}
               onClick={() => setPage(page() + 1)}
             >
-              Next
+              {t("common.next")}
             </button>
           </div>
         </div>
 
         <div class='mt-8 border-t border-slate-200 pt-6'>
-          <h2 class='font-rubik text-xl font-semibold text-slate-800'>Tee</h2>
+          <h2 class='font-rubik text-xl font-semibold text-slate-800'>
+            {t("common.tee")}
+          </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
-            Select the tee color you played.
+            {t("newRound.teeDescription")}
           </p>
 
           <Show
@@ -510,8 +528,8 @@ export default function NewRound() {
             fallback={
               <p class={`mt-3 text-sm ${teesError() ? "text-rose-700" : "text-slate-500"}`}>
                 {teesError()
-                  ? `Failed to load tees: ${teesError()}`
-                  : "Select a course to view tees."}
+                  ? t("newRound.errors.loadTees", { message: teesError() })
+                  : t("newRound.selectCourseForTees")}
               </p>
             }
           >
@@ -528,7 +546,7 @@ export default function NewRound() {
                       }`}
                       onClick={() => handleTeeSelect(tee.id, tee.color)}
                     >
-                      {tee.color} ({tee.total_yardage} metres)
+                      {tee.color} ({tee.total_yardage} {t("units.metres")})
                     </button>
                   </li>
                 )}
@@ -539,24 +557,24 @@ export default function NewRound() {
 
         <div class='mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4'>
           <h3 class='font-rubik text-lg font-semibold text-slate-800'>
-            Selection Summary
+            {t("newRound.selectionSummary")}
           </h3>
           <p class='mt-2 text-sm text-slate-700'>
-            Course:{" "}
+            {t("common.course")}:{" "}
             <span class='font-medium'>
-              {selectedCourse().name || "Not selected"}
+              {selectedCourse().name || t("newRound.notSelected")}
             </span>
           </p>
           <p class='text-sm text-slate-700'>
-            Tee:{" "}
+            {t("common.tee")}:{" "}
             <span class='font-medium'>
-              {selectedTee().color || "Not selected"}
+              {selectedTee().color || t("newRound.notSelected")}
             </span>
           </p>
           <p class='text-sm text-slate-700'>
-            Date:{" "}
+            {t("common.date")}:{" "}
             <span class='font-medium'>
-              {roundDate() ? toDMYDash(roundDate()) : "Not selected"}
+              {roundDate() ? toDMYDash(roundDate()) : t("newRound.notSelected")}
             </span>
           </p>
         </div>
@@ -572,7 +590,7 @@ export default function NewRound() {
           disabled={!canStartRound()}
           onClick={handleStartRound}
         >
-          {startingRound() ? "Starting..." : "Start Round"}
+          {startingRound() ? t("newRound.starting") : t("newRound.startRound")}
         </button>
       </div>
     </div>

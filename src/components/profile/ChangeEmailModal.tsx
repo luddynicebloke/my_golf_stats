@@ -36,7 +36,7 @@ const ChangeEmailModal = (props: ChangeEmailModalProps) => {
               value={props.emailDraft}
               onInput={(e) => props.onEmailInput(e.currentTarget.value)}
               class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-              placeholder='you@example.com'
+              placeholder={t("forms.emailPlaceholder")}
             />
           </label>
           <div class='mt-5 flex justify-end gap-2'>

@@ -36,7 +36,7 @@ export default function SignIn() {
       reset(loginForm);
       navigate("/dashboard");
     } catch (error) {
-      setSubmitError("An unexpected error occurred. Please try again.");
+      setSubmitError(t("errors.unexpected"));
       console.error("Unexpected error:", error);
     } finally {
       setLoading(false);
@@ -47,7 +47,7 @@ export default function SignIn() {
     <div class='min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8'>
       <div class='mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl lg:grid-cols-2'>
         <div class='bg-linear-to-br from-cyan-950 via-slate-900 to-emerald-950 p-8 text-white sm:p-10'>
-          <img class='h-20 w-auto' src={LogoSG} alt='SG Calculater Logo' />
+          <img class='h-20 w-auto' src={LogoSG} alt={t("common.logoAlt")} />
           <p class='mt-6 font-grotesk text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300'>
             {t("signin.title")}
           </p>
@@ -80,7 +80,7 @@ export default function SignIn() {
               onSubmit={(values) => handleFormSubmit(values)}
               class='space-y-4'
             >
-              <Field name='email' validate={[required("Email is required")]}>
+              <Field name='email' validate={[required(t("forms.emailRequired"))]}>
                 {(field, props) => (
                   <TextInput
                     {...props}
@@ -89,15 +89,15 @@ export default function SignIn() {
                     value={field.value}
                     error={field.error}
                     required
-                    label='Email'
-                    placeholder='you@example.com'
+                    label={t("forms.email")}
+                    placeholder={t("forms.emailPlaceholder")}
                     class='min-h-30'
                   />
                 )}
               </Field>
               <Field
                 name='password'
-                validate={[required("Password is required")]}
+                validate={[required(t("forms.passwordRequired"))]}
               >
                 {(field, props) => (
                   <TextInput
@@ -107,8 +107,8 @@ export default function SignIn() {
                     value={field.value}
                     error={field.error}
                     required
-                    label='Password'
-                    placeholder='Your password'
+                    label={t("forms.password")}
+                    placeholder={t("signin.passwordPlaceholder")}
                     class='min-h-30'
                   />
                 )}

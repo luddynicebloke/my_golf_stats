@@ -6,6 +6,7 @@ import {
   onCleanup,
   Show,
 } from "solid-js";
+import { useTransContext } from "@mbarzda/solid-i18next";
 
 import { supabase } from "../../supabase/client";
 
@@ -115,6 +116,7 @@ type CategoryRowProps = {
 };
 
 const CategoryRow = (props: CategoryRowProps) => {
+  const [t] = useTransContext();
   const [code, setCode] = createSignal(props.category.code);
   const [name, setName] = createSignal(props.category.name);
   const [saving, setSaving] = createSignal(false);
@@ -132,7 +134,7 @@ const CategoryRow = (props: CategoryRowProps) => {
     if (!nextCode || !nextName) {
       setState({
         type: "error",
-        message: "Code and name are required.",
+        message: t("admin.strokesExpectation.codeNameRequired"),
       });
       return;
     }
@@ -157,7 +159,7 @@ const CategoryRow = (props: CategoryRowProps) => {
 
     setState({
       type: "success",
-      message: "Category updated.",
+      message: t("admin.strokesExpectation.categoryUpdated"),
     });
     await props.onSaved();
     setSaving(false);
@@ -190,7 +192,7 @@ const CategoryRow = (props: CategoryRowProps) => {
             disabled={saving()}
             class='rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 hover:bg-cyan-100 disabled:opacity-60'
           >
-            {saving() ? "Saving..." : "Save"}
+            {saving() ? t("common.saving") : t("common.save")}
           </button>
           <Show when={state()}>
             {(messageState) => (
@@ -299,6 +301,7 @@ const StrokesGainedCell = (props: StrokesGainedCellProps) => {
 };
 
 export default function Stokes_expectation() {
+  const [t] = useTransContext();
   const [activeTab, setActiveTab] = createSignal<ActiveTab>("categories");
   const [selectedLieType, setSelectedLieType] = createSignal("all");
   const [categories, { refetch: refetchCategories }] =
@@ -389,7 +392,7 @@ export default function Stokes_expectation() {
               : "border-slate-300 bg-white text-slate-700 hover:border-cyan-300 hover:text-cyan-700"
           }`}
         >
-          Categories
+          {t("admin.strokesExpectation.categories")}
         </button>
         <button
           type='button'
@@ -400,33 +403,42 @@ export default function Stokes_expectation() {
               : "border-slate-300 bg-white text-slate-700 hover:border-cyan-300 hover:text-cyan-700"
           }`}
         >
-          Strokes Gained (yards / feet)
+          {t("admin.strokesExpectation.strokesGainedTab")}
         </button>
       </div>
 
       <Show when={activeTab() === "categories"}>
         <div>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>
-            Categories
+            {t("admin.strokesExpectation.categories")}
           </h2>
           <p class='mt-1 text-sm text-slate-500'>
-            Update the category code and name values used by the expectations
-            data.
+            {t("admin.strokesExpectation.categoriesDescription")}
           </p>
         </div>
 
         <Show
           when={!categories.loading}
-          fallback={<div class='text-sm text-slate-500'>Loading categories...</div>}
+          fallback={
+            <div class='text-sm text-slate-500'>
+              {t("admin.strokesExpectation.loadingCategories")}
+            </div>
+          }
         >
           <div class='overflow-x-auto rounded-xl border border-slate-200'>
             <table class='w-full min-w-160 text-left text-sm text-slate-700'>
               <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
                 <tr>
                   <th class='px-4 py-3 font-semibold'>ID</th>
-                  <th class='px-4 py-3 font-semibold'>Code</th>
-                  <th class='px-4 py-3 font-semibold'>Name</th>
-                  <th class='px-4 py-3 font-semibold'>Action</th>
+                  <th class='px-4 py-3 font-semibold'>
+                    {t("admin.strokesExpectation.code")}
+                  </th>
+                  <th class='px-4 py-3 font-semibold'>
+                    {t("admin.courses.name")}
+                  </th>
+                  <th class='px-4 py-3 font-semibold'>
+                    {t("common.action")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -447,11 +459,10 @@ export default function Stokes_expectation() {
       <Show when={activeTab() === "strokes-gained"}>
         <div>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>
-            Strokes Gained
+            {t("admin.strokesExpectation.strokesGained")}
           </h2>
           <p class='mt-1 text-sm text-slate-500'>
-            Review the expectation ranges used for strokes gained: yards for
-            tee-to-green lies and feet on the green.
+            {t("admin.strokesExpectation.strokesGainedDescription")}
           </p>
         </div>
 
@@ -459,7 +470,7 @@ export default function Stokes_expectation() {
           when={!strokesExpectation.loading}
           fallback={
             <div class='text-sm text-slate-500'>
-              Loading strokes gained matrix...
+              {t("admin.strokesExpectation.loadingMatrix")}
             </div>
           }
         >
@@ -469,7 +480,7 @@ export default function Stokes_expectation() {
                 <tr>
                   <th class='w-20 px-2 py-2 font-semibold'>
                     <div class='flex flex-col gap-2'>
-                      <span>Lie Type</span>
+                      <span>{t("roundShots.lieType")}</span>
                       <select
                         value={selectedLieType()}
                         onChange={(e) =>
@@ -477,25 +488,31 @@ export default function Stokes_expectation() {
                         }
                         class='w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-normal text-slate-700'
                       >
-                        <option value='all'>All lie types</option>
+                        <option value='all'>
+                          {t("admin.strokesExpectation.allLieTypes")}
+                        </option>
                         <For each={lieTypes()}>
                           {(lieType) => (
-                            <option value={lieType}>{lieType}</option>
+                            <option value={lieType}>
+                              {t(`lieTypes.${lieType}`, {
+                                defaultValue: lieType,
+                              })}
+                            </option>
                           )}
                         </For>
                       </select>
                     </div>
                   </th>
                   <th class='w-10 px-1 py-2 text-center font-semibold'>
-                    <span class='block'>Min</span>
+                    <span class='block'>{t("admin.strokesExpectation.min")}</span>
                     <span class='block text-xs font-normal text-slate-500'>
-                      Dist
+                      {t("admin.strokesExpectation.dist")}
                     </span>
                   </th>
                   <th class='w-10 px-1 py-2 text-center font-semibold'>
-                    <span class='block'>Max</span>
+                    <span class='block'>{t("admin.strokesExpectation.max")}</span>
                     <span class='block text-xs font-normal text-slate-500'>
-                      Dist
+                      {t("admin.strokesExpectation.dist")}
                     </span>
                   </th>
                   <For each={displayCategories()}>
@@ -511,7 +528,11 @@ export default function Stokes_expectation() {
                 <For each={strokesGainedRows()}>
                   {(row) => (
                     <tr class='border-b border-slate-200 odd:bg-white even:bg-slate-50'>
-                      <td class='px-2 py-2'>{row.lie_type}</td>
+                      <td class='px-2 py-2'>
+                        {t(`lieTypes.${row.lie_type}`, {
+                          defaultValue: row.lie_type,
+                        })}
+                      </td>
                       <td class='px-2 py-2 text-center'>{row.min_distance}</td>
                       <td class='px-2 py-2 text-center'>{row.max_distance}</td>
                       <For each={displayCategories()}>

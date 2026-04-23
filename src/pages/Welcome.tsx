@@ -42,14 +42,14 @@ export default function Welcome() {
               src={ImageL}
               width={1600}
               height={900} // Adjust to match your image's actual aspect ratio
-              alt='Screenshots of the dashboard project showing desktop version'
+              alt={t("welcomeImages.desktopAlt")}
               class='hidden md:block w-full h-auto'
             />
             <img
               src={ImageM}
               width={560}
               height={620}
-              alt='Screenshot of the dashboard project showing mobile version'
+              alt={t("welcomeImages.mobileAlt")}
               class='block md:hidden w-full h-auto'
             />
           </div>

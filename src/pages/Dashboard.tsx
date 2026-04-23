@@ -229,16 +229,15 @@ export default function Dashboard() {
       <div class='mx-auto w-full max-w-4xl space-y-6'>
         <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
           <h1 class='font-rubik text-2xl font-semibold tracking-tight text-slate-800 md:text-3xl'>
-            Pro Dashboard
+            {t("dashboard.pro.title")}
           </h1>
           <p class='mt-2 text-sm text-slate-500'>
-            Choose a player who has granted you access, then open their rounds
-            or statistics in read-only mode.
+            {t("dashboard.pro.description")}
           </p>
         </div>
 
         <PlayerSelector
-          label='Viewing player'
+          label={t("stats.viewingPlayerLabel")}
           players={auth.accessiblePlayers()}
           selectedPlayerId={auth.selectedPlayerId()}
           onChange={auth.setSelectedPlayerId}
@@ -249,18 +248,22 @@ export default function Dashboard() {
             href='/dashboard/rounds'
             class='rounded-2xl border border-cyan-200 bg-cyan-50 p-6 text-slate-800 shadow-sm transition hover:bg-cyan-100'
           >
-            <h2 class='font-rubik text-xl font-semibold'>Rounds</h2>
+            <h2 class='font-rubik text-xl font-semibold'>
+              {t("common.rounds")}
+            </h2>
             <p class='mt-2 text-sm text-slate-600'>
-              Review saved rounds for your selected player.
+              {t("dashboard.pro.roundsDescription")}
             </p>
           </A>
           <A
             href='/dashboard/stats'
             class='rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-slate-800 shadow-sm transition hover:bg-emerald-100'
           >
-            <h2 class='font-rubik text-xl font-semibold'>Statistics</h2>
+            <h2 class='font-rubik text-xl font-semibold'>
+              {t("common.statistics")}
+            </h2>
             <p class='mt-2 text-sm text-slate-600'>
-              View strokes gained summaries and recent trends.
+              {t("dashboard.pro.statsDescription")}
             </p>
           </A>
         </div>
@@ -272,14 +275,14 @@ export default function Dashboard() {
     <div class='w-full'>
       <div class='mb-6 flex flex-wrap items-center justify-between gap-3'>
         <h1 class='font-rubik text-2xl font-semibold tracking-tight text-gray-600 md:text-3xl'>
-          Dashboard
+          {t("dashboard.title")}
         </h1>
         {auth.role() === "admin" && (
           <a
             href='/admin'
             class='inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100'
           >
-            Admin Panel
+            {t("admin.title")}
           </a>
         )}
       </div>

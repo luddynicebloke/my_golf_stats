@@ -104,7 +104,7 @@ const Profile = () => {
         if (profileError) {
           setProfileState({
             type: "error",
-            message: `t("profile.state.profileError")}: ${profileError.message}`,
+            message: `${t("profile.state.profileError")}: ${profileError.message}`,
           });
           return;
         }
@@ -112,7 +112,7 @@ const Profile = () => {
         if (categoryError) {
           setProfileState({
             type: "error",
-            message: `t("profile.state.categoryError")}: ${categoryError.message}`,
+            message: `${t("profile.state.categoryError")}: ${categoryError.message}`,
           });
           return;
         }
@@ -188,7 +188,7 @@ const Profile = () => {
     if (error) {
       setProfileState({
         type: "error",
-        message: `t("profile.state.saveError")}: ${error.message}`,
+        message: `${t("profile.state.saveError")}: ${error.message}`,
       });
       return;
     }
@@ -235,7 +235,7 @@ const Profile = () => {
       setEmailSaving(false);
       setEmailState({
         type: "error",
-        message: `t("profile.state.emailSavingError")}: ${profileError.message}`,
+        message: `${t("profile.state.emailSavingError")}: ${profileError.message}`,
       });
       return;
     }
@@ -334,7 +334,7 @@ const Profile = () => {
         </p>
       </div>
 
-      <Show when={!loading()} fallback={<div>Loading profile...</div>}>
+      <Show when={!loading()} fallback={<div>{t("profile.state.loading")}</div>}>
         <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
           <h2 class='font-rubik text-xl font-semibold text-slate-800'>
             {t("profile.publicProfile")}
@@ -353,14 +353,14 @@ const Profile = () => {
                 value={username()}
                 onInput={(e) => setUsername(e.currentTarget.value)}
                 class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400'
-                placeholder='Your username'
+                placeholder={t("forms.usernamePlaceholder")}
                 required
               />
             </label>
 
             <label class='block'>
               <span class='mb-1 block text-sm font-medium text-slate-700'>
-                Avatar URL
+                {t("profile.avatarUrl")}
               </span>
               <input
                 type='url'
@@ -382,7 +382,7 @@ const Profile = () => {
                   class='w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-800'
                   required
                 >
-                  <option value=''>Select category</option>
+                  <option value=''>{t("register.selectCategory")}</option>
                   {categoryOptions().map((option) => (
                     <option value={option.id}>
                       {t(`categories.${option.code}`, {
@@ -466,10 +466,10 @@ const Profile = () => {
                 <div class='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4'>
                   <div>
                     <p class='font-medium text-slate-800'>
-                      {pro.user_name || pro.email || "Unnamed pro"}
+                      {pro.user_name || pro.email || t("profile.unnamedPro")}
                     </p>
                     <p class='text-sm text-slate-500'>
-                      {pro.email ?? "No email"}
+                      {pro.email ?? t("profile.noEmail")}
                     </p>
                   </div>
                   <button
@@ -493,7 +493,9 @@ const Profile = () => {
         </div>
 
         <div class='rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
-          <h2 class='font-rubik text-xl font-semibold text-slate-800'>Email</h2>
+          <h2 class='font-rubik text-xl font-semibold text-slate-800'>
+            {t("forms.email")}
+          </h2>
           <p class='mt-1 font-grotesk text-sm text-slate-500'>
             {t("profile.emailDescription")}
           </p>
@@ -558,7 +560,9 @@ const Profile = () => {
               disabled={passwordResetSending()}
               class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
             >
-              {passwordResetSending() ? "Sending..." : "Reset Password"}
+              {passwordResetSending()
+                ? t("profile.sendingPassword")
+                : t("profile.resetPassword")}
             </button>
           </div>
         </div>
