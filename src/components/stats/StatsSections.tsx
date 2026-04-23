@@ -47,12 +47,47 @@ const formatTableValue = (value: number | null) => {
 const formatPercentageValue = (value: number | null) =>
   value == null ? "-" : `${value.toFixed(1)}%`;
 
+const distanceRangeTranslationKeys: Record<string, string> = {
+  "0 to 3": "0_3",
+  "4 to 7": "4_7",
+  "8 to 11": "8_11",
+  "12 to 15": "12_15",
+  "16 to 20": "16_20",
+  "21 to 30": "21_30",
+  "31 to 40": "31_40",
+  "41 to 50": "41_50",
+  "51 to 60": "51_60",
+  "61 to 74": "61_74",
+  "75 to 119": "75_119",
+  "120+": "120_plus",
+};
+
+const formatDistanceRange = (
+  distanceRange: string,
+  translationPrefix: string | undefined,
+  t: ReturnType<typeof useTransContext>[0],
+) => {
+  if (!translationPrefix) {
+    return distanceRange;
+  }
+
+  const translationKey = distanceRangeTranslationKeys[distanceRange];
+  if (!translationKey) {
+    return distanceRange;
+  }
+
+  return t(`${translationPrefix}.${translationKey}`, {
+    defaultValue: distanceRange,
+  });
+};
+
 function StatsSection(props: {
   chartTitle: string;
   description: string;
   emptyMessage: string;
   hideChart?: boolean;
   hideDistanceRange?: boolean;
+  distanceRangeTranslationPrefix?: string;
   showFairwayColumns?: boolean;
   rows: DistanceStatsRow[];
   t: ReturnType<typeof useTransContext>[0];
@@ -81,8 +116,15 @@ function StatsSection(props: {
     };
   });
 
+  const displayDistanceRange = (distanceRange: string) =>
+    formatDistanceRange(
+      distanceRange,
+      props.distanceRangeTranslationPrefix,
+      props.t,
+    );
+
   const chartData = createMemo(() => ({
-    labels: props.rows.map((row) => row.distance_range),
+    labels: props.rows.map((row) => displayDistanceRange(row.distance_range)),
     datasets: [
       {
         label: props.t("stats.chart.average"),
@@ -195,7 +237,9 @@ function StatsSection(props: {
               {props.rows.map((row) => (
                 <tr class='border-b border-slate-100 last:border-b-0'>
                   <Show when={!props.hideDistanceRange}>
-                    <td class='px-4 py-3'>{row.distance_range}</td>
+                    <td class='px-4 py-3'>
+                      {displayDistanceRange(row.distance_range)}
+                    </td>
                   </Show>
                   <td class='px-4 py-3'>{row.shots_in_group}</td>
                   <td class='px-4 py-3'>{formatSignedValue(row.avg_sg_value)}</td>
@@ -244,6 +288,7 @@ export function StatsSections(props: {
           description={props.t("stats.putting.description")}
           emptyMessage={props.t("stats.putting.empty")}
           rows={props.stats?.putting.rows ?? []}
+          distanceRangeTranslationPrefix='stats.putting.ranges'
           t={props.t}
         />
         <StatsSection

@@ -139,7 +139,21 @@
     "putting": {
       "title": "Putting",
       "description": "Putting strokes gained grouped by distance.",
-      "empty": "No putting stats were returned for your latest rounds."
+      "empty": "No putting stats were returned for your latest rounds.",
+      "ranges": {
+        "0_3": "0 to 3 ft",
+        "4_7": "4 to 7 ft",
+        "8_11": "8 to 11 ft",
+        "12_15": "12 to 15 ft",
+        "16_20": "16 to 20 ft",
+        "21_30": "21 to 30 ft",
+        "31_40": "31 to 40 ft",
+        "41_50": "41 to 50 ft",
+        "51_60": "51 to 60 ft",
+        "61_74": "61 to 74 ft",
+        "75_119": "75 to 119 ft",
+        "120_plus": "120+ ft"
+      }
     },
     "driving": {
       "title": "Driving",

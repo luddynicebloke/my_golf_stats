@@ -139,7 +139,21 @@
     "putting": {
       "title": "Putting",
       "description": "Strokes gained au putting regroupés par distance.",
-      "empty": "Aucune statistique de putting n'a été trouvée pour vos dernières parties."
+      "empty": "Aucune statistique de putting n'a été trouvée pour vos dernières parties.",
+      "ranges": {
+        "0_3": "<1m",
+        "4_7": "1 - 2m",
+        "8_11": "2 - 3m",
+        "12_15": "4 - 5m",
+        "16_20": "5 - 6m",
+        "21_30": "6 - 9m",
+        "31_40": "9 - 12m",
+        "41_50": "12 - 15m",
+        "51_60": "16 - 18m",
+        "61_74": "19 - 23m",
+        "75_119": "23 - 36m",
+        "120_plus": ">36m"
+      }
     },
     "driving": {
       "title": "Driving",
