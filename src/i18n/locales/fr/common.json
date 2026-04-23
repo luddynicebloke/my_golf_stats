@@ -165,12 +165,26 @@
     "approach": {
       "title": "Approches",
       "description": "Strokes gained d'approche regroupés par distance.",
-      "empty": "Aucune statistique d'approche n'a été trouvée pour vos dernières parties."
+      "empty": "Aucune statistique d'approche n'a été trouvée pour vos dernières parties.",
+      "ranges": {
+        "31_60": "30 - 55m",
+        "61_90": "55 - 85m",
+        "91_120": "85 - 110m",
+        "121_150": "110 - 140m",
+        "151_200": "140 - 180m",
+        "201_plus": ">180m"
+      }
     },
     "chipping": {
       "title": "Chipping",
       "description": "Strokes gained au chipping, de 1 à 30, regroupés par distance.",
-      "empty": "Aucune statistique de chipping n'a été trouvée pour vos dernières parties."
+      "empty": "Aucune statistique de chipping n'a été trouvée pour vos dernières parties.",
+      "ranges": {
+        "1_10": "<10m",
+        "11_20": "10 - 20m",
+        "21_30": "20 - 30m",
+        "31_plus": ">30m"
+      }
     },
     "table": {
       "distanceRange": "Plage de distance",

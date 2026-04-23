@@ -165,12 +165,26 @@
     "approach": {
       "title": "Approaches",
       "description": "Approach strokes gained grouped by distance.",
-      "empty": "No approach stats were returned for your latest rounds."
+      "empty": "No approach stats were returned for your latest rounds.",
+      "ranges": {
+        "31_60": "31 to 60 yds",
+        "61_90": "61 to 90 yds",
+        "91_120": "91 to 120 yds",
+        "121_150": "121 to 150 yds",
+        "151_200": "151 to 200 yds",
+        "201_plus": "201+ yds"
+      }
     },
     "chipping": {
       "title": "Chipping",
       "description": "Chipping strokes gained from 1 to 30 grouped by distance.",
-      "empty": "No chipping stats were returned for your latest rounds."
+      "empty": "No chipping stats were returned for your latest rounds.",
+      "ranges": {
+        "1_10": "1 to 10 yds",
+        "11_20": "11 to 20 yds",
+        "21_30": "21 to 30 yds",
+        "31_plus": "31+ yds"
+      }
     },
     "table": {
       "distanceRange": "Distance Range",

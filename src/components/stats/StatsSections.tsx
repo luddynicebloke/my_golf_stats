@@ -48,18 +48,27 @@ const formatPercentageValue = (value: number | null) =>
   value == null ? "-" : `${value.toFixed(1)}%`;
 
 const distanceRangeTranslationKeys: Record<string, string> = {
+  "1 to 10": "1_10",
   "0 to 3": "0_3",
   "4 to 7": "4_7",
   "8 to 11": "8_11",
   "12 to 15": "12_15",
   "16 to 20": "16_20",
+  "11 to 20": "11_20",
   "21 to 30": "21_30",
   "31 to 40": "31_40",
+  "31 to 60": "31_60",
   "41 to 50": "41_50",
   "51 to 60": "51_60",
   "61 to 74": "61_74",
+  "61 to 90": "61_90",
   "75 to 119": "75_119",
+  "91 to 120": "91_120",
   "120+": "120_plus",
+  "121 to 150": "121_150",
+  "151 to 200": "151_200",
+  "31+": "31_plus",
+  "201+": "201_plus",
 };
 
 const formatDistanceRange = (
@@ -296,6 +305,7 @@ export function StatsSections(props: {
           description={props.t("stats.approach.description")}
           emptyMessage={props.t("stats.approach.empty")}
           rows={props.stats?.approach.rows ?? []}
+          distanceRangeTranslationPrefix='stats.approach.ranges'
           t={props.t}
         />
         <StatsSection
@@ -303,6 +313,7 @@ export function StatsSections(props: {
           description={props.t("stats.chipping.description")}
           emptyMessage={props.t("stats.chipping.empty")}
           rows={props.stats?.chipping.rows ?? []}
+          distanceRangeTranslationPrefix='stats.chipping.ranges'
           t={props.t}
         />
       </div>
