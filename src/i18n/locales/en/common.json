@@ -106,13 +106,21 @@
       "empty": "No data available",
       "SG": {
         "tee": "Off the Tee",
-        "approach": "Approach > 120",
+        "approach": "Approach",
         "longApproach": "Long approach",
         "mediumApproach": "Medium approach",
         "shortApproach": "Short approach",
         "chipping": "Chipping",
         "arroundTheGreen": "Around the green",
         "putting": "Putting"
+      },
+      "ranges": {
+        "approach": ">120 yds",
+        "longApproach": "91-120 yds",
+        "mediumApproach": "61-90 yds",
+        "shortApproach": "31-60 yds",
+        "chipping": "11-30 yds",
+        "arroundTheGreen": "<=10 yds"
       }
     },
     "latestRounds": {

@@ -7,7 +7,7 @@ import DashboardChart from "../components/dashboard/dashboardChart";
 import LatestRounds from "../components/dashboard/latestRounds";
 import PlayerSelector from "../components/pro/PlayerSelector";
 import { useAuth } from "../context/AuthProvider";
-import { normalizeDistanceUnit, type DistanceUnit } from "../lib/distance";
+import { normalizeDistanceUnit } from "../lib/distance";
 import { supabase } from "../supabase/client";
 import type { TLatestRound, TStrokesGained } from "../lib/definitions";
 
@@ -32,7 +32,6 @@ type StrokesGainedCategory =
 
 type DashboardStatsParams = {
   userId: string;
-  distanceUnit: DistanceUnit;
 };
 
 type DashboardStatsRpcRow = {
@@ -60,8 +59,6 @@ type DashboardSgCategoryStat = {
   category: StrokesGainedCategory;
   score: number;
 };
-
-const YARDS_TO_METRES = 0.9144;
 
 const strokesGainedCategoryTranslationKeys: Record<
   StrokesGainedCategory,
@@ -98,48 +95,17 @@ const formatWholeNumber = (value: number | null) =>
 const formatSignedWholeNumber = (value: number | null) =>
   value == null ? "-" : `${value > 0 ? "+" : ""}${Math.round(value)}`;
 
-const formatRangeValue = (yards: number, unit: DistanceUnit) =>
-  unit === "yards" ? yards : Math.round(yards * YARDS_TO_METRES);
-
-const getDistanceRangeLabel = (
-  minYards: number | null,
-  maxYards: number,
-  unit: DistanceUnit,
-) => {
-  const unitLabel = unit === "yards" ? "yds" : "m";
-  const maxLabel = formatRangeValue(maxYards, unit);
-
-  if (minYards == null) {
-    return `<=${maxLabel} ${unitLabel}`;
-  }
-
-  const minLabel = formatRangeValue(minYards, unit);
-  return `${minLabel}-${maxLabel} ${unitLabel}`;
-};
-
 const getCategoryLabel = (
   category: StrokesGainedCategory,
-  unit: DistanceUnit,
   t: ReturnType<typeof useTransContext>[0],
 ) => {
-  const baseLabel = t(
-    `dashboard.chart.SG.${strokesGainedCategoryTranslationKeys[category]}`,
-  );
+  const categoryKey = strokesGainedCategoryTranslationKeys[category];
+  const baseLabel = t(`dashboard.chart.SG.${categoryKey}`);
+  const rangeLabel = t(`dashboard.chart.ranges.${categoryKey}`, {
+    defaultValue: "",
+  });
 
-  switch (category) {
-    case "aroundTheGreen":
-      return `${baseLabel} (${getDistanceRangeLabel(null, 10, unit)})`;
-    case "chipping":
-      return `${baseLabel} (${getDistanceRangeLabel(11, 30, unit)})`;
-    case "shortApproach":
-      return `${baseLabel} (${getDistanceRangeLabel(31, 60, unit)})`;
-    case "mediumApproach":
-      return `${baseLabel} (${getDistanceRangeLabel(61, 90, unit)})`;
-    case "longApproach":
-      return `${baseLabel} (${getDistanceRangeLabel(91, 120, unit)})`;
-    default:
-      return baseLabel;
-  }
+  return rangeLabel ? `${baseLabel} (${rangeLabel})` : baseLabel;
 };
 
 const isLatestRoundArray = (
@@ -152,7 +118,6 @@ const isCategoryArray = (
 
 const fetchDashboardCardStats = async ({
   userId,
-  distanceUnit,
 }: DashboardStatsParams): Promise<DashboardCardStats> => {
   if (!userId) {
     return emptyDashboardCardStats();
@@ -213,13 +178,12 @@ export default function Dashboard() {
   const [cardStats] = createResource(
     () => ({
       userId: auth.targetUserId() ?? "",
-      distanceUnit: distanceUnit(),
     }),
     fetchDashboardCardStats,
   );
   const chartStrokesGained = createMemo<TStrokesGained[]>(() =>
     (cardStats()?.strokesGainedByCategory ?? []).map((item) => ({
-      title: getCategoryLabel(item.category, distanceUnit(), t),
+      title: getCategoryLabel(item.category, t),
       score: item.score,
     })),
   );

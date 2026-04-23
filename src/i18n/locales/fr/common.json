@@ -106,13 +106,21 @@
       "empty": "Aucune donnée disponible",
       "SG": {
         "tee": "Départ",
-        "approach": "Approche > 120",
+        "approach": "Approche",
         "longApproach": "Approche longue",
         "mediumApproach": "Approche moyenne",
         "shortApproach": "Approche courte",
         "chipping": "Chipping",
         "arroundTheGreen": "Autour du green",
         "putting": "Putting"
+      },
+      "ranges": {
+        "approach": ">110m",
+        "longApproach": "85-110m",
+        "mediumApproach": "55-85m",
+        "shortApproach": "30-55m",
+        "chipping": "10-30m",
+        "arroundTheGreen": "<=10m"
       }
     },
     "latestRounds": {
