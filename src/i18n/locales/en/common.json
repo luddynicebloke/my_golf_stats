@@ -461,6 +461,8 @@
     "currentHoleShots": "Current Hole Shots",
     "deleteLastShot": "Delete last shot",
     "noLocalShots": "No local shots saved for this hole yet.",
+    "applyPenalty": "Apply Penalty",
+    "appliedPenaltyValue": "Applied penalty {{count}}",
     "penaltyValue": "Penalty {{count}}",
     "penalties": {
       "oobLostBall": "OOB / Lost Ball",

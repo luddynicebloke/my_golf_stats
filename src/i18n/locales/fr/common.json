@@ -461,6 +461,8 @@
     "currentHoleShots": "Coups du trou actuel",
     "deleteLastShot": "Supprimer le dernier coup",
     "noLocalShots": "Aucun coup local enregistré pour ce trou.",
+    "applyPenalty": "Appliquer la pénalité",
+    "appliedPenaltyValue": "Pénalité appliquée {{count}}",
     "penaltyValue": "Pénalité {{count}}",
     "penalties": {
       "oobLostBall": "Hors limites / balle perdue",

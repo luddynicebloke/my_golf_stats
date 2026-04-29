@@ -105,6 +105,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   const [penaltyEnabled, setPenaltyEnabled] = createSignal(false);
   const [penaltyType, setPenaltyType] = createSignal<PenaltyType>(null);
   const [penaltyShots, setPenaltyShots] = createSignal<number | null>(null);
+  const [appliedPenaltyShots, setAppliedPenaltyShots] = createSignal(0);
   const [recovery, setRecovery] = createSignal(false);
   const [holedOut, setHoledOut] = createSignal(false);
   const [shotsByHole, setShotsByHole] = createSignal<
@@ -118,7 +119,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
     [...currentHoleShots()].reverse(),
   );
   const currentShotNumber = createMemo(
-    () => getTotalShotCount(currentHoleShots()) + 1,
+    () => getTotalShotCount(currentHoleShots()) + appliedPenaltyShots() + 1,
   );
   const currentHoleShotCount = createMemo(() => currentHoleShots().length);
   const teeDisabled = createMemo(() => {
@@ -209,6 +210,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
     const defaultLie = getDefaultLie(hole);
     setBallLie(defaultLie);
     setSliderValue(getDefaultDistance(hole, defaultLie, props.distanceUnit));
+    setAppliedPenaltyShots(0);
     resetFlags();
   };
 
@@ -249,6 +251,18 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
     });
   };
 
+  const applyPenalty = () => {
+    const selectedPenaltyShots = Math.max(0, penaltyShots() ?? 0);
+
+    if (selectedPenaltyShots === 0) {
+      resetFlags();
+      return;
+    }
+
+    setAppliedPenaltyShots((current) => current + selectedPenaltyShots);
+    resetFlags();
+  };
+
   const addLocalShot = async () => {
     const activeHole = props.hole;
     const activeHoleNumber = activeHole.hole_number;
@@ -263,7 +277,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       shotNumber: currentShotNumber(),
       lieType: ballLie(),
       distanceToPin: storedDistanceToPin,
-      penaltyShots: penaltyEnabled() ? Math.max(0, penaltyShots() ?? 0) : 0,
+      penaltyShots: appliedPenaltyShots(),
       recovery: recovery(),
       holedOut: holedOut(),
     };
@@ -285,6 +299,7 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       ...current,
       [activeHoleNumber]: updatedShots,
     }));
+    setAppliedPenaltyShots(0);
     resetFlags();
   };
 
@@ -508,9 +523,24 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
                     </div>
                   </div>
                 </div>
+                <button
+                  type='button'
+                  class='w-full rounded-md border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-800 transition-colors hover:bg-cyan-100'
+                  onClick={applyPenalty}
+                >
+                  {t("scoreEntry.applyPenalty")}
+                </button>
               </div>
             </Show>
           </div>
+
+          <Show when={appliedPenaltyShots() > 0}>
+            <p class='mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800'>
+              {t("scoreEntry.appliedPenaltyValue", {
+                count: appliedPenaltyShots(),
+              })}
+            </p>
+          </Show>
 
           <div class='mt-4 flex flex-wrap items-center justify-between gap-3'>
             <button
