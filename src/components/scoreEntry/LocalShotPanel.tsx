@@ -34,8 +34,9 @@ const FEET_TO_METRES = 0.3048;
 const METRES_TO_FEET = 3.28084;
 const GREEN_DEFAULT_FEET = 15;
 const GREEN_MIN_FEET = 1;
-const GREEN_MAX_FEET = 100;
+const GREEN_MAX_FEET = 70;
 const MIN_TEE_SHOT_DISTANCE_METRES = 138;
+const SHORT_GAME_MAX_YARDS = 150;
 
 const roundMetresForGreenUi = (metres: number): number =>
   Math.round(metres * 2) / 2;
@@ -84,9 +85,6 @@ const getPenaltyShotsForType = (penaltyType: PenaltyType): number => {
   return 0;
 };
 
-const greenPresetFeet = [1, 3, 5, 8, 12, 20] as const;
-const shortGamePresetMetres = [5, 10, 20, 30, 50] as const;
-
 const clampTeeShotDistance = (distanceMetres: number, lie: BallLie): number =>
   lie === "Tee"
     ? Math.max(distanceMetres, MIN_TEE_SHOT_DISTANCE_METRES)
@@ -94,6 +92,29 @@ const clampTeeShotDistance = (distanceMetres: number, lie: BallLie): number =>
 
 const getTotalShotCount = (shots: LocalShot[]): number =>
   shots.reduce((total, shot) => total + 1 + shot.penaltyShots, 0);
+
+const getShortGameMax = (distanceUnit: DistanceUnit): number =>
+  distanceUnit === "metres"
+    ? convertUnitToMetres(SHORT_GAME_MAX_YARDS, "yards")
+    : SHORT_GAME_MAX_YARDS;
+
+const getNextDistanceMax = (
+  currentDistance: number,
+  distanceUnit: DistanceUnit,
+): number =>
+  Math.max(getShortGameMax(distanceUnit), Math.round(currentDistance));
+
+const getNextGreenDistanceMax = (
+  currentDistance: number,
+  distanceUnit: DistanceUnit,
+): number => {
+  const currentDistanceFeet = convertGreenUiValueToFeet(
+    currentDistance,
+    distanceUnit,
+  );
+
+  return convertFeetToGreenUiValue(currentDistanceFeet + 10, distanceUnit);
+};
 
 export default function LocalShotPanel(props: LocalShotPanelProps) {
   let latestShotElement: HTMLDivElement | undefined;
@@ -106,6 +127,10 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
   const [penaltyType, setPenaltyType] = createSignal<PenaltyType>(null);
   const [penaltyShots, setPenaltyShots] = createSignal<number | null>(null);
   const [appliedPenaltyShots, setAppliedPenaltyShots] = createSignal(0);
+  const [distanceSliderMax, setDistanceSliderMax] = createSignal<number | null>(
+    null,
+  );
+  const [greenSliderMax, setGreenSliderMax] = createSignal<number | null>(null);
   const [recovery, setRecovery] = createSignal(false);
   const [holedOut, setHoledOut] = createSignal(false);
   const [shotsByHole, setShotsByHole] = createSignal<
@@ -148,14 +173,22 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       ? convertFeetToGreenUiValue(GREEN_MIN_FEET, props.distanceUnit)
       : 1,
   );
-  const sliderMax = createMemo(() =>
-    isGreenLie()
-      ? convertFeetToGreenUiValue(GREEN_MAX_FEET, props.distanceUnit)
-      : Math.max(
-          convertMetresToUnit(props.hole.distanceMetres, props.distanceUnit),
-          convertMetresToUnit(549, props.distanceUnit),
-        ),
+  const fullDistanceSliderMax = createMemo(() =>
+    Math.max(
+      convertMetresToUnit(props.hole.distanceMetres, props.distanceUnit),
+      getShortGameMax(props.distanceUnit),
+    ),
   );
+  const sliderMax = createMemo(() => {
+    if (isGreenLie()) {
+      return (
+        greenSliderMax() ??
+        convertFeetToGreenUiValue(GREEN_MAX_FEET, props.distanceUnit)
+      );
+    }
+
+    return distanceSliderMax() ?? fullDistanceSliderMax();
+  });
   const sliderStep = createMemo(() => {
     if (isGreenLie() && props.distanceUnit === "metres") {
       return 0.5;
@@ -168,36 +201,6 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       Number((sliderMin() + sliderStep() * index).toFixed(1)),
     ),
   );
-  const showDistancePresets = createMemo(() => {
-    if (isGreenLie()) {
-      return true;
-    }
-
-    const currentDistanceMetres = convertUnitToMetres(
-      sliderValue(),
-      props.distanceUnit,
-    );
-    return currentDistanceMetres <= 50;
-  });
-  const distancePresets = createMemo(() => {
-    if (isGreenLie()) {
-      return greenPresetFeet.map((feet) => ({
-        label:
-          props.distanceUnit === "metres"
-            ? `${formatGreenUiValue(feet, props.distanceUnit)} m`
-            : `${feet} ft`,
-        value: convertFeetToGreenUiValue(feet, props.distanceUnit),
-      }));
-    }
-
-    return shortGamePresetMetres.map((metres) => ({
-      label: `${convertMetresToUnit(metres, props.distanceUnit)} ${getDistanceUnitLabel(
-        props.distanceUnit,
-      ).toLowerCase()}`,
-      value: convertMetresToUnit(metres, props.distanceUnit),
-    }));
-  });
-
   const resetFlags = () => {
     setPenaltyEnabled(false);
     setPenaltyType(null);
@@ -210,6 +213,8 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
     const defaultLie = getDefaultLie(hole);
     setBallLie(defaultLie);
     setSliderValue(getDefaultDistance(hole, defaultLie, props.distanceUnit));
+    setDistanceSliderMax(null);
+    setGreenSliderMax(null);
     setAppliedPenaltyShots(0);
     resetFlags();
   };
@@ -299,6 +304,15 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
       ...current,
       [activeHoleNumber]: updatedShots,
     }));
+    if (isGreenLie()) {
+      setGreenSliderMax(
+        getNextGreenDistanceMax(sliderValue(), props.distanceUnit),
+      );
+    } else {
+      setDistanceSliderMax(
+        getNextDistanceMax(sliderValue(), props.distanceUnit),
+      );
+    }
     setAppliedPenaltyShots(0);
     resetFlags();
   };
@@ -385,22 +399,6 @@ export default function LocalShotPanel(props: LocalShotPanelProps) {
           r6={sliderMarks()[5]}
           r7={sliderMarks()[6]}
         />
-
-        <Show when={showDistancePresets()}>
-          <div class='mb-4 flex flex-wrap gap-2'>
-            <For each={distancePresets()}>
-              {(preset) => (
-                <button
-                  type='button'
-                  class='rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100'
-                  onClick={() => setSliderValue(preset.value)}
-                >
-                  {preset.label}
-                </button>
-              )}
-            </For>
-          </div>
-        </Show>
 
         <div class='mt-2'>
           {/* <p class='mb-3 text-sm font-medium text-slate-700'>Ball lie</p> */}
