@@ -7,7 +7,7 @@ import {
 } from "../../supabase/roundSummary";
 import type { DistanceUnit } from "../../lib/distance";
 
-const formatAverageValue = (value: number | null) => {
+const formatSgValue = (value: number | null) => {
   if (value == null) {
     return "-";
   }
@@ -47,34 +47,34 @@ function SummaryContent(props: {
   const [t] = useTransContext();
   const approachLabel =
     props.distanceUnit === "yards"
-      ? t("roundSummary.approachAverageYards")
-      : t("roundSummary.approachAverageMetres");
+      ? t("roundSummary.approachTotalYards")
+      : t("roundSummary.approachTotalMetres");
   const shortGameLabel =
     props.distanceUnit === "yards"
-      ? t("roundSummary.shortGameAverageYards")
-      : t("roundSummary.shortGameAverageMetres");
+      ? t("roundSummary.shortGameTotalYards")
+      : t("roundSummary.shortGameTotalMetres");
 
   return (
     <dl class='mt-4'>
       <SummaryRow
-        label={t("roundSummary.offTeeAverage")}
-        value={formatAverageValue(props.summary.offTeeAverage)}
+        label={t("roundSummary.offTeeTotal")}
+        value={formatSgValue(props.summary.offTeeTotal)}
       />
       <SummaryRow
         label={approachLabel}
-        value={formatAverageValue(props.summary.approachAverage)}
+        value={formatSgValue(props.summary.approachTotal)}
       />
       <SummaryRow
         label={shortGameLabel}
-        value={formatAverageValue(props.summary.shortGameAverage)}
+        value={formatSgValue(props.summary.shortGameTotal)}
       />
       <SummaryRow
-        label={t("roundSummary.puttingAverage")}
-        value={formatAverageValue(props.summary.puttingAverage)}
+        label={t("roundSummary.puttingTotal")}
+        value={formatSgValue(props.summary.puttingTotal)}
       />
       <SummaryRow
         label={t("roundSummary.totalSg")}
-        value={formatAverageValue(props.summary.totalSg)}
+        value={formatSgValue(props.summary.totalSg)}
       />
       <SummaryRow
         label={t("roundSummary.fairwaysHitFromTee")}

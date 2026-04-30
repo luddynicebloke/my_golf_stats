@@ -39,14 +39,14 @@ type CategoryStats = {
 const METRES_TO_YARDS = 1.09361;
 
 export type RoundSgSummary = {
-  approachAverage: number | null;
+  approachTotal: number | null;
   fairwaysHitFromTee: number;
   greenHoledOutDistanceFeet: number;
   greensInRegulation: number;
-  offTeeAverage: number | null;
+  offTeeTotal: number | null;
   putts: number;
-  puttingAverage: number | null;
-  shortGameAverage: number | null;
+  puttingTotal: number | null;
+  shortGameTotal: number | null;
   totalSg: number | null;
 };
 
@@ -63,8 +63,8 @@ const createCategoryStats = (): CategoryStats => ({
   sum: 0,
 });
 
-const averageFromStats = (stats: CategoryStats): number | null =>
-  stats.count === 0 ? null : stats.sum / stats.count;
+const totalFromStats = (stats: CategoryStats): number | null =>
+  stats.count === 0 ? null : stats.sum;
 
 const normalizeLieType = (lieType: string) => lieType.trim().toLowerCase();
 
@@ -108,14 +108,14 @@ export const fetchRoundSgSummary = async (
 
   if (roundHoleIds.length === 0) {
     return {
-      approachAverage: null,
+      approachTotal: null,
       fairwaysHitFromTee: 0,
       greenHoledOutDistanceFeet: 0,
       greensInRegulation: 0,
-      offTeeAverage: null,
+      offTeeTotal: null,
       putts: 0,
-      puttingAverage: null,
-      shortGameAverage: null,
+      puttingTotal: null,
+      shortGameTotal: null,
       totalSg: null,
     };
   }
@@ -232,14 +232,14 @@ export const fetchRoundSgSummary = async (
   }
 
   return {
-    approachAverage: averageFromStats(approach),
+    approachTotal: totalFromStats(approach),
     fairwaysHitFromTee,
     greenHoledOutDistanceFeet,
     greensInRegulation,
-    offTeeAverage: averageFromStats(offTee),
+    offTeeTotal: totalFromStats(offTee),
     putts,
-    puttingAverage: averageFromStats(putting),
-    shortGameAverage: averageFromStats(shortGame),
+    puttingTotal: totalFromStats(putting),
+    shortGameTotal: totalFromStats(shortGame),
     totalSg: totalSgCount === 0 ? null : totalSgSum,
   };
 };
