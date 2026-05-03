@@ -472,6 +472,7 @@
       "invalidRound": "Invalid round id.",
       "loadRound": "Failed to load round details.",
       "loadScorecard": "Failed to load scorecard.",
+      "requestTimeout": "The request took too long. Please try again.",
       "notFinalised": "Round was not finalised.",
       "markIncomplete": "Failed to mark round incomplete.",
       "completeRound": "Failed to complete round: {{message}}",

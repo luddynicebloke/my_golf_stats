@@ -472,6 +472,7 @@
       "invalidRound": "ID de partie invalide.",
       "loadRound": "Impossible de charger les détails de la partie.",
       "loadScorecard": "Impossible de charger la carte.",
+      "requestTimeout": "La requête a pris trop de temps. Veuillez réessayer.",
       "notFinalised": "La partie n'a pas été finalisée.",
       "markIncomplete": "Impossible de marquer la partie comme incomplète.",
       "completeRound": "Impossible de terminer la partie : {{message}}",

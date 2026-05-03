@@ -4,7 +4,13 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import { fetchAccessiblePlayersForPro, type AccessiblePlayer } from "../supabase/proAccess";
 
-import { createSignal, createContext, useContext, onMount } from "solid-js";
+import {
+  createSignal,
+  createContext,
+  useContext,
+  onCleanup,
+  onMount,
+} from "solid-js";
 
 type UserProfile = {
   email: string;
@@ -57,6 +63,21 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>();
 const SELECTED_PLAYER_STORAGE_KEY = "sg:selected-pro-player-id";
+const AUTH_REQUEST_TIMEOUT_MS = 15000;
+
+const withAuthTimeout = <T,>(
+  request: PromiseLike<T>,
+  message: string,
+): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      reject(new Error(message));
+    }, AUTH_REQUEST_TIMEOUT_MS);
+
+    void Promise.resolve(request)
+      .then(resolve, reject)
+      .finally(() => window.clearTimeout(timeoutId));
+  });
 
 export const AuthProvider: ParentComponent = (props) => {
   const [user, setUser] = createSignal<User | null>(null);
@@ -74,6 +95,8 @@ export const AuthProvider: ParentComponent = (props) => {
     : window.localStorage.getItem(SELECTED_PLAYER_STORAGE_KEY));
   const [loading, setLoading] = createSignal<boolean>(true);
   const [initialized, setInitialized] = createSignal<boolean>(false);
+  let authHydrationRequestId = 0;
+  let authChangeTimerId: number | undefined;
 
   const ensureProfileExists = async (
     currentUser: User,
@@ -214,46 +237,113 @@ export const AuthProvider: ParentComponent = (props) => {
     setProfile(data as ProfileData);
   };
 
-  onMount(async () => {
-    // get current session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    setSession(session ?? null);
-    setUser(session?.user ?? null);
-    setMetaData(session?.user?.user_metadata as UserMetadata | null);
-    if (session?.user) {
-      await fetchUserRole(session.user.id);
-      await refreshProfile();
-      await refreshAccessiblePlayers();
-    } else {
+  const clearSignedOutState = () => {
+    setRole(null);
+    setProfile(null);
+    setAccessiblePlayers([]);
+    setSelectedPlayerId(null);
+  };
+
+  const hydrateSession = async (
+    nextSession: Session | null,
+    completeInitialLoad = false,
+  ) => {
+    const requestId = ++authHydrationRequestId;
+
+    setLoading(true);
+    setSession(nextSession ?? null);
+    setUser(nextSession?.user ?? null);
+    setMetaData(nextSession?.user?.user_metadata as UserMetadata | null);
+
+    try {
+      if (!nextSession?.user) {
+        clearSignedOutState();
+        return;
+      }
+
+      await withAuthTimeout(
+        fetchUserRole(nextSession.user.id),
+        "Timed out while loading the user role.",
+      );
+      if (requestId !== authHydrationRequestId) return;
+
+      await withAuthTimeout(
+        refreshProfile(),
+        "Timed out while loading the user profile.",
+      );
+      if (requestId !== authHydrationRequestId) return;
+
+      await withAuthTimeout(
+        refreshAccessiblePlayers(),
+        "Timed out while loading accessible players.",
+      );
+    } catch (error) {
+      if (requestId !== authHydrationRequestId) return;
+
+      console.error("Failed to hydrate auth state:", error);
+      setRole(null);
       setProfile(null);
       setAccessiblePlayers([]);
-      setSelectedPlayerId(null);
-    }
-    setLoading(false);
-    setInitialized(true);
-
-    // Listen for session changes
-    const { data: sub } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        setSession(newSession ?? null);
-        setUser(newSession?.user ?? null);
-        setMetaData(newSession?.user?.user_metadata as UserMetadata | null);
-        if (newSession?.user) {
-          await fetchUserRole(newSession.user.id);
-          await refreshProfile();
-          await refreshAccessiblePlayers();
-        } else {
-          setRole(null);
-          setProfile(null);
-          setAccessiblePlayers([]);
-          setSelectedPlayerId(null);
+    } finally {
+      if (requestId !== authHydrationRequestId) {
+        if (completeInitialLoad) {
+          setInitialized(true);
         }
+        return;
+      }
+
+      setLoading(false);
+      if (completeInitialLoad) {
+        setInitialized(true);
+      }
+    }
+  };
+
+  onMount(() => {
+    void (async () => {
+      try {
+        const {
+          data: { session },
+        } = await withAuthTimeout(
+          supabase.auth.getSession(),
+          "Timed out while loading the current auth session.",
+        );
+
+        await hydrateSession(session ?? null, true);
+      } catch (error) {
+        console.error("Failed to load auth session:", error);
+
+        if (!user()) {
+          setSession(null);
+          setUser(null);
+          setMetaData(null);
+          clearSignedOutState();
+        }
+
+        setLoading(false);
+        setInitialized(true);
+      }
+    })();
+
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        if (authChangeTimerId != null) {
+          window.clearTimeout(authChangeTimerId);
+        }
+
+        authChangeTimerId = window.setTimeout(() => {
+          void hydrateSession(newSession ?? null, false);
+        }, 0);
       },
     );
 
-    return () => sub.subscription.unsubscribe();
+    onCleanup(() => {
+      if (authChangeTimerId != null) {
+        window.clearTimeout(authChangeTimerId);
+      }
+
+      sub.subscription.unsubscribe();
+    });
   });
 
   // fetch profile when user changes

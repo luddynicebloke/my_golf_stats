@@ -46,6 +46,7 @@ type FinaliseRoundResponse = {
   part_finalised: boolean;
 };
 
+const SCORECARD_REQUEST_TIMEOUT_MS = 20000;
 const emptyHeader: RoundHeader = {
   courseName: "",
   teeColor: "",
@@ -76,6 +77,20 @@ const isAbortLikeError = (error: unknown): boolean => {
     error.message.includes("signal is aborted without reason")
   );
 };
+
+const withRequestTimeout = <T,>(
+  request: PromiseLike<T>,
+  message: string,
+): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      reject(new Error(message));
+    }, SCORECARD_REQUEST_TIMEOUT_MS);
+
+    void Promise.resolve(request)
+      .then(resolve, reject)
+      .finally(() => window.clearTimeout(timeoutId));
+  });
 
 export default function ScorecardEntry(props: { id: string }) {
   const roundId = Number(props.id);
@@ -146,11 +161,14 @@ export default function ScorecardEntry(props: { id: string }) {
     setLoadError(null);
 
     try {
-      const { data: round, error: roundError } = await supabase
-        .from("rounds")
-        .select("tee_id, is_finalised, part_finalised, courses(name), tees(color)")
-        .eq("id", roundId)
-        .single();
+      const { data: round, error: roundError } = await withRequestTimeout(
+        supabase
+          .from("rounds")
+          .select("tee_id, is_finalised, part_finalised, courses(name), tees(color)")
+          .eq("id", roundId)
+          .single(),
+        t("scoreEntry.errors.requestTimeout"),
+      );
 
       if (requestId !== latestLoadRequestId) return;
 
@@ -176,11 +194,14 @@ export default function ScorecardEntry(props: { id: string }) {
       });
 
       const teeId = Number(round.tee_id);
-      const { data: holeRows, error: holeRowsError } = await supabase
-        .from("round_holes")
-        .select("id, hole_id, score, completed, holes(hole_number, par)")
-        .eq("round_id", roundId)
-        .order("id", { ascending: true });
+      const { data: holeRows, error: holeRowsError } = await withRequestTimeout(
+        supabase
+          .from("round_holes")
+          .select("id, hole_id, score, completed, holes(hole_number, par)")
+          .eq("round_id", roundId)
+          .order("id", { ascending: true }),
+        t("scoreEntry.errors.requestTimeout"),
+      );
 
       if (requestId !== latestLoadRequestId) return;
 
@@ -197,11 +218,16 @@ export default function ScorecardEntry(props: { id: string }) {
 
       const holeIds = (holeRows ?? []).map((row) => row.hole_id);
       const roundHoleIds = (holeRows ?? []).map((row) => Number(row.id));
-      const { data: yardageRows, error: yardageError } = await supabase
-        .from("hole_tee")
-        .select("hole_id, yardage")
-        .eq("tee_id", teeId)
-        .in("hole_id", holeIds);
+      const { data: yardageRows, error: yardageError } = holeIds.length === 0
+        ? { data: [], error: null }
+        : await withRequestTimeout(
+            supabase
+              .from("hole_tee")
+              .select("hole_id, yardage")
+              .eq("tee_id", teeId)
+              .in("hole_id", holeIds),
+            t("scoreEntry.errors.requestTimeout"),
+          );
 
       if (requestId !== latestLoadRequestId) return;
 
@@ -216,14 +242,19 @@ export default function ScorecardEntry(props: { id: string }) {
         return;
       }
 
-      const { data: shotRows, error: shotError } = await supabase
-        .from("shots")
-        .select(
-          "round_hole_id, shot_number, distance_to_pin, lie_type, penalty_strokes, recovery, holed_out",
-        )
-        .in("round_hole_id", roundHoleIds)
-        .order("round_hole_id", { ascending: true })
-        .order("shot_number", { ascending: true });
+      const { data: shotRows, error: shotError } = roundHoleIds.length === 0
+        ? { data: [], error: null }
+        : await withRequestTimeout(
+            supabase
+              .from("shots")
+              .select(
+                "round_hole_id, shot_number, distance_to_pin, lie_type, penalty_strokes, recovery, holed_out",
+              )
+              .in("round_hole_id", roundHoleIds)
+              .order("round_hole_id", { ascending: true })
+              .order("shot_number", { ascending: true }),
+            t("scoreEntry.errors.requestTimeout"),
+          );
 
       if (requestId !== latestLoadRequestId) return;
 
@@ -345,12 +376,16 @@ export default function ScorecardEntry(props: { id: string }) {
     setSaveStage("calculatingSg");
     setSaveStage("finalisingRound");
 
-    const { data: finaliseResult, error: finaliseRoundError } = await supabase
-      .rpc("finalise_round_with_sg", {
-        p_round_id: roundId,
-        p_part_finalised: partFinalised,
-      })
-      .single<FinaliseRoundResponse>();
+    const { data: finaliseResult, error: finaliseRoundError } =
+      await withRequestTimeout(
+        supabase
+          .rpc("finalise_round_with_sg", {
+            p_round_id: roundId,
+            p_part_finalised: partFinalised,
+          })
+          .single<FinaliseRoundResponse>(),
+        t("scoreEntry.errors.requestTimeout"),
+      );
 
     if (finaliseRoundError) {
       throw new Error(finaliseRoundError.message);
@@ -369,13 +404,16 @@ export default function ScorecardEntry(props: { id: string }) {
     setUpdatingRoundStatus(true);
 
     try {
-      const { error } = await supabase
-        .from("rounds")
-        .update({
-          is_finalised: false,
-          part_finalised: false,
-        })
-        .eq("id", roundId);
+      const { error } = await withRequestTimeout(
+        supabase
+          .from("rounds")
+          .update({
+            is_finalised: false,
+            part_finalised: false,
+          })
+          .eq("id", roundId),
+        t("scoreEntry.errors.requestTimeout"),
+      );
 
       if (error) {
         throw new Error(error.message);
@@ -429,32 +467,37 @@ export default function ScorecardEntry(props: { id: string }) {
 
       const score = getHoleScore(completedShots);
 
-      const { error: deleteExistingError } = await supabase
-        .from("shots")
-        .delete()
-        .eq("round_hole_id", hole.round_hole_id);
+      const { error: deleteExistingError } = await withRequestTimeout(
+        supabase.from("shots").delete().eq("round_hole_id", hole.round_hole_id),
+        t("scoreEntry.errors.requestTimeout"),
+      );
 
       if (deleteExistingError) {
         throw new Error(deleteExistingError.message);
       }
 
-      const { error: insertShotsError } = await supabase
-        .from("shots")
-        .insert(shotRows);
+      const { error: insertShotsError } = await withRequestTimeout(
+        supabase.from("shots").insert(shotRows),
+        t("scoreEntry.errors.requestTimeout"),
+      );
 
       if (insertShotsError) {
         throw new Error(insertShotsError.message);
       }
 
-      const { data: updatedHoles, error: updateHoleError } = await supabase
-        .from("round_holes")
-        .update({
-          score,
-          completed: true,
-        })
-        .eq("round_id", roundId)
-        .eq("hole_id", hole.hole_id)
-        .select("id");
+      const { data: updatedHoles, error: updateHoleError } =
+        await withRequestTimeout(
+          supabase
+            .from("round_holes")
+            .update({
+              score,
+              completed: true,
+            })
+            .eq("round_id", roundId)
+            .eq("hole_id", hole.hole_id)
+            .select("id"),
+          t("scoreEntry.errors.requestTimeout"),
+        );
 
       if (updateHoleError) {
         throw new Error(updateHoleError.message);
