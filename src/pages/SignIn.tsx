@@ -1,11 +1,12 @@
 import { createForm, required, reset } from "@modular-forms/solid";
 import { A, useNavigate } from "@solidjs/router";
-import { createSignal } from "solid-js";
+import { createEffect, createMemo, createSignal } from "solid-js";
 import { useTransContext } from "@mbarzda/solid-i18next";
 
 import TextInput from "../components/forms/TextInput";
 import LogoSG from "../assets/logo.png";
 import { supabase } from "../supabase/client";
+import { useAuth } from "../context/AuthProvider";
 
 type LoginFormProps = {
   email: string;
@@ -13,14 +14,28 @@ type LoginFormProps = {
 };
 
 export default function SignIn() {
+  const auth = useAuth();
   const [loading, setLoading] = createSignal(false);
+  const [waitingForAuth, setWaitingForAuth] = createSignal(false);
   const [submitError, setSubmitError] = createSignal("");
   const [loginForm, { Form, Field }] = createForm<LoginFormProps>();
   const [t] = useTransContext();
   const navigate = useNavigate();
+  const signingIn = createMemo(
+    () => loading() || waitingForAuth() || auth.loading(),
+  );
+
+  createEffect(() => {
+    if (!auth.initialized() || auth.loading() || !auth.user()) {
+      return;
+    }
+
+    navigate("/dashboard", { replace: true });
+  });
 
   const handleFormSubmit = async (values: LoginFormProps) => {
     setSubmitError("");
+    setWaitingForAuth(false);
     try {
       setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
@@ -34,7 +49,7 @@ export default function SignIn() {
       }
 
       reset(loginForm);
-      navigate("/dashboard");
+      setWaitingForAuth(true);
     } catch (error) {
       setSubmitError(t("errors.unexpected"));
       console.error("Unexpected error:", error);
@@ -117,9 +132,9 @@ export default function SignIn() {
               <button
                 class='inline-flex w-full justify-center self-auto rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 font-grotesk text-sm font-semibold text-cyan-800 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60'
                 type='submit'
-                disabled={loading()}
+                disabled={signingIn()}
               >
-                {loading() ? t("signin.signingIn") : t("signin.logInButton")}
+                {signingIn() ? t("signin.signingIn") : t("signin.logInButton")}
               </button>
             </Form>
           </div>
