@@ -5,7 +5,7 @@ import {
   For,
   Show,
 } from "solid-js";
-import { A, useNavigate } from "@solidjs/router";
+import { A, useNavigate, useSearchParams } from "@solidjs/router";
 
 import ConfirmationModal from "../components/ConfirmationModal";
 import PlayerSelector from "../components/pro/PlayerSelector";
@@ -95,6 +95,7 @@ export default function Rounds() {
   const [t] = useTransContext();
   const auth = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isReadOnly = () => auth.isReadOnly();
   const [page, setPage] = createSignal(1);
   const [rounds, { refetch }] = createResource(
@@ -121,6 +122,10 @@ export default function Rounds() {
   const [expandedRoundId, setExpandedRoundId] = createSignal<number | null>(
     null,
   );
+  const highlightedRoundId = () => {
+    const roundId = Number(searchParams.summaryRoundId);
+    return Number.isFinite(roundId) ? roundId : null;
+  };
   const distanceUnit = () =>
     normalizeDistanceUnit(auth.profile()?.preferred_distance_unit);
 
@@ -128,6 +133,20 @@ export default function Rounds() {
     if (!rounds.loading && page() > 1 && (rounds()?.rounds.length ?? 0) === 0) {
       setPage((currentPage) => Math.max(1, currentPage - 1));
     }
+  });
+
+  createEffect(() => {
+    const roundId = highlightedRoundId();
+    if (roundId == null || rounds.loading) {
+      return;
+    }
+
+    const roundExistsOnPage = rounds()?.rounds.some((round) => round.id === roundId);
+    if (!roundExistsOnPage) {
+      return;
+    }
+
+    setExpandedRoundId(roundId);
   });
 
   const openDeleteModal = (roundId: number) => {
@@ -146,6 +165,7 @@ export default function Rounds() {
     setExpandedRoundId((currentRoundId) =>
       currentRoundId === roundId ? null : roundId,
     );
+    setSearchParams({ summaryRoundId: undefined }, { replace: true });
   };
 
   const formatRoundScore = (round: RoundListItem) => {
@@ -450,6 +470,8 @@ export default function Rounds() {
                           <Show when={expandedRoundId() === round.id}>
                             <RoundSummaryDropdown
                               distanceUnit={distanceUnit()}
+                              onRerunComplete={refetch}
+                              partFinalised={round.partFinalised}
                               roundId={round.id}
                             />
                           </Show>
@@ -591,6 +613,8 @@ export default function Rounds() {
                               <td colSpan={7} class='px-4 py-4'>
                                 <RoundSummaryDropdown
                                   distanceUnit={distanceUnit()}
+                                  onRerunComplete={refetch}
+                                  partFinalised={round.partFinalised}
                                   roundId={round.id}
                                 />
                               </td>

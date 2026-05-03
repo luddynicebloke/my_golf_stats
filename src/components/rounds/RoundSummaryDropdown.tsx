@@ -1,9 +1,10 @@
-import { createResource, Show } from "solid-js";
+import { createResource, createSignal, Show } from "solid-js";
 import { useTransContext } from "@mbarzda/solid-i18next";
 
 import {
   type RoundSgSummary,
   fetchRoundSgSummary,
+  rerunRoundStrokesGained,
 } from "../../supabase/roundSummary";
 import type { DistanceUnit } from "../../lib/distance";
 
@@ -101,10 +102,14 @@ function SummaryContent(props: {
 
 export default function RoundSummaryDropdown(props: {
   distanceUnit: DistanceUnit;
+  onRerunComplete?: () => Promise<unknown> | unknown;
+  partFinalised: boolean;
   roundId: number;
 }) {
   const [t] = useTransContext();
-  const [summary] = createResource(
+  const [rerunningSg, setRerunningSg] = createSignal(false);
+  const [rerunError, setRerunError] = createSignal<string | null>(null);
+  const [summary, { refetch }] = createResource(
     () => ({
       distanceUnit: props.distanceUnit,
       roundId: props.roundId,
@@ -112,6 +117,27 @@ export default function RoundSummaryDropdown(props: {
     async ({ distanceUnit, roundId }) =>
       fetchRoundSgSummary(roundId, distanceUnit),
   );
+
+  const handleRerunSg = async () => {
+    if (rerunningSg()) {
+      return;
+    }
+
+    setRerunError(null);
+    setRerunningSg(true);
+
+    try {
+      await rerunRoundStrokesGained(props.roundId, props.partFinalised);
+      await refetch();
+      await props.onRerunComplete?.();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : t("errors.unknown");
+      setRerunError(t("roundSummary.rerunError", { message }));
+    } finally {
+      setRerunningSg(false);
+    }
+  };
 
   return (
     <div class='mt-3 rounded-xl border border-slate-200 bg-white p-4'>
@@ -124,7 +150,25 @@ export default function RoundSummaryDropdown(props: {
             {t("roundSummary.description")}
           </p>
         </div>
+        <button
+          type='button'
+          class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100 disabled:opacity-60'
+          disabled={rerunningSg()}
+          onClick={() => void handleRerunSg()}
+        >
+          {rerunningSg()
+            ? t("roundSummary.rerunningSg")
+            : t("roundSummary.rerunSg")}
+        </button>
       </div>
+
+      <Show when={rerunError()}>
+        {(message) => (
+          <p class='mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700'>
+            {message()}
+          </p>
+        )}
+      </Show>
 
       <Show
         when={!summary.loading}

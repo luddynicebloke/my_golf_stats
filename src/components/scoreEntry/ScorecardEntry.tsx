@@ -1,5 +1,5 @@
 import { createMemo, createSignal, onMount, Show } from "solid-js";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { useTransContext } from "@mbarzda/solid-i18next";
 
 import { useAuth } from "../../context/AuthProvider";
@@ -96,6 +96,7 @@ export default function ScorecardEntry(props: { id: string }) {
   const roundId = Number(props.id);
   const { profile } = useAuth();
   const [t] = useTransContext();
+  const navigate = useNavigate();
   let latestLoadRequestId = 0;
 
   const [activeNine, setActiveNine] = createSignal<"front" | "back">("front");
@@ -372,6 +373,12 @@ export default function ScorecardEntry(props: { id: string }) {
     }));
   };
 
+  const navigateToCompletedRoundSummary = () => {
+    window.setTimeout(() => {
+      navigate(`/dashboard/rounds?summaryRoundId=${roundId}`);
+    }, 0);
+  };
+
   const finaliseRound = async (partFinalised = false): Promise<boolean> => {
     setSaveStage("calculatingSg");
     setSaveStage("finalisingRound");
@@ -437,6 +444,7 @@ export default function ScorecardEntry(props: { id: string }) {
 
     try {
       await finaliseRound(false);
+      navigateToCompletedRoundSummary();
     } catch (error) {
       const message = error instanceof Error ? error.message : t("errors.unknown");
       setEntryError(t("scoreEntry.errors.completeRound", { message }));
@@ -525,6 +533,7 @@ export default function ScorecardEntry(props: { id: string }) {
 
       if (shouldAutoFinalise) {
         await finaliseRound(false);
+        navigateToCompletedRoundSummary();
       } else {
         moveToNextHole(hole.hole_number);
       }

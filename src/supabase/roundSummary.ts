@@ -50,6 +50,13 @@ export type RoundSgSummary = {
   totalSg: number | null;
 };
 
+type FinaliseRoundResponse = {
+  round_id: number;
+  updated_shot_count: number;
+  round_finalised: boolean;
+  part_finalised: boolean;
+};
+
 const getSingleRelation = <T,>(value: T | T[] | null | undefined): T | null => {
   if (Array.isArray(value)) {
     return value[0] ?? null;
@@ -242,4 +249,26 @@ export const fetchRoundSgSummary = async (
     shortGameTotal: totalFromStats(shortGame),
     totalSg: totalSgCount === 0 ? null : totalSgSum,
   };
+};
+
+export const rerunRoundStrokesGained = async (
+  roundId: number,
+  partFinalised: boolean,
+): Promise<FinaliseRoundResponse> => {
+  const { data, error } = await supabase
+    .rpc("finalise_round_with_sg", {
+      p_round_id: roundId,
+      p_part_finalised: partFinalised,
+    })
+    .single<FinaliseRoundResponse>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data?.round_finalised) {
+    throw new Error("Round was not finalised.");
+  }
+
+  return data;
 };
