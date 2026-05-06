@@ -1,5 +1,5 @@
 import { useTransContext } from "@mbarzda/solid-i18next";
-import { createMemo, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 
 import {
   BarController,
@@ -15,7 +15,11 @@ import {
 import { Bar } from "solid-chartjs";
 
 import { SGColors } from "../../lib/graphColors";
-import type { DistanceStatsRow, StatsPageData } from "../../supabase/shotStats";
+import type {
+  DistanceStatsRow,
+  ShotDetail,
+  StatsPageData,
+} from "../../supabase/shotStats";
 
 Chart.register(
   BarController,
@@ -46,6 +50,9 @@ const formatTableValue = (value: number | null) => {
 
 const formatPercentageValue = (value: number | null) =>
   value == null ? "-" : `${value.toFixed(1)}%`;
+
+const formatDrivingDistance = (distanceInMetres: number) =>
+  `${Math.round(distanceInMetres * 1.09361)} yds`;
 
 const distanceRangeTranslationKeys: Record<string, string> = {
   "1 to 10": "1_10",
@@ -103,6 +110,10 @@ function StatsSection(props: {
   rows: DistanceStatsRow[];
   t: ReturnType<typeof useTransContext>[0];
 }) {
+  const [expandedDistanceRange, setExpandedDistanceRange] = createSignal<
+    string | null
+  >(null);
+
   const fairwaySummary = createMemo(() => {
     const fairwayRows = props.rows.filter((row) => row.fairways_hit != null);
 
@@ -133,6 +144,23 @@ function StatsSection(props: {
       props.distanceRangeTranslationPrefix,
       props.t,
     );
+
+  const hasShotDetails = (row: DistanceStatsRow) =>
+    (row.shot_details?.length ?? 0) > 0;
+
+  const isExpanded = (row: DistanceStatsRow) =>
+    expandedDistanceRange() === row.distance_range;
+
+  const toggleShotDetails = (row: DistanceStatsRow) => {
+    if (!hasShotDetails(row)) {
+      return;
+    }
+
+    setExpandedDistanceRange(isExpanded(row) ? null : row.distance_range);
+  };
+
+  const detailColumnSpan = () =>
+    (props.hideDistanceRange ? 0 : 1) + (props.showFairwayColumns ? 4 : 2);
 
   const chartData = createMemo(() => ({
     labels: props.rows.map((row) => displayDistanceRange(row.distance_range)),
@@ -245,32 +273,113 @@ function StatsSection(props: {
               </tr>
             </thead>
             <tbody>
-              {props.rows.map((row) => (
-                <tr class='border-b border-slate-100 last:border-b-0'>
-                  <Show when={!props.hideDistanceRange}>
-                    <td class='px-4 py-3'>
-                      {displayDistanceRange(row.distance_range)}
-                    </td>
-                  </Show>
-                  <td class='px-4 py-3'>{row.shots_in_group}</td>
-                  <td class='px-4 py-3'>{formatSignedValue(row.avg_sg_value)}</td>
-                  <Show when={props.showFairwayColumns}>
-                    <>
+              <For each={props.rows}>
+                {(row) => (
+                  <>
+                    <tr class='border-b border-slate-100 last:border-b-0'>
+                      <Show when={!props.hideDistanceRange}>
+                        <td class='px-4 py-3'>
+                          {displayDistanceRange(row.distance_range)}
+                        </td>
+                      </Show>
                       <td class='px-4 py-3'>
-                        {formatTableValue(row.fairways_hit)}
+                        <Show
+                          when={hasShotDetails(row)}
+                          fallback={row.shots_in_group}
+                        >
+                          <button
+                            type='button'
+                            aria-expanded={isExpanded(row)}
+                            class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 font-semibold text-cyan-800 hover:bg-cyan-100'
+                            onClick={() => toggleShotDetails(row)}
+                          >
+                            {row.shots_in_group}
+                          </button>
+                        </Show>
                       </td>
                       <td class='px-4 py-3'>
-                        {formatPercentageValue(row.fairway_hit_percentage)}
+                        {formatSignedValue(row.avg_sg_value)}
                       </td>
-                    </>
-                  </Show>
-                </tr>
-              ))}
+                      <Show when={props.showFairwayColumns}>
+                        <>
+                          <td class='px-4 py-3'>
+                            {formatTableValue(row.fairways_hit)}
+                          </td>
+                          <td class='px-4 py-3'>
+                            {formatPercentageValue(row.fairway_hit_percentage)}
+                          </td>
+                        </>
+                      </Show>
+                    </tr>
+                    <Show when={isExpanded(row) && row.shot_details}>
+                      {(shotDetails) => (
+                        <tr class='border-b border-slate-100 bg-slate-50'>
+                          <td
+                            colSpan={detailColumnSpan()}
+                            class='px-4 py-3'
+                          >
+                            <DrivingShotDetails
+                              shotDetails={shotDetails()}
+                              t={props.t}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Show>
+                  </>
+                )}
+              </For>
             </tbody>
           </table>
         </div>
       </Show>
     </section>
+  );
+}
+
+function DrivingShotDetails(props: {
+  shotDetails: ShotDetail[];
+  t: ReturnType<typeof useTransContext>[0];
+}) {
+  return (
+    <div class='overflow-x-auto rounded-lg border border-slate-200 bg-white'>
+      <table class='w-full min-w-120 text-left text-xs text-slate-700 sm:text-sm'>
+        <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
+          <tr>
+            <th class='px-3 py-2 font-semibold'>
+              {props.t("stats.driving.details.course")}
+            </th>
+            <th class='px-3 py-2 font-semibold'>
+              {props.t("stats.driving.details.date")}
+            </th>
+            <th class='px-3 py-2 font-semibold'>
+              {props.t("stats.driving.details.hole")}
+            </th>
+            <th class='px-3 py-2 font-semibold'>
+              {props.t("stats.driving.details.distance")}
+            </th>
+            <th class='px-3 py-2 font-semibold'>
+              {props.t("stats.driving.details.sg")}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <For each={props.shotDetails}>
+            {(shot) => (
+              <tr class='border-b border-slate-100 last:border-b-0'>
+                <td class='px-3 py-2'>{shot.courseName}</td>
+                <td class='px-3 py-2'>{shot.roundDate}</td>
+                <td class='px-3 py-2'>{shot.holeNumber}</td>
+                <td class='px-3 py-2'>
+                  {formatDrivingDistance(shot.distanceToPin)}
+                </td>
+                <td class='px-3 py-2'>{formatSignedValue(shot.sgValue)}</td>
+              </tr>
+            )}
+          </For>
+        </tbody>
+      </table>
+    </div>
   );
 }
 

@@ -8,6 +8,7 @@ export type DistanceStatsRow = {
   avg_sg_value: number | null;
   fairways_hit: number | null;
   fairway_hit_percentage: number | null;
+  shot_details?: ShotDetail[];
 };
 
 export type DistanceStatsData = {
@@ -27,6 +28,15 @@ export type SelectableRound = {
   playedDate: string;
 };
 
+export type ShotDetail = {
+  courseName: string;
+  distanceToPin: number;
+  holeNumber: number;
+  roundDate: string;
+  shotNumber: number;
+  sgValue: number;
+};
+
 type RoundSummaryRow = {
   id: number | string | null;
   played_date: string | null;
@@ -35,6 +45,9 @@ type RoundSummaryRow = {
 };
 
 type RoundShotViewRow = {
+  course_name: string | null;
+  round_date: string | null;
+  hole_number: number | null;
   round_hole_id: number | null;
   shot_number: number | null;
   distance_to_pin: number | null;
@@ -44,8 +57,12 @@ type RoundShotViewRow = {
 
 type AggregatedShot = {
   distanceToPin: number;
+  courseName: string;
+  holeNumber: number;
   lieType: string;
   nextLieType: string | null;
+  roundDate: string;
+  shotNumber: number;
   sgValue: number;
 };
 
@@ -102,41 +119,6 @@ export const emptyStatsPageData = (): StatsPageData => ({
   driving: emptyDistanceStatsData(),
   putting: emptyDistanceStatsData(),
 });
-
-const parseNumberLike = (value: unknown): number | null => {
-  if (typeof value === "number") {
-    return Number.isNaN(value) ? null : value;
-  }
-
-  if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number(value);
-    return Number.isNaN(parsed) ? null : parsed;
-  }
-
-  return null;
-};
-
-const normalizeDistanceStatsRow = (value: unknown): DistanceStatsRow | null => {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return null;
-  }
-
-  const row = value as Record<string, unknown>;
-  const distanceRange = row.distance_range;
-  const parsedShotsInGroup = parseNumberLike(row.shots_in_group);
-
-  if (typeof distanceRange !== "string" || parsedShotsInGroup == null) {
-    return null;
-  }
-
-  return {
-    distance_range: distanceRange,
-    shots_in_group: parsedShotsInGroup,
-    avg_sg_value: parseNumberLike(row.avg_sg_value),
-    fairways_hit: parseNumberLike(row.fairways_hit),
-    fairway_hit_percentage: parseNumberLike(row.fairway_hit_percentage),
-  };
-};
 
 const normalizeLieType = (lieType: string) => lieType.trim().toLowerCase();
 
@@ -200,6 +182,7 @@ const aggregateShotStats = (
       fairwaysHit: number;
       maxDistance: number;
       minDistance: number;
+      shotDetails: ShotDetail[];
       shots: number;
       sgTotal: number;
     }
@@ -216,6 +199,7 @@ const aggregateShotStats = (
       fairwaysHit: 0,
       maxDistance: bucketDistance,
       minDistance: bucketDistance,
+      shotDetails: [],
       shots: 0,
       sgTotal: 0,
     };
@@ -225,11 +209,19 @@ const aggregateShotStats = (
     existing.minDistance = Math.min(existing.minDistance, bucketDistance);
     existing.maxDistance = Math.max(existing.maxDistance, bucketDistance);
 
-    if (
-      shotGroup === "driving" &&
-      normalizeLieType(shot.nextLieType ?? "") === "fairway"
-    ) {
-      existing.fairwaysHit += 1;
+    if (shotGroup === "driving") {
+      existing.shotDetails.push({
+        courseName: shot.courseName,
+        distanceToPin: shot.distanceToPin,
+        holeNumber: shot.holeNumber,
+        roundDate: shot.roundDate,
+        shotNumber: shot.shotNumber,
+        sgValue: shot.sgValue,
+      });
+
+      if (normalizeLieType(shot.nextLieType ?? "") === "fairway") {
+        existing.fairwaysHit += 1;
+      }
     }
 
     groupedRows.set(bucketLabel, existing);
@@ -250,6 +242,16 @@ const aggregateShotStats = (
           shotGroup === "driving"
             ? roundToPrecision((row.fairwaysHit / row.shots) * 100, 1)
             : null,
+        shot_details:
+          shotGroup === "driving"
+            ? [...row.shotDetails].sort(
+                (a, b) =>
+                  a.roundDate.localeCompare(b.roundDate) ||
+                  a.courseName.localeCompare(b.courseName) ||
+                  a.holeNumber - b.holeNumber ||
+                  a.shotNumber - b.shotNumber,
+              )
+            : undefined,
       })),
   };
 };
@@ -261,45 +263,14 @@ const createStatsPageDataFromShots = (shots: AggregatedShot[]): StatsPageData =>
   putting: aggregateShotStats(shots, "putting"),
 });
 
-const fetchRecentShotSgStats = async (
-  targetUserId: string,
-  shotGroup: ShotGroup,
-): Promise<DistanceStatsData> => {
-  const { data, error } = await supabase.rpc("get_recent_sg_stats_for_user", {
-    p_target_user_id: targetUserId,
-    p_round_limit: RECENT_ROUNDS_LIMIT,
-    p_shot_group: shotGroup,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const rows = Array.isArray(data)
-    ? data
-        .map((item) => normalizeDistanceStatsRow(item))
-        .filter((item): item is DistanceStatsRow => item !== null)
-    : [];
-
-  return { rows };
-};
-
 export const fetchRecentStatsPageData = async (
   targetUserId: string,
 ): Promise<StatsPageData> => {
-  const [putting, driving, approach, chipping] = await Promise.all([
-    fetchRecentShotSgStats(targetUserId, "putting"),
-    fetchRecentShotSgStats(targetUserId, "driving"),
-    fetchRecentShotSgStats(targetUserId, "approach"),
-    fetchRecentShotSgStats(targetUserId, "chipping"),
-  ]);
+  const roundIds = (await fetchSelectableRounds(targetUserId))
+    .slice(0, RECENT_ROUNDS_LIMIT)
+    .map((round) => round.id);
 
-  return {
-    approach,
-    chipping,
-    driving,
-    putting,
-  };
+  return fetchSelectedRoundStats(roundIds);
 };
 
 export const fetchSelectableRounds = async (
@@ -389,8 +360,12 @@ export const fetchSelectedRoundStats = async (
 
       shots.push({
         distanceToPin: Number(shot.distance_to_pin),
+        courseName: shot.course_name ?? "Unknown course",
+        holeNumber: Number(shot.hole_number ?? 0),
         lieType: shot.lie_type,
         nextLieType: sortedShots[index + 1]?.lie_type ?? null,
+        roundDate: shot.round_date ?? "",
+        shotNumber: Number(shot.shot_number ?? 0),
         sgValue: Number(shot.sg_value),
       });
     }

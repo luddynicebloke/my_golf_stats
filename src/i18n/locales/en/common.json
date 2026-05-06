@@ -160,7 +160,14 @@
       "description": "Tee-shot strokes gained grouped by distance, including fairways hit.",
       "empty": "No driving stats were returned for your latest rounds.",
       "fairwaysHit": "Fairways hit",
-      "fairwaysHitRate": "Fairway hit rate"
+      "fairwaysHitRate": "Fairway hit rate",
+      "details": {
+        "course": "Course",
+        "date": "Date",
+        "hole": "Hole",
+        "distance": "Distance",
+        "sg": "SG"
+      }
     },
     "approach": {
       "title": "Approaches",

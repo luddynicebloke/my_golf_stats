@@ -160,7 +160,14 @@
       "description": "Strokes gained au départ regroupés par distance, avec les fairways touchés.",
       "empty": "Aucune statistique de driving n'a été trouvée pour vos dernières parties.",
       "fairwaysHit": "Fairways touchés",
-      "fairwaysHitRate": "Taux de fairways touchés"
+      "fairwaysHitRate": "Taux de fairways touchés",
+      "details": {
+        "course": "Parcours",
+        "date": "Date",
+        "hole": "Trou",
+        "distance": "Distance",
+        "sg": "SG"
+      }
     },
     "approach": {
       "title": "Approches",
