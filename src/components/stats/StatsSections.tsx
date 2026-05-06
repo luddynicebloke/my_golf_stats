@@ -92,8 +92,10 @@ const formatDistanceRange = (
 
 function StatsSection(props: {
   chartTitle: string;
+  chartValueTitle?: string;
   description: string;
   emptyMessage: string;
+  sgValueLabel?: string;
   hideChart?: boolean;
   hideDistanceRange?: boolean;
   distanceRangeTranslationPrefix?: string;
@@ -136,7 +138,7 @@ function StatsSection(props: {
     labels: props.rows.map((row) => displayDistanceRange(row.distance_range)),
     datasets: [
       {
-        label: props.t("stats.chart.average"),
+        label: props.sgValueLabel ?? props.t("stats.chart.average"),
         data: props.rows.map((row) => row.avg_sg_value ?? 0),
         backgroundColor: props.rows.map(
           (_, index) => SGColors[index % SGColors.length],
@@ -207,7 +209,7 @@ function StatsSection(props: {
         <Show when={!props.hideChart}>
           <div class='mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
             <h3 class='mb-4 font-rubik text-lg font-semibold text-slate-800 sm:text-xl'>
-              {props.t("stats.chart.title")}
+              {props.chartValueTitle ?? props.t("stats.chart.title")}
             </h3>
             <div class='h-72 sm:h-80'>
               <Bar data={chartData()} options={chartOptions()} />
@@ -228,7 +230,7 @@ function StatsSection(props: {
                   {props.t("stats.table.shots")}
                 </th>
                 <th class='px-4 py-3 font-semibold'>
-                  {props.t("stats.table.average")}
+                  {props.sgValueLabel ?? props.t("stats.table.average")}
                 </th>
                 <Show when={props.showFairwayColumns}>
                   <>
@@ -294,26 +296,32 @@ export function StatsSections(props: {
       <div class='mt-4 space-y-4'>
         <StatsSection
           chartTitle={props.t("stats.putting.title")}
+          chartValueTitle={props.t("stats.chart.totalTitle")}
           description={props.t("stats.putting.description")}
           emptyMessage={props.t("stats.putting.empty")}
           rows={props.stats?.putting.rows ?? []}
           distanceRangeTranslationPrefix='stats.putting.ranges'
+          sgValueLabel={props.t("stats.table.total")}
           t={props.t}
         />
         <StatsSection
           chartTitle={props.t("stats.approach.title")}
+          chartValueTitle={props.t("stats.chart.totalTitle")}
           description={props.t("stats.approach.description")}
           emptyMessage={props.t("stats.approach.empty")}
           rows={props.stats?.approach.rows ?? []}
           distanceRangeTranslationPrefix='stats.approach.ranges'
+          sgValueLabel={props.t("stats.table.total")}
           t={props.t}
         />
         <StatsSection
           chartTitle={props.t("stats.chipping.title")}
+          chartValueTitle={props.t("stats.chart.totalTitle")}
           description={props.t("stats.chipping.description")}
           emptyMessage={props.t("stats.chipping.empty")}
           rows={props.stats?.chipping.rows ?? []}
           distanceRangeTranslationPrefix='stats.chipping.ranges'
+          sgValueLabel={props.t("stats.table.total")}
           t={props.t}
         />
       </div>

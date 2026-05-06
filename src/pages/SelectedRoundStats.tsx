@@ -11,6 +11,7 @@ import {
 import PlayerSelector from "../components/pro/PlayerSelector";
 import { StatsSections } from "../components/stats/StatsSections";
 import { useAuth } from "../context/AuthProvider";
+import { toDMYDash } from "../hooks/useDateFormat";
 import {
   emptyStatsPageData,
   fetchSelectableRounds,
@@ -54,6 +55,14 @@ export default function SelectedRoundStats() {
 
   const clearSelection = () => {
     setSelectedRoundIds([]);
+  };
+
+  const formatRoundDate = (playedDate: string) => {
+    if (!playedDate) {
+      return "-";
+    }
+
+    return toDMYDash(playedDate);
   };
 
   return (
@@ -148,17 +157,25 @@ export default function SelectedRoundStats() {
                           type='button'
                           class={`rounded-xl border p-4 text-left transition ${
                             isSelected()
-                              ? "border-cyan-300 bg-cyan-50 shadow-sm"
+                              ? "border-cyan-300 bg-cyan-50 shadow-sm ring-1 ring-cyan-100"
                               : "border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/50"
                           }`}
                           aria-pressed={isSelected()}
                           onClick={() => toggleRound(round.id)}
                         >
-                          <span class='block font-rubik text-base font-semibold text-slate-800'>
-                            {round.course}
-                          </span>
-                          <span class='mt-1 block text-sm text-slate-500'>
-                            {round.playedDate}
+                          <span class='flex min-h-18 flex-col justify-between gap-3'>
+                            <span class='block font-rubik text-base font-semibold leading-snug text-slate-800'>
+                              {round.course}
+                            </span>
+                            <span
+                              class={`inline-flex w-fit items-center rounded-md border px-2.5 py-1 text-xs font-medium ${
+                                isSelected()
+                                  ? "border-cyan-200 bg-white text-cyan-800"
+                                  : "border-slate-200 bg-slate-50 text-slate-600"
+                              }`}
+                            >
+                              {t("common.date")}: {formatRoundDate(round.playedDate)}
+                            </span>
                           </span>
                         </button>
                       );

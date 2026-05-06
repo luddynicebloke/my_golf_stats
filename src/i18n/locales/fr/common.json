@@ -190,11 +190,13 @@
       "distanceRange": "Plage de distance",
       "shots": "Coups",
       "average": "SG moyen",
+      "total": "SG total",
       "fairwaysHit": "Fairways touchés",
       "fairwayHitRate": "% de fairways touchés"
     },
     "chart": {
       "title": "SG moyen par distance",
+      "totalTitle": "SG total par distance",
       "average": "SG moyen"
     }
   },

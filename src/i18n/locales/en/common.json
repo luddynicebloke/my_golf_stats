@@ -190,11 +190,13 @@
       "distanceRange": "Distance Range",
       "shots": "Shots",
       "average": "Average SG",
+      "total": "Total SG",
       "fairwaysHit": "Fairways Hit",
       "fairwayHitRate": "Fairway Hit %"
     },
     "chart": {
       "title": "Average SG by Distance",
+      "totalTitle": "Total SG by Distance",
       "average": "Average SG"
     }
   },

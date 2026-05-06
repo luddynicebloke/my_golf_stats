@@ -241,7 +241,10 @@ const aggregateShotStats = (
       .map(([distanceRange, row]) => ({
         distance_range: distanceRange,
         shots_in_group: row.shots,
-        avg_sg_value: roundToPrecision(row.sgTotal / row.shots, 3),
+        avg_sg_value: roundToPrecision(
+          shotGroup === "driving" ? row.sgTotal / row.shots : row.sgTotal,
+          3,
+        ),
         fairways_hit: shotGroup === "driving" ? row.fairwaysHit : null,
         fairway_hit_percentage:
           shotGroup === "driving"

@@ -77,7 +77,10 @@ as $$
         end
     end as distance_range,
     count(*) as shots_in_group,
-    round(avg(s.sg_value), 3) as avg_sg_value,
+    case
+      when lower(trim(p_shot_group)) = 'driving' then round(avg(s.sg_value), 3)
+      else round(sum(s.sg_value), 3)
+    end as avg_sg_value,
     case
       when lower(trim(p_shot_group)) = 'driving' then
         count(*) filter (
