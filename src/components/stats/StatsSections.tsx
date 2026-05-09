@@ -15,6 +15,10 @@ import {
 import { Bar } from "solid-chartjs";
 
 import { SGColors } from "../../lib/graphColors";
+import {
+  convertMetresToUnit,
+  type DistanceUnit,
+} from "../../lib/distance";
 import type {
   DistanceStatsRow,
   ShotGroup,
@@ -52,12 +56,39 @@ const formatTableValue = (value: number | null) => {
 const formatPercentageValue = (value: number | null) =>
   value == null ? "-" : `${value.toFixed(1)}%`;
 
-const formatDrivingDistance = (distanceInMetres: number) =>
-  `${Math.round(distanceInMetres * 1.09361)} yds`;
+const FEET_TO_METRES = 0.3048;
+
+const formatGreenDistance = (distanceInFeet: number, unit: DistanceUnit) => {
+  if (unit === "yards") {
+    return `${Math.round(distanceInFeet)} ft`;
+  }
+
+  const metres = Math.round(distanceInFeet * FEET_TO_METRES * 2) / 2;
+  const displayValue = Number.isInteger(metres)
+    ? metres.toFixed(0)
+    : metres.toFixed(1);
+
+  return `${displayValue} m`;
+};
+
+const formatTeeToGreenDistance = (
+  distanceInMetres: number,
+  unit: DistanceUnit,
+) => {
+  const unitLabel = unit === "yards" ? "yds" : "m";
+
+  return `${convertMetresToUnit(distanceInMetres, unit)} ${unitLabel}`;
+};
+
+const formatShotDistance = (shot: ShotDetail, unit: DistanceUnit) =>
+  shot.lieType.trim().toLowerCase() === "green"
+    ? formatGreenDistance(shot.distanceToPin, unit)
+    : formatTeeToGreenDistance(shot.distanceToPin, unit);
 
 type ImprovementPriority = {
   category: ShotGroup;
   distanceRange: string;
+  shotDetails: ShotDetail[];
   shots: number;
   strokesLost: number;
 };
@@ -169,6 +200,7 @@ const getImprovementPriorities = (
       stats[category].rows.map((row) => ({
         category,
         distanceRange: row.distance_range,
+        shotDetails: row.shot_details ?? [],
         shots: row.shots_in_group,
         strokesLost: getRowStrokesLost(row, category),
       })),
@@ -237,10 +269,29 @@ const getRangeLabel = (
 };
 
 function ImprovementPriorities(props: {
+  distanceUnit: DistanceUnit;
   stats: StatsPageData | undefined;
   t: ReturnType<typeof useTransContext>[0];
 }) {
+  const [expandedPriority, setExpandedPriority] = createSignal<string | null>(
+    null,
+  );
   const priorities = createMemo(() => getImprovementPriorities(props.stats));
+
+  const getPriorityId = (priority: ImprovementPriority) =>
+    `${priority.category}:${priority.distanceRange}`;
+
+  const isExpanded = (priority: ImprovementPriority) =>
+    expandedPriority() === getPriorityId(priority);
+
+  const togglePriority = (priority: ImprovementPriority) => {
+    if (priority.shotDetails.length === 0) {
+      return;
+    }
+
+    const priorityId = getPriorityId(priority);
+    setExpandedPriority(isExpanded(priority) ? null : priorityId);
+  };
 
   const getDistanceLabel = (priority: ImprovementPriority) => {
     return getRangeLabel(
@@ -288,21 +339,28 @@ function ImprovementPriorities(props: {
           <For each={priorities()}>
             {(priority, index) => (
               <article class='rounded-xl border border-cyan-200 bg-white p-4 text-slate-800 shadow-sm'>
-                <div class='flex items-center gap-3'>
-                  <span class='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-700 font-rubik text-sm font-semibold text-white'>
-                    {index() + 1}
-                  </span>
-                  <div>
-                    <h3 class='font-rubik text-base font-semibold'>
-                      {getPriorityTitle(priority)}
-                    </h3>
-                    <p class='mt-1 text-sm text-slate-500'>
-                      {props.t("stats.improvement.shots", {
-                        count: priority.shots,
-                      })}
-                    </p>
+                <button
+                  type='button'
+                  aria-expanded={isExpanded(priority)}
+                  class='w-full text-left'
+                  onClick={() => togglePriority(priority)}
+                >
+                  <div class='flex items-center gap-3'>
+                    <span class='flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-slate-900 font-rubik text-base font-semibold text-white shadow-sm'>
+                      {index() + 1}
+                    </span>
+                    <div>
+                      <h3 class='font-rubik text-base font-semibold text-slate-900'>
+                        {getPriorityTitle(priority)}
+                      </h3>
+                      <p class='mt-1 inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800'>
+                        {props.t("stats.improvement.shots", {
+                          count: priority.shots,
+                        })}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </button>
 
                 <div class='mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700'>
                   {props.t("stats.improvement.lostStrokes", {
@@ -315,6 +373,26 @@ function ImprovementPriorities(props: {
                 <p class='mt-1 text-sm text-slate-600'>
                   {props.t(`stats.improvement.practice.${priority.category}`)}
                 </p>
+                <button
+                  type='button'
+                  aria-expanded={isExpanded(priority)}
+                  class='mt-4 inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100'
+                  onClick={() => togglePriority(priority)}
+                >
+                  {isExpanded(priority)
+                    ? props.t("stats.improvement.hideEvidence")
+                    : props.t("stats.improvement.showEvidence")}
+                </button>
+
+                <Show when={isExpanded(priority)}>
+                  <div class='mt-4'>
+                    <PriorityShotEvidence
+                      distanceUnit={props.distanceUnit}
+                      shotDetails={priority.shotDetails}
+                      t={props.t}
+                    />
+                  </div>
+                </Show>
               </article>
             )}
           </For>
@@ -425,6 +503,7 @@ function StatsSection(props: {
   chartTitle: string;
   chartValueTitle?: string;
   description: string;
+  distanceUnit: DistanceUnit;
   emptyMessage: string;
   sgValueLabel?: string;
   hideChart?: boolean;
@@ -642,7 +721,8 @@ function StatsSection(props: {
                             colSpan={detailColumnSpan()}
                             class='px-4 py-3'
                           >
-                            <DrivingShotDetails
+                            <ShotEvidenceTable
+                              distanceUnit={props.distanceUnit}
                               shotDetails={shotDetails()}
                               t={props.t}
                             />
@@ -661,7 +741,8 @@ function StatsSection(props: {
   );
 }
 
-function DrivingShotDetails(props: {
+function ShotEvidenceTable(props: {
+  distanceUnit: DistanceUnit;
   shotDetails: ShotDetail[];
   t: ReturnType<typeof useTransContext>[0];
 }) {
@@ -683,6 +764,9 @@ function DrivingShotDetails(props: {
               {props.t("stats.driving.details.distance")}
             </th>
             <th class='px-3 py-2 font-semibold'>
+              {props.t("stats.driving.details.lie")}
+            </th>
+            <th class='px-3 py-2 font-semibold'>
               {props.t("stats.driving.details.sg")}
             </th>
           </tr>
@@ -695,7 +779,12 @@ function DrivingShotDetails(props: {
                 <td class='px-3 py-2'>{shot.roundDate}</td>
                 <td class='px-3 py-2'>{shot.holeNumber}</td>
                 <td class='px-3 py-2'>
-                  {formatDrivingDistance(shot.distanceToPin)}
+                  {formatShotDistance(shot, props.distanceUnit)}
+                </td>
+                <td class='px-3 py-2'>
+                  {props.t(`lieTypes.${shot.lieType}`, {
+                    defaultValue: shot.lieType,
+                  })}
                 </td>
                 <td class='px-3 py-2'>{formatSignedValue(shot.sgValue)}</td>
               </tr>
@@ -707,18 +796,78 @@ function DrivingShotDetails(props: {
   );
 }
 
+function PriorityShotEvidence(props: {
+  distanceUnit: DistanceUnit;
+  shotDetails: ShotDetail[];
+  t: ReturnType<typeof useTransContext>[0];
+}) {
+  return (
+    <div class='space-y-2'>
+      <For each={props.shotDetails}>
+        {(shot) => (
+          <div class='rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700'>
+            <div class='flex items-start justify-between gap-3'>
+              <div class='min-w-0'>
+                <p class='truncate font-semibold text-slate-900'>
+                  {shot.courseName}
+                </p>
+                <p class='mt-1 text-slate-500'>{shot.roundDate}</p>
+              </div>
+              <span class='shrink-0 rounded-full bg-white px-2 py-1 font-semibold text-slate-800'>
+                {formatSignedValue(shot.sgValue)}
+              </span>
+            </div>
+            <div class='mt-2 grid grid-cols-3 gap-2'>
+              <div>
+                <p class='font-semibold text-slate-500'>
+                  {props.t("stats.driving.details.hole")}
+                </p>
+                <p class='mt-0.5 text-slate-800'>{shot.holeNumber}</p>
+              </div>
+              <div>
+                <p class='font-semibold text-slate-500'>
+                  {props.t("stats.driving.details.distance")}
+                </p>
+                <p class='mt-0.5 text-slate-800'>
+                  {formatShotDistance(shot, props.distanceUnit)}
+                </p>
+              </div>
+              <div>
+                <p class='font-semibold text-slate-500'>
+                  {props.t("stats.driving.details.lie")}
+                </p>
+                <p class='mt-0.5 truncate text-slate-800'>
+                  {props.t(`lieTypes.${shot.lieType}`, {
+                    defaultValue: shot.lieType,
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </For>
+    </div>
+  );
+}
+
 export function StatsSections(props: {
+  distanceUnit: DistanceUnit;
   stats: StatsPageData | undefined;
   t: ReturnType<typeof useTransContext>[0];
 }) {
   return (
     <>
-      <ImprovementPriorities stats={props.stats} t={props.t} />
+      <ImprovementPriorities
+        distanceUnit={props.distanceUnit}
+        stats={props.stats}
+        t={props.t}
+      />
       <WeaknessRanking stats={props.stats} t={props.t} />
 
       <div class='mt-4'>
         <StatsSection
           chartTitle={props.t("stats.driving.title")}
+          distanceUnit={props.distanceUnit}
           description={props.t("stats.driving.description")}
           emptyMessage={props.t("stats.driving.empty")}
           rows={props.stats?.driving.rows ?? []}
@@ -733,6 +882,7 @@ export function StatsSections(props: {
         <StatsSection
           chartTitle={props.t("stats.putting.title")}
           chartValueTitle={props.t("stats.chart.totalTitle")}
+          distanceUnit={props.distanceUnit}
           description={props.t("stats.putting.description")}
           emptyMessage={props.t("stats.putting.empty")}
           rows={props.stats?.putting.rows ?? []}
@@ -743,6 +893,7 @@ export function StatsSections(props: {
         <StatsSection
           chartTitle={props.t("stats.approach.title")}
           chartValueTitle={props.t("stats.chart.totalTitle")}
+          distanceUnit={props.distanceUnit}
           description={props.t("stats.approach.description")}
           emptyMessage={props.t("stats.approach.empty")}
           rows={props.stats?.approach.rows ?? []}
@@ -753,6 +904,7 @@ export function StatsSections(props: {
         <StatsSection
           chartTitle={props.t("stats.chipping.title")}
           chartValueTitle={props.t("stats.chart.totalTitle")}
+          distanceUnit={props.distanceUnit}
           description={props.t("stats.chipping.description")}
           emptyMessage={props.t("stats.chipping.empty")}
           rows={props.stats?.chipping.rows ?? []}

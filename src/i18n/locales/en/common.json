@@ -145,6 +145,8 @@
       "shots": "{{count}} shots",
       "lostStrokes": "Lost {{strokes}} strokes",
       "biggestLeak": "Biggest scoring leak",
+      "showEvidence": "Show example shots",
+      "hideEvidence": "Hide example shots",
       "practice": {
         "approach": "Practice focus: distance control and green-in-regulation from this range.",
         "chipping": "Practice focus: landing spot control and getting the first putt closer.",
@@ -196,6 +198,7 @@
         "date": "Date",
         "hole": "Hole",
         "distance": "Distance",
+        "lie": "Lie",
         "sg": "SG"
       }
     },

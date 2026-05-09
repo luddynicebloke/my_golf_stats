@@ -32,6 +32,7 @@ export type ShotDetail = {
   courseName: string;
   distanceToPin: number;
   holeNumber: number;
+  lieType: string;
   roundDate: string;
   shotNumber: number;
   sgValue: number;
@@ -209,16 +210,17 @@ const aggregateShotStats = (
     existing.minDistance = Math.min(existing.minDistance, bucketDistance);
     existing.maxDistance = Math.max(existing.maxDistance, bucketDistance);
 
-    if (shotGroup === "driving") {
-      existing.shotDetails.push({
-        courseName: shot.courseName,
-        distanceToPin: shot.distanceToPin,
-        holeNumber: shot.holeNumber,
-        roundDate: shot.roundDate,
-        shotNumber: shot.shotNumber,
-        sgValue: shot.sgValue,
-      });
+    existing.shotDetails.push({
+      courseName: shot.courseName,
+      distanceToPin: shot.distanceToPin,
+      holeNumber: shot.holeNumber,
+      lieType: shot.lieType,
+      roundDate: shot.roundDate,
+      shotNumber: shot.shotNumber,
+      sgValue: shot.sgValue,
+    });
 
+    if (shotGroup === "driving") {
       if (normalizeLieType(shot.nextLieType ?? "") === "fairway") {
         existing.fairwaysHit += 1;
       }
@@ -242,16 +244,13 @@ const aggregateShotStats = (
           shotGroup === "driving"
             ? roundToPrecision((row.fairwaysHit / row.shots) * 100, 1)
             : null,
-        shot_details:
-          shotGroup === "driving"
-            ? [...row.shotDetails].sort(
-                (a, b) =>
-                  a.roundDate.localeCompare(b.roundDate) ||
-                  a.courseName.localeCompare(b.courseName) ||
-                  a.holeNumber - b.holeNumber ||
-                  a.shotNumber - b.shotNumber,
-              )
-            : undefined,
+        shot_details: [...row.shotDetails].sort(
+          (a, b) =>
+            a.roundDate.localeCompare(b.roundDate) ||
+            a.courseName.localeCompare(b.courseName) ||
+            a.holeNumber - b.holeNumber ||
+            a.shotNumber - b.shotNumber,
+        ),
       })),
   };
 };

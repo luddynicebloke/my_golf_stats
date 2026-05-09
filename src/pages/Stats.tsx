@@ -4,6 +4,7 @@ import { createMemo, createResource, Show } from "solid-js";
 import PlayerSelector from "../components/pro/PlayerSelector";
 import { StatsSections } from "../components/stats/StatsSections";
 import { useAuth } from "../context/AuthProvider";
+import { normalizeDistanceUnit } from "../lib/distance";
 import {
   emptyStatsPageData,
   fetchRecentStatsPageData,
@@ -14,6 +15,9 @@ export default function Stats() {
   const [t] = useTransContext();
   const auth = useAuth();
   const isReadOnly = createMemo(() => auth.isReadOnly());
+  const distanceUnit = createMemo(() =>
+    normalizeDistanceUnit(auth.profile()?.preferred_distance_unit),
+  );
 
   const [stats] = createResource(
     () => auth.targetUserId() ?? "",
@@ -78,7 +82,11 @@ export default function Stats() {
               </p>
             }
           >
-            <StatsSections stats={stats()} t={t} />
+            <StatsSections
+              distanceUnit={distanceUnit()}
+              stats={stats()}
+              t={t}
+            />
           </Show>
         </Show>
       </div>

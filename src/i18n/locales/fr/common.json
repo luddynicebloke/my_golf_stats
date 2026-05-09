@@ -145,6 +145,8 @@
       "shots": "{{count}} coups",
       "lostStrokes": "{{strokes}} coups perdus",
       "biggestLeak": "Plus grosse perte de score",
+      "showEvidence": "Afficher les coups exemples",
+      "hideEvidence": "Masquer les coups exemples",
       "practice": {
         "approach": "Objectif d'entrainement : controle des distances et greens en regulation depuis cette zone.",
         "chipping": "Objectif d'entrainement : controle du point de chute et premier putt plus proche.",
@@ -196,6 +198,7 @@
         "date": "Date",
         "hole": "Trou",
         "distance": "Distance",
+        "lie": "Lie",
         "sg": "SG"
       }
     },
