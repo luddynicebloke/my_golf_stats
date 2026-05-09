@@ -17,6 +17,7 @@ import { Bar } from "solid-chartjs";
 import { SGColors } from "../../lib/graphColors";
 import type {
   DistanceStatsRow,
+  ShotGroup,
   ShotDetail,
   StatsPageData,
 } from "../../supabase/shotStats";
@@ -53,6 +54,52 @@ const formatPercentageValue = (value: number | null) =>
 
 const formatDrivingDistance = (distanceInMetres: number) =>
   `${Math.round(distanceInMetres * 1.09361)} yds`;
+
+type ImprovementPriority = {
+  category: ShotGroup;
+  distanceRange: string;
+  shots: number;
+  strokesLost: number;
+};
+
+type WeaknessRange = {
+  distanceRange: string;
+  shots: number;
+  strokesLost: number;
+};
+
+type WeaknessRankingRow = {
+  category: ShotGroup;
+  ranges: WeaknessRange[];
+  shots: number;
+  strokesLost: number;
+};
+
+const improvementCategories: {
+  category: ShotGroup;
+  translationKey: string;
+  distanceRangeTranslationPrefix?: string;
+}[] = [
+  {
+    category: "approach",
+    translationKey: "stats.approach.title",
+    distanceRangeTranslationPrefix: "stats.approach.ranges",
+  },
+  {
+    category: "chipping",
+    translationKey: "stats.chipping.title",
+    distanceRangeTranslationPrefix: "stats.chipping.ranges",
+  },
+  {
+    category: "putting",
+    translationKey: "stats.putting.title",
+    distanceRangeTranslationPrefix: "stats.putting.ranges",
+  },
+  {
+    category: "driving",
+    translationKey: "stats.driving.title",
+  },
+];
 
 const distanceRangeTranslationKeys: Record<string, string> = {
   "1 to 10": "1_10",
@@ -96,6 +143,283 @@ const formatDistanceRange = (
     defaultValue: distanceRange,
   });
 };
+
+const getRowStrokesLost = (row: DistanceStatsRow, category: ShotGroup) => {
+  if (row.avg_sg_value == null || row.avg_sg_value >= 0) {
+    return 0;
+  }
+
+  const strokesGained =
+    category === "driving"
+      ? row.avg_sg_value * row.shots_in_group
+      : row.avg_sg_value;
+
+  return Math.abs(strokesGained);
+};
+
+const getImprovementPriorities = (
+  stats: StatsPageData | undefined,
+): ImprovementPriority[] => {
+  if (!stats) {
+    return [];
+  }
+
+  return improvementCategories
+    .flatMap(({ category }) =>
+      stats[category].rows.map((row) => ({
+        category,
+        distanceRange: row.distance_range,
+        shots: row.shots_in_group,
+        strokesLost: getRowStrokesLost(row, category),
+      })),
+    )
+    .filter((priority) => priority.strokesLost > 0)
+    .sort((a, b) => b.strokesLost - a.strokesLost)
+    .slice(0, 3);
+};
+
+const getWeaknessRanking = (
+  stats: StatsPageData | undefined,
+): WeaknessRankingRow[] => {
+  if (!stats) {
+    return [];
+  }
+
+  return improvementCategories
+    .map(({ category }) => {
+      const ranges = stats[category].rows
+        .map((row) => ({
+          distanceRange: row.distance_range,
+          shots: row.shots_in_group,
+          strokesLost: getRowStrokesLost(row, category),
+        }))
+        .filter((range) => range.strokesLost > 0)
+        .sort((a, b) => b.strokesLost - a.strokesLost);
+
+      return {
+        category,
+        ranges,
+        shots: ranges.reduce((total, range) => total + range.shots, 0),
+        strokesLost: ranges.reduce(
+          (total, range) => total + range.strokesLost,
+          0,
+        ),
+      };
+    })
+    .filter((row) => row.strokesLost > 0)
+    .sort((a, b) => b.strokesLost - a.strokesLost);
+};
+
+const getCategoryConfig = (category: ShotGroup) =>
+  improvementCategories.find((config) => config.category === category);
+
+const getCategoryLabel = (
+  category: ShotGroup,
+  t: ReturnType<typeof useTransContext>[0],
+) => {
+  const config = getCategoryConfig(category);
+
+  return config ? t(config.translationKey) : category;
+};
+
+const getRangeLabel = (
+  category: ShotGroup,
+  distanceRange: string,
+  t: ReturnType<typeof useTransContext>[0],
+) => {
+  const config = getCategoryConfig(category);
+
+  return formatDistanceRange(
+    distanceRange,
+    config?.distanceRangeTranslationPrefix,
+    t,
+  );
+};
+
+function ImprovementPriorities(props: {
+  stats: StatsPageData | undefined;
+  t: ReturnType<typeof useTransContext>[0];
+}) {
+  const priorities = createMemo(() => getImprovementPriorities(props.stats));
+
+  const getDistanceLabel = (priority: ImprovementPriority) => {
+    return getRangeLabel(
+      priority.category,
+      priority.distanceRange,
+      props.t,
+    );
+  };
+
+  const getPriorityTitle = (priority: ImprovementPriority) => {
+    const category = getCategoryLabel(priority.category, props.t);
+
+    if (priority.category === "driving") {
+      return props.t("stats.improvement.drivingCardTitle", { category });
+    }
+
+    return props.t("stats.improvement.cardTitle", {
+      category,
+      range: getDistanceLabel(priority),
+    });
+  };
+
+  return (
+    <section class='mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 shadow-sm sm:p-6'>
+      <div class='flex flex-wrap items-start justify-between gap-3'>
+        <div>
+          <h2 class='font-rubik text-xl font-semibold text-slate-800'>
+            {props.t("stats.improvement.title")}
+          </h2>
+          <p class='mt-1 text-sm text-slate-600'>
+            {props.t("stats.improvement.description")}
+          </p>
+        </div>
+      </div>
+
+      <Show
+        when={priorities().length > 0}
+        fallback={
+          <p class='mt-4 rounded-xl border border-cyan-200 bg-white p-4 text-sm text-slate-600'>
+            {props.t("stats.improvement.empty")}
+          </p>
+        }
+      >
+        <div class='mt-4 grid gap-3 lg:grid-cols-3'>
+          <For each={priorities()}>
+            {(priority, index) => (
+              <article class='rounded-xl border border-cyan-200 bg-white p-4 text-slate-800 shadow-sm'>
+                <div class='flex items-center gap-3'>
+                  <span class='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-700 font-rubik text-sm font-semibold text-white'>
+                    {index() + 1}
+                  </span>
+                  <div>
+                    <h3 class='font-rubik text-base font-semibold'>
+                      {getPriorityTitle(priority)}
+                    </h3>
+                    <p class='mt-1 text-sm text-slate-500'>
+                      {props.t("stats.improvement.shots", {
+                        count: priority.shots,
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div class='mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700'>
+                  {props.t("stats.improvement.lostStrokes", {
+                    strokes: priority.strokesLost.toFixed(1),
+                  })}
+                </div>
+                <p class='mt-3 text-sm font-semibold text-slate-700'>
+                  {props.t("stats.improvement.biggestLeak")}
+                </p>
+                <p class='mt-1 text-sm text-slate-600'>
+                  {props.t(`stats.improvement.practice.${priority.category}`)}
+                </p>
+              </article>
+            )}
+          </For>
+        </div>
+      </Show>
+    </section>
+  );
+}
+
+function WeaknessRanking(props: {
+  stats: StatsPageData | undefined;
+  t: ReturnType<typeof useTransContext>[0];
+}) {
+  const ranking = createMemo(() => getWeaknessRanking(props.stats));
+
+  return (
+    <section class='mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6'>
+      <div>
+        <h2 class='font-rubik text-xl font-semibold text-slate-800'>
+          {props.t("stats.weaknessRanking.title")}
+        </h2>
+        <p class='mt-1 text-sm text-slate-500'>
+          {props.t("stats.weaknessRanking.description")}
+        </p>
+      </div>
+
+      <Show
+        when={ranking().length > 0}
+        fallback={
+          <p class='mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500'>
+            {props.t("stats.weaknessRanking.empty")}
+          </p>
+        }
+      >
+        <div class='mt-4 overflow-x-auto rounded-xl border border-slate-200'>
+          <table class='w-full min-w-160 text-left text-sm text-slate-700'>
+            <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
+              <tr>
+                <th class='px-4 py-3 font-semibold'>
+                  {props.t("stats.weaknessRanking.table.rank")}
+                </th>
+                <th class='px-4 py-3 font-semibold'>
+                  {props.t("stats.weaknessRanking.table.area")}
+                </th>
+                <th class='px-4 py-3 font-semibold'>
+                  {props.t("stats.weaknessRanking.table.totalLost")}
+                </th>
+                <th class='px-4 py-3 font-semibold'>
+                  {props.t("stats.weaknessRanking.table.shots")}
+                </th>
+                <th class='px-4 py-3 font-semibold'>
+                  {props.t("stats.weaknessRanking.table.ranges")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <For each={ranking()}>
+                {(row, index) => (
+                  <tr class='border-b border-slate-100 last:border-b-0'>
+                    <td class='px-4 py-3 font-semibold text-slate-800'>
+                      {index() + 1}
+                    </td>
+                    <td class='px-4 py-3 font-semibold text-slate-800'>
+                      {getCategoryLabel(row.category, props.t)}
+                    </td>
+                    <td class='px-4 py-3 text-rose-700'>
+                      {props.t("stats.weaknessRanking.lostStrokes", {
+                        strokes: row.strokesLost.toFixed(1),
+                      })}
+                    </td>
+                    <td class='px-4 py-3'>{row.shots}</td>
+                    <td class='px-4 py-3'>
+                      <div class='flex flex-wrap gap-2'>
+                        <For each={row.ranges.slice(0, 3)}>
+                          {(range) => (
+                            <span class='rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700'>
+                              {props.t(
+                                "stats.weaknessRanking.rangeSummary",
+                                {
+                                  range:
+                                    row.category === "driving"
+                                      ? getCategoryLabel(row.category, props.t)
+                                      : getRangeLabel(
+                                          row.category,
+                                          range.distanceRange,
+                                          props.t,
+                                        ),
+                                  strokes: range.strokesLost.toFixed(1),
+                                },
+                              )}
+                            </span>
+                          )}
+                        </For>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </For>
+            </tbody>
+          </table>
+        </div>
+      </Show>
+    </section>
+  );
+}
 
 function StatsSection(props: {
   chartTitle: string;
@@ -389,6 +713,9 @@ export function StatsSections(props: {
 }) {
   return (
     <>
+      <ImprovementPriorities stats={props.stats} t={props.t} />
+      <WeaknessRanking stats={props.stats} t={props.t} />
+
       <div class='mt-4'>
         <StatsSection
           chartTitle={props.t("stats.driving.title")}

@@ -136,6 +136,36 @@
     "choosePlayer": "Choisissez un joueur pour consulter les statistiques.",
     "loading": "Chargement des statistiques...",
     "error": "Impossible de charger les statistiques de strokes gained.",
+    "improvement": {
+      "title": "Top 3 des priorites d'amelioration",
+      "description": "Vos plus grosses pertes de score sur les dernieres parties finalisees.",
+      "empty": "Aucune priorite claire pour le moment. Ajoutez plus de parties finalisees avec des donnees strokes gained pour voir ou progresser.",
+      "cardTitle": "{{category}} depuis {{range}}",
+      "drivingCardTitle": "{{category}}",
+      "shots": "{{count}} coups",
+      "lostStrokes": "{{strokes}} coups perdus",
+      "biggestLeak": "Plus grosse perte de score",
+      "practice": {
+        "approach": "Objectif d'entrainement : controle des distances et greens en regulation depuis cette zone.",
+        "chipping": "Objectif d'entrainement : controle du point de chute et premier putt plus proche.",
+        "putting": "Objectif d'entrainement : ligne de depart, dosage et reduction des trois-putts depuis cette distance.",
+        "driving": "Objectif d'entrainement : dispersion au depart, fairways touches et choix du club le plus sur."
+      }
+    },
+    "weaknessRanking": {
+      "title": "Classement des faiblesses",
+      "description": "Secteurs classes par total de coups perdus, avec les pires plages de distance dans chaque secteur.",
+      "empty": "Aucun secteur negatif en strokes gained n'a ete trouve dans les dernieres parties finalisees.",
+      "lostStrokes": "{{strokes}} perdus",
+      "rangeSummary": "{{range}} : {{strokes}}",
+      "table": {
+        "rank": "Rang",
+        "area": "Secteur",
+        "totalLost": "Total perdu",
+        "shots": "Coups",
+        "ranges": "Pires plages"
+      }
+    },
     "putting": {
       "title": "Putting",
       "description": "Strokes gained au putting regroupés par distance.",

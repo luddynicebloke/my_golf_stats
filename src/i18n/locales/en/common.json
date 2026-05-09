@@ -136,6 +136,36 @@
     "choosePlayer": "Choose a player to view statistics.",
     "loading": "Loading stats...",
     "error": "Failed to load strokes gained stats.",
+    "improvement": {
+      "title": "Top 3 improvement priorities",
+      "description": "Your biggest scoring leaks from the latest finalised rounds.",
+      "empty": "No clear improvement priorities yet. Add more finalised rounds with strokes gained data to see where to focus.",
+      "cardTitle": "{{category}} from {{range}}",
+      "drivingCardTitle": "{{category}}",
+      "shots": "{{count}} shots",
+      "lostStrokes": "Lost {{strokes}} strokes",
+      "biggestLeak": "Biggest scoring leak",
+      "practice": {
+        "approach": "Practice focus: distance control and green-in-regulation from this range.",
+        "chipping": "Practice focus: landing spot control and getting the first putt closer.",
+        "putting": "Practice focus: start line, pace control, and reducing three-putts from this range.",
+        "driving": "Practice focus: tee-shot dispersion, fairways hit, and choosing the safest club from the tee."
+      }
+    },
+    "weaknessRanking": {
+      "title": "Weakness ranking",
+      "description": "Areas ranked by total strokes lost, with the worst distance ranges inside each area.",
+      "empty": "No negative strokes gained areas were found in the latest finalised rounds.",
+      "lostStrokes": "{{strokes}} lost",
+      "rangeSummary": "{{range}}: {{strokes}}",
+      "table": {
+        "rank": "Rank",
+        "area": "Area",
+        "totalLost": "Total lost",
+        "shots": "Shots",
+        "ranges": "Worst ranges"
+      }
+    },
     "putting": {
       "title": "Putting",
       "description": "Putting strokes gained grouped by distance.",
