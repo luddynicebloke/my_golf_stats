@@ -382,6 +382,8 @@ $$;
 
 grant execute on function public.get_recent_sg_stats_for_user(uuid, text, integer) to authenticated;
 
+drop function if exists public.get_round_summary_list(uuid, integer, integer, integer);
+
 create or replace function public.get_round_summary_list(
   p_user_id uuid,
   p_limit integer,
@@ -397,7 +399,9 @@ returns table (
   part_finalised boolean,
   holes_played integer,
   score bigint,
-  sg_total numeric
+  sg_total numeric,
+  penalty_strokes integer,
+  recovery_shots integer
 )
 language plpgsql
 security definer
@@ -453,6 +457,16 @@ begin
     join public.shots s on s.round_hole_id = rh.id
     where s.sg_value is not null
     group by rh.round_id
+  ),
+  round_shot_counts as (
+    select
+      rh.round_id,
+      coalesce(sum(coalesce(s.penalty_strokes, 0)), 0)::integer as penalty_strokes,
+      count(*) filter (where coalesce(s.recovery, false))::integer as recovery_shots
+    from public.round_holes rh
+    join paged_rounds ur on ur.id = rh.round_id
+    join public.shots s on s.round_hole_id = rh.id
+    group by rh.round_id
   )
   select
     ur.id,
@@ -463,10 +477,13 @@ begin
     coalesce(ur.part_finalised, false) as part_finalised,
     coalesce(rs.holes_played, 0) as holes_played,
     rs.total_score as score,
-    rsg.total_sg as sg_total
+    rsg.total_sg as sg_total,
+    coalesce(rsc.penalty_strokes, 0) as penalty_strokes,
+    coalesce(rsc.recovery_shots, 0) as recovery_shots
   from paged_rounds ur
   left join round_scores rs on rs.round_id = ur.id
   left join round_sg rsg on rsg.round_id = ur.id
+  left join round_shot_counts rsc on rsc.round_id = ur.id
   order by ur.round_date desc nulls last, ur.id desc;
 end;
 $$;

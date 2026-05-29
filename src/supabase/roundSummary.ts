@@ -23,6 +23,8 @@ type ShotRow = {
   distance_to_pin: number;
   holed_out: boolean | null;
   lie_type: string;
+  penalty_strokes: number | null;
+  recovery: boolean | null;
   sg_value: number | null;
 };
 
@@ -44,8 +46,10 @@ export type RoundSgSummary = {
   greenHoledOutDistanceFeet: number;
   greensInRegulation: number;
   offTeeTotal: number | null;
+  penaltyStrokes: number;
   putts: number;
   puttingTotal: number | null;
+  recoveryShots: number;
   shortGameTotal: number | null;
   totalSg: number | null;
 };
@@ -120,8 +124,10 @@ export const fetchRoundSgSummary = async (
       greenHoledOutDistanceFeet: 0,
       greensInRegulation: 0,
       offTeeTotal: null,
+      penaltyStrokes: 0,
       putts: 0,
       puttingTotal: null,
+      recoveryShots: 0,
       shortGameTotal: null,
       totalSg: null,
     };
@@ -130,7 +136,7 @@ export const fetchRoundSgSummary = async (
   const { data: shotRows, error: shotsError } = await supabase
     .from("shots")
     .select(
-      "round_hole_id, shot_number, distance_to_pin, holed_out, lie_type, sg_value",
+      "round_hole_id, shot_number, distance_to_pin, holed_out, lie_type, penalty_strokes, recovery, sg_value",
     )
     .in("round_hole_id", roundHoleIds)
     .order("round_hole_id", { ascending: true })
@@ -149,7 +155,9 @@ export const fetchRoundSgSummary = async (
   let fairwaysHitFromTee = 0;
   let greenHoledOutDistanceFeet = 0;
   let greensInRegulation = 0;
+  let penaltyStrokes = 0;
   let putts = 0;
+  let recoveryShots = 0;
 
   const shotsByRoundHoleId = new Map<number, ShotRow[]>();
   const getComparisonDistanceYards = (metres: number) =>
@@ -164,11 +172,20 @@ export const fetchRoundSgSummary = async (
       shot_number: Number(shot.shot_number),
       distance_to_pin: Number(shot.distance_to_pin),
       holed_out: Boolean(shot.holed_out),
+      penalty_strokes:
+        shot.penalty_strokes == null ? 0 : Number(shot.penalty_strokes),
+      recovery: Boolean(shot.recovery),
       sg_value: shot.sg_value == null ? null : Number(shot.sg_value),
     });
     shotsByRoundHoleId.set(roundHoleId, shotsForHole);
 
     const normalizedLieType = normalizeLieType(shot.lie_type);
+    penaltyStrokes +=
+      shot.penalty_strokes == null ? 0 : Number(shot.penalty_strokes);
+
+    if (Boolean(shot.recovery)) {
+      recoveryShots += 1;
+    }
 
     if (normalizedLieType === "green" && Boolean(shot.holed_out)) {
       greenHoledOutDistanceFeet += Number(shot.distance_to_pin);
@@ -244,8 +261,10 @@ export const fetchRoundSgSummary = async (
     greenHoledOutDistanceFeet,
     greensInRegulation,
     offTeeTotal: totalFromStats(offTee),
+    penaltyStrokes,
     putts,
     puttingTotal: totalFromStats(putting),
+    recoveryShots,
     shortGameTotal: totalFromStats(shortGame),
     totalSg: totalSgCount === 0 ? null : totalSgSum,
   };

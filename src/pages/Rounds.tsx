@@ -25,6 +25,8 @@ type RoundListItem = {
   tee: string;
   score: number | null;
   sgTotal: number | null;
+  penaltyStrokes: number;
+  recoveryShots: number;
 };
 
 type RoundSummaryRow = {
@@ -37,6 +39,8 @@ type RoundSummaryRow = {
   holes_played: number | null;
   score: number | null;
   sg_total: number | null;
+  penalty_strokes: number | null;
+  recovery_shots: number | null;
 };
 
 type FinaliseRoundResponse = {
@@ -83,6 +87,8 @@ const fetchRounds = async ({
     holesPlayed: Number(round.holes_played ?? 0),
     score: round.score == null ? null : Number(round.score),
     sgTotal: round.sg_total == null ? null : Number(round.sg_total),
+    penaltyStrokes: Number(round.penalty_strokes ?? 0),
+    recoveryShots: Number(round.recovery_shots ?? 0),
   }));
 
   return {
@@ -400,13 +406,25 @@ export default function Rounds() {
                         </div>
                         <div class='col-span-2'>
                           <dt class='text-xs font-semibold uppercase tracking-wide text-slate-500'>
-                            SG Total
+                            {t("rounds.sgTotal")}
                           </dt>
                           <dd class='mt-1'>
                             {round.sgTotal == null
                               ? "-"
                               : round.sgTotal.toFixed(3)}
                           </dd>
+                        </div>
+                        <div>
+                          <dt class='text-xs font-semibold uppercase tracking-wide text-slate-500'>
+                            {t("rounds.penaltyStrokes")}
+                          </dt>
+                          <dd class='mt-1'>{round.penaltyStrokes}</dd>
+                        </div>
+                        <div>
+                          <dt class='text-xs font-semibold uppercase tracking-wide text-slate-500'>
+                            {t("rounds.recoveryShots")}
+                          </dt>
+                          <dd class='mt-1'>{round.recoveryShots}</dd>
                         </div>
                       </dl>
 
@@ -512,6 +530,12 @@ export default function Rounds() {
                       <th scope='col' class='px-4 py-3 font-semibold'>
                         {t("rounds.sgTotal")}
                       </th>
+                      <th scope='col' class='px-4 py-3 font-semibold'>
+                        {t("rounds.penaltyStrokes")}
+                      </th>
+                      <th scope='col' class='px-4 py-3 font-semibold'>
+                        {t("rounds.recoveryShots")}
+                      </th>
                       <th
                         scope='col'
                         class='px-4 py-3 text-right font-semibold'
@@ -558,6 +582,8 @@ export default function Rounds() {
                                 ? "-"
                                 : round.sgTotal.toFixed(3)}
                             </td>
+                            <td class='px-4 py-3'>{round.penaltyStrokes}</td>
+                            <td class='px-4 py-3'>{round.recoveryShots}</td>
                             <td class='px-4 py-3 text-right'>
                               <Show when={isReadOnly()}>
                                 <A
@@ -610,7 +636,7 @@ export default function Rounds() {
                             }
                           >
                             <tr class='border-b border-slate-100 bg-slate-50'>
-                              <td colSpan={7} class='px-4 py-4'>
+                              <td colSpan={9} class='px-4 py-4'>
                                 <RoundSummaryDropdown
                                   distanceUnit={distanceUnit()}
                                   onRerunComplete={refetch}

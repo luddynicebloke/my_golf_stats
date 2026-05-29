@@ -235,6 +235,8 @@
     "roundsCompleted": "Rounds completed",
     "score": "Score",
     "sgTotal": "SG total",
+    "penaltyStrokes": "Penalties",
+    "recoveryShots": "Recovery",
     "completeRound": "Complete round",
     "completeRoundDescription": "Continue entering holes, or finalise the round with the holes you have already completed.",
     "continueRound": "Continue round",
@@ -256,6 +258,7 @@
       "distance": "Distance",
       "lieType": "Lie Type",
       "penalty": "Penalty",
+      "recovery": "Recovery",
       "score": "Score",
       "SG": "SG"
     }
@@ -504,6 +507,8 @@
     "shortGameTotalMetres": "Short game total (<=30m)",
     "puttingTotal": "Putting total",
     "totalSg": "Total SG",
+    "penaltyStrokes": "Penalty strokes",
+    "recoveryShots": "Recovery shots",
     "fairwaysHitFromTee": "Tee shots finishing on fairway",
     "greensInRegulation": "Greens in regulation",
     "putts": "Number of putts",

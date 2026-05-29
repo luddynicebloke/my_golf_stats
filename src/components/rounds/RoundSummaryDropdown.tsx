@@ -78,6 +78,14 @@ function SummaryContent(props: {
         value={formatSgValue(props.summary.totalSg)}
       />
       <SummaryRow
+        label={t("roundSummary.penaltyStrokes")}
+        value={formatCountValue(props.summary.penaltyStrokes)}
+      />
+      <SummaryRow
+        label={t("roundSummary.recoveryShots")}
+        value={formatCountValue(props.summary.recoveryShots)}
+      />
+      <SummaryRow
         label={t("roundSummary.fairwaysHitFromTee")}
         value={formatCountValue(props.summary.fairwaysHitFromTee)}
       />

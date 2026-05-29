@@ -235,6 +235,8 @@
     "roundsCompleted": "Parties terminées",
     "score": "Score",
     "sgTotal": "SG total",
+    "penaltyStrokes": "Pénalités",
+    "recoveryShots": "Recovery",
     "completeRound": "Terminer la partie",
     "completeRoundDescription": "Continuez à saisir les trous, ou finalisez la partie avec les trous déjà terminés.",
     "continueRound": "Continuer la partie",
@@ -256,6 +258,7 @@
       "distance": "Distance",
       "lieType": "Lie",
       "penalty": "Pénalité",
+      "recovery": "Recovery",
       "score": "Score",
       "SG": "SG"
     }
@@ -504,6 +507,8 @@
     "shortGameTotalMetres": "Total petit jeu (<=30 m)",
     "puttingTotal": "Total putting",
     "totalSg": "SG total",
+    "penaltyStrokes": "Coups de pénalité",
+    "recoveryShots": "Coups de recovery",
     "fairwaysHitFromTee": "Mises en jeu finissant sur le fairway",
     "greensInRegulation": "Greens en régulation",
     "putts": "Nombre de putts",

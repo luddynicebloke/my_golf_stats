@@ -62,6 +62,7 @@ begin
       s.shot_number,
       s.distance_to_pin,
       s.lie_type,
+      coalesce(s.recovery, false) as recovery,
       coalesce(s.penalty_strokes, 0) as penalty_strokes,
       lead(s.distance_to_pin) over (
         partition by s.round_hole_id
@@ -78,6 +79,24 @@ begin
   lookup_values as (
     select
       os.*,
+      case
+        when os.recovery then 0
+        else (
+          select count(*)::integer
+          from ordered_shots recovery_shot
+          where recovery_shot.round_hole_id = os.round_hole_id
+            and recovery_shot.shot_number > os.shot_number
+            and recovery_shot.recovery
+            and not exists (
+              select 1
+              from ordered_shots blocker
+              where blocker.round_hole_id = os.round_hole_id
+                and blocker.shot_number > os.shot_number
+                and blocker.shot_number < recovery_shot.shot_number
+                and not blocker.recovery
+            )
+        )
+      end as recovery_strokes,
       case
         when lower(trim(os.lie_type)) = 'green' then os.distance_to_pin
         when lower(trim(os.lie_type)) = 'tee' then greatest(os.distance_to_pin * 1.09361, 150)
@@ -96,8 +115,10 @@ begin
   expectation_matches as (
     select
       lv.id,
+      lv.recovery,
       start_exp.expected_strokes as start_expected_strokes,
-      coalesce(end_exp.expected_strokes, 0) as end_expected_strokes
+      coalesce(end_exp.expected_strokes, 0) as end_expected_strokes,
+      lv.recovery_strokes
     from lookup_values lv
     join sg_expectation_yds start_exp
       on start_exp.category_id = v_category_id
@@ -114,10 +135,18 @@ begin
   updated_shots as (
     update shots s
     set sg_value = round(
-      (
-        em.start_expected_strokes -
-        (1 + coalesce(s.penalty_strokes, 0) + em.end_expected_strokes)
-      )::numeric,
+      case
+        when em.recovery then 0
+        else (
+          em.start_expected_strokes -
+          (
+            1 +
+            coalesce(s.penalty_strokes, 0) +
+            em.recovery_strokes +
+            em.end_expected_strokes
+          )
+        )
+      end::numeric,
       3
     )
     from expectation_matches em

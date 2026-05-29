@@ -598,6 +598,9 @@ export default function RoundShots(props: { id: string }) {
                         {t("rounds.shots.penalty")}
                       </th>
                       <th class='px-4 py-3 font-semibold'>
+                        {t("rounds.shots.recovery")}
+                      </th>
+                      <th class='px-4 py-3 font-semibold'>
                         {t("rounds.shots.score")}
                       </th>
                       <th class='px-4 py-3 font-semibold'>SG</th>
@@ -619,6 +622,9 @@ export default function RoundShots(props: { id: string }) {
                           </td>
                           <td class='px-4 py-3'>{shot.lieType}</td>
                           <td class='px-4 py-3'>{shot.penaltyStrokes}</td>
+                          <td class='px-4 py-3'>
+                            {shot.recovery ? t("common.yes") : t("common.no")}
+                          </td>
                           <td class='px-4 py-3'>{shot.score ?? "-"}</td>
                           <td class='px-4 py-3'>
                             {shot.sgValue == null ? "-" : shot.sgValue.toFixed(3)}
