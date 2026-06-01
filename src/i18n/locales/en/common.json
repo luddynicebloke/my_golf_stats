@@ -597,6 +597,15 @@
       "role": "Role",
       "distances": "Distances",
       "avatar": "Avatar",
+      "history": {
+        "title": "Player rounds",
+        "show": "Show played courses",
+        "hide": "Hide played courses",
+        "loading": "Loading played courses...",
+        "empty": "This player has no recorded rounds.",
+        "error": "Failed to load the player's rounds.",
+        "unknownCourse": "Unknown course"
+      },
       "filters": {
         "all": "All",
         "users": "Users",

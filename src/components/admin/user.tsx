@@ -1,6 +1,10 @@
-import { createSignal, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { useTransContext } from "@mbarzda/solid-i18next";
 import { supabase } from "../../supabase/client";
+import {
+  fetchPlayerRoundHistory,
+  type PlayerRoundHistoryItem,
+} from "../../supabase/adminUsers";
 
 type UserType = {
   id: string | null;
@@ -57,6 +61,12 @@ const User = (props: UserProps) => {
   const [editing, setEditing] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
   const [errorMessage, setErrorMessage] = createSignal("");
+  const [historyOpen, setHistoryOpen] = createSignal(false);
+  const [historyLoading, setHistoryLoading] = createSignal(false);
+  const [historyError, setHistoryError] = createSignal("");
+  const [roundHistory, setRoundHistory] = createSignal<
+    PlayerRoundHistoryItem[] | null
+  >(null);
 
   const [email, setEmail] = createSignal(props.user.email ?? "");
   const [avatar, setAvatar] = createSignal(props.user.avatar_url || "");
@@ -82,6 +92,36 @@ const User = (props: UserProps) => {
     );
 
     setErrorMessage("");
+  };
+
+  const toggleRoundHistory = async () => {
+    if (historyOpen()) {
+      setHistoryOpen(false);
+      return;
+    }
+
+    setHistoryOpen(true);
+
+    if (roundHistory() != null || historyLoading()) {
+      return;
+    }
+
+    if (!props.user.id) {
+      setHistoryError(t("admin.users.history.error"));
+      return;
+    }
+
+    setHistoryError("");
+    setHistoryLoading(true);
+
+    try {
+      setRoundHistory(await fetchPlayerRoundHistory(props.user.id));
+    } catch (error) {
+      console.error("Error fetching player round history:", error);
+      setHistoryError(t("admin.users.history.error"));
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   const saveUser = async () => {
@@ -167,7 +207,7 @@ const User = (props: UserProps) => {
 
       <Show when={editing()}>
         <tr class='border-b border-slate-200 bg-slate-50'>
-          <td colSpan={7} class='px-6 py-4'>
+          <td colSpan={8} class='px-6 py-4'>
             <div class='grid gap-3 md:grid-cols-2 lg:grid-cols-3'>
               <label class='block'>
                 <span class='mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500'>
@@ -276,7 +316,67 @@ const User = (props: UserProps) => {
               >
                 {t("common.cancel")}
               </button>
+              <button
+                type='button'
+                onClick={() => void toggleRoundHistory()}
+                class='inline-flex self-auto rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-100'
+              >
+                {historyOpen()
+                  ? t("admin.users.history.hide")
+                  : t("admin.users.history.show")}
+              </button>
             </div>
+
+            <Show when={historyOpen()}>
+              <div class='mt-4 rounded-lg border border-slate-200 bg-white p-4'>
+                <h3 class='text-sm font-semibold text-slate-800'>
+                  {t("admin.users.history.title")}
+                </h3>
+                <Show when={!historyLoading()} fallback={
+                  <p class='mt-3 text-sm text-slate-500'>
+                    {t("admin.users.history.loading")}
+                  </p>
+                }>
+                  <Show when={!historyError()} fallback={
+                    <p class='mt-3 text-sm text-rose-700'>{historyError()}</p>
+                  }>
+                    <Show when={(roundHistory()?.length ?? 0) > 0} fallback={
+                      <p class='mt-3 text-sm text-slate-500'>
+                        {t("admin.users.history.empty")}
+                      </p>
+                    }>
+                      <div class='mt-3 overflow-x-auto'>
+                        <table class='w-full text-left text-sm text-slate-700'>
+                          <thead class='border-b border-slate-200 bg-slate-100'>
+                            <tr>
+                              <th scope='col' class='px-3 py-2 font-semibold'>
+                                {t("common.date")}
+                              </th>
+                              <th scope='col' class='px-3 py-2 font-semibold'>
+                                {t("common.course")}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <For each={roundHistory()}>
+                              {(round) => (
+                                <tr class='border-b border-slate-100 last:border-b-0'>
+                                  <td class='px-3 py-2'>{round.roundDate}</td>
+                                  <td class='px-3 py-2'>
+                                    {round.courseName ||
+                                      t("admin.users.history.unknownCourse")}
+                                  </td>
+                                </tr>
+                              )}
+                            </For>
+                          </tbody>
+                        </table>
+                      </div>
+                    </Show>
+                  </Show>
+                </Show>
+              </div>
+            </Show>
           </td>
         </tr>
       </Show>

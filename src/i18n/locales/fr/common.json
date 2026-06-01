@@ -597,6 +597,15 @@
       "role": "Rôle",
       "distances": "Distances",
       "avatar": "Avatar",
+      "history": {
+        "title": "Parties du joueur",
+        "show": "Afficher les parcours joués",
+        "hide": "Masquer les parcours joués",
+        "loading": "Chargement des parcours joués...",
+        "empty": "Ce joueur n'a aucune partie enregistrée.",
+        "error": "Impossible de charger les parties du joueur.",
+        "unknownCourse": "Parcours inconnu"
+      },
       "filters": {
         "all": "Tous",
         "users": "Utilisateurs",
