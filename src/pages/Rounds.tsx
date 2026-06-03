@@ -11,6 +11,7 @@ import ConfirmationModal from "../components/ConfirmationModal";
 import PlayerSelector from "../components/pro/PlayerSelector";
 import RoundSummaryDropdown from "../components/rounds/RoundSummaryDropdown";
 import { useAuth } from "../context/AuthProvider";
+import { toDMYDash } from "../hooks/useDateFormat";
 import { normalizeDistanceUnit } from "../lib/distance";
 import { supabase } from "../supabase/client";
 import { useTransContext } from "@mbarzda/solid-i18next";
@@ -375,7 +376,7 @@ export default function Rounds() {
                             {round.course}
                           </h2>
                           <p class='mt-1 text-sm text-slate-500'>
-                            {round.playedDate}
+                            {toDMYDash(round.playedDate)}
                           </p>
                         </div>
                         <span
@@ -508,39 +509,39 @@ export default function Rounds() {
                 </For>
               </div>
 
-              <div class='mt-4 hidden overflow-x-auto rounded-xl border border-slate-200 sm:block'>
-                <table class='w-full min-w-120 text-left text-sm text-slate-700'>
-                  <thead class='border-b border-slate-200 bg-slate-100 text-slate-700'>
+              <div class='mt-4 hidden overflow-x-auto rounded-lg border border-slate-200 sm:block'>
+                <table class='w-full min-w-[900px] table-fixed text-left text-xs text-slate-700'>
+                  <thead class='border-b border-slate-200 bg-slate-100 text-xs text-slate-700'>
                     <tr>
-                      <th scope='col' class='px-4 py-3 font-semibold'>
-                        Date
+                      <th scope='col' class='w-24 px-3 py-3 font-semibold'>
+                        {t("common.date")}
                       </th>
-                      <th scope='col' class='px-4 py-3 font-semibold'>
+                      <th scope='col' class='w-48 px-3 py-3 font-semibold'>
                         {t("common.course")}
                       </th>
-                      <th scope='col' class='px-4 py-3 font-semibold'>
+                      <th scope='col' class='w-16 px-3 py-3 font-semibold'>
                         {t("common.tee")}
                       </th>
-                      <th scope='col' class='px-4 py-3 font-semibold'>
+                      <th scope='col' class='w-24 px-3 py-3 font-semibold'>
                         {t("common.completed")}
                       </th>
-                      <th scope='col' class='px-4 py-3 font-semibold'>
+                      <th scope='col' class='w-14 px-3 py-3 font-semibold'>
                         {t("rounds.score")}
                       </th>
-                      <th scope='col' class='px-4 py-3 font-semibold'>
+                      <th scope='col' class='w-16 px-3 py-3 font-semibold'>
                         {t("rounds.sgTotal")}
                       </th>
-                      <th scope='col' class='px-4 py-3 font-semibold'>
-                        {t("rounds.penaltyStrokes")}
+                      <th scope='col' class='w-12 px-3 py-3 font-semibold'>
+                        {t("rounds.tablePenaltyStrokes")}
                       </th>
-                      <th scope='col' class='px-4 py-3 font-semibold'>
-                        {t("rounds.recoveryShots")}
+                      <th scope='col' class='w-12 px-3 py-3 font-semibold'>
+                        {t("rounds.tableRecoveryShots")}
                       </th>
                       <th
                         scope='col'
-                        class='px-4 py-3 text-right font-semibold'
+                        class='w-72 px-3 py-3 text-right font-semibold'
                       >
-                        Action
+                        {t("common.action")}
                       </th>
                     </tr>
                   </thead>
@@ -549,12 +550,30 @@ export default function Rounds() {
                       {(round) => (
                         <>
                           <tr class='border-b border-slate-100 last:border-b-0'>
-                            <td class='px-4 py-3'>{round.playedDate}</td>
-                            <td class='px-4 py-3'>{round.course}</td>
-                            <td class='px-4 py-3'>{round.tee}</td>
-                            <td class='px-4 py-3'>
+                            <td class='whitespace-nowrap px-3 py-3'>
+                              {toDMYDash(round.playedDate)}
+                            </td>
+                            <td class='w-48 px-3 py-3'>
+                              <span
+                                class='group relative block max-w-full rounded-sm focus:outline-none focus:ring-2 focus:ring-cyan-300'
+                                tabIndex={0}
+                              >
+                                <span class='block truncate'>
+                                  {round.course}
+                                </span>
+                                <span class='pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-lg group-hover:block group-focus-within:block'>
+                                  {round.course}
+                                </span>
+                              </span>
+                            </td>
+                            <td class='px-3 py-3'>{round.tee}</td>
+                            <td class='px-3 py-3'>
                               <div class='flex items-center gap-2'>
-                                <span>{round.finished ? "Yes" : "No"}</span>
+                                <span>
+                                  {round.finished
+                                    ? t("common.yes")
+                                    : t("common.no")}
+                                </span>
                                 <Show when={!round.finished && !isReadOnly()}>
                                   <button
                                     type='button'
@@ -563,7 +582,7 @@ export default function Rounds() {
                                       openRoundActionModal(round.id)
                                     }
                                   >
-                                    Complete
+                                    {t("common.complete")}
                                   </button>
                                 </Show>
                                 <Show when={round.finished && !isReadOnly()}>
@@ -571,24 +590,24 @@ export default function Rounds() {
                                     href={`/scorecard-entry/${round.id}`}
                                     class='inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100'
                                   >
-                                    Edit
+                                    {t("common.edit")}
                                   </A>
                                 </Show>
                               </div>
                             </td>
-                            <td class='px-4 py-3'>{formatRoundScore(round)}</td>
-                            <td class='px-4 py-3'>
+                            <td class='px-3 py-3'>{formatRoundScore(round)}</td>
+                            <td class='px-3 py-3'>
                               {round.sgTotal == null
                                 ? "-"
                                 : round.sgTotal.toFixed(3)}
                             </td>
-                            <td class='px-4 py-3'>{round.penaltyStrokes}</td>
-                            <td class='px-4 py-3'>{round.recoveryShots}</td>
-                            <td class='px-4 py-3 text-right'>
+                            <td class='px-3 py-3'>{round.penaltyStrokes}</td>
+                            <td class='px-3 py-3'>{round.recoveryShots}</td>
+                            <td class='px-3 py-3 text-right'>
                               <Show when={isReadOnly()}>
                                 <A
                                   href={`/dashboard/rounds/${round.id}`}
-                                  class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+                                  class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100'
                                 >
                                   View Shots
                                 </A>
@@ -597,7 +616,7 @@ export default function Rounds() {
                                 <div class='flex justify-end gap-2'>
                                   <button
                                     type='button'
-                                    class='inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50'
+                                    class='inline-flex rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50'
                                     onClick={() => toggleRoundSummary(round.id)}
                                   >
                                     {expandedRoundId() === round.id
@@ -606,25 +625,27 @@ export default function Rounds() {
                                   </button>
                                   <A
                                     href={`/dashboard/rounds/${round.id}`}
-                                    class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-800 hover:bg-cyan-100'
+                                    class='inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-100'
                                   >
-                                    View
+                                    {t("common.view")}
                                   </A>
                                   <A
                                     href={`/scorecard-entry/${round.id}`}
-                                    class='inline-flex rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800 hover:bg-amber-100'
+                                    class='inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100'
                                   >
-                                    {round.finished ? "Edit" : "Enter"}
+                                    {round.finished
+                                      ? t("common.edit")
+                                      : t("common.enter")}
                                   </A>
                                   <button
                                     type='button'
-                                    class='inline-flex rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
+                                    class='inline-flex rounded-md border border-rose-200 bg-rose-50 px-2 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
                                     disabled={deletingRoundId() === round.id}
                                     onClick={() => openDeleteModal(round.id)}
                                   >
                                     {deletingRoundId() === round.id
-                                      ? "Deleting..."
-                                      : "Delete"}
+                                      ? t("common.deleting")
+                                      : t("common.delete")}
                                   </button>
                                 </div>
                               </Show>
